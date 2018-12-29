@@ -1,5 +1,4 @@
 # Stawallet
-
 Stawallet is a different type of wallet. Something between hot and cold...
 
 ## Warning!
@@ -11,8 +10,8 @@ Stawallet is a different type of wallet. Something between hot and cold...
 * Stawallet (is going to) supports any kind of crypto assets (based on SLIP-0044).
 * Hot wallet: Automatically accept deposit or process withdraw requests.
 * Cold wallet: It's your primary wallet. Stawallet might only send transaction to it.
-* BIP-0044 address derivation methodology.
-* Cold wallet could be managed by any BIP-0044-compatible wallets (both software or hardware wallet).
+* `BIP-0044` address derivation methodology.
+* Cold wallet could be managed by any `BIP-0044`-compatible wallets (both software or hardware wallet).
 * Prevent hot wallet to keep more than UCL.
 * Notify you whenever your hot wallet's balance get lower than LCL.
 
@@ -40,7 +39,7 @@ Stawallet is a different type of wallet. Something between hot and cold...
 Stawallet is a service to simplify the deposit and withdraw of cryptocurrency assets...
 
 ## Getting started
-1. Make 2 wallet seed and backup from BIP-0039 mnemonic words (Don't skip the backup section, or you will loose anything).
+1. Make 2 wallet seed and backup from `BIP-0039` mnemonic words (Don't skip the backup section, or you will loose anything).
 2. Start blockchain rpc-enabled daemon of all supported cryptocurrencies (docker is great for it).
 3. For each cryptocurrency, choose an address as the base address in your cold wallet.
 4. For each cryptocurrency, make `XPRV` derivation using `m/44'/coin_type'/account_index'/` as path (`account_index` could be anything, choose `0` for beginning)
