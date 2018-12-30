@@ -50,5 +50,5 @@ Stawallet is a service to simplify the deposit and withdraw of cryptocurrency as
 ## UseCases
 * Exchange internal wallet
 * Custodian wallet providers
-* Payment processing of any **dynamic** and *enterprise** merchant app
+* Payment processing of any **dynamic** and **enterprise** merchant app
 

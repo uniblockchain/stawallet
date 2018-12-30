@@ -1,35 +1,24 @@
 import com.typesafe.config.*
 import kotlinx.coroutines.*
+import redis.clients.jedis.Jedis
 import java.util.logging.*
 
-
 val config: Config = ConfigFactory.load()
-val logger: Logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME)
+val jedis = Jedis()
+private val logger = Logger.getLogger("Application")
 
 
 fun main(args: Array<String>) {
-    logger.log(Level.INFO, "Initializing wallets:")
+    logger.log(Level.WARNING, "Initializing wallets:")
 
-    println("Start")
-
-// Start a coroutine
-    GlobalScope.launch {
-        delay(1000)
-        println("Hello")
-    }
-
-//    Thread.sleep(2000) // wait for 2 seconds
-    println("Stop")
     Wallet.init()
 
-    for (w in Wallet.all){
-        print("salam")
+    logger.log(Level.WARNING, "Syncing wallets:")
+
+    Wallet.all.forEach {
+        runBlocking {
+            // TODO: Sync wallet
+        }
     }
 
 }
-
-//fun initializeWallets(): List<CryptocurrencyWallet>{
-//    for (wc in config.getList("wallet")){
-//
-//    }
-//}

@@ -17,6 +17,8 @@ dependencies {
     compile(kotlin("stdlib-jdk8"))
     compile("com.typesafe:config:1.3.2")
     compile("wf.bitcoin:JavaBitcoindRpcClient:0.9.13")
+    compile("org.web3j:core:4.0.0")
+    compile("redis.clients:jedis:3.0.1")
 }
 
 tasks.withType<KotlinCompile> {
