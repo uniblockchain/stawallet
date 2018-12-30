@@ -5,7 +5,29 @@ import java.util.logging.Logger
 private val logger = Logger.getLogger("Wallet")
 
 class BitcoinWallet(coldAddress: String, hotXPrv: String) : Wallet(coldAddress, hotXPrv) {
-//    override val rpcClient: RpcClient = RpcClient()
+
+    val rpcClient = RpcClientFactory.createBitcoinClient(
+        user = config.getString("wallet.btc.rpc.username"),
+        password = config.getString("wallet.btc.rpc.password"),
+        host = config.getString("wallet.btc.rpc.host"),
+        port = config.getInt("wallet.btc.rpc.port"),
+        secure = config.getBoolean("wallet.btc.rpc.secure")
+    )
+
+    init {
+//        rpcClient.getMemoryInfo()
+//        rpcClient.getBlockchainInfo()
+//        rpcClient.getMempoolInfo()
+//        rpcClient.getNetworkInfo()
+//        rpcClient.getMiningInfo()
+//        rpcClient.getPeerInfo()
+//        rpcClient.getAddedNodeInfo()
+//        rpcClient.getUnspentTransactionOutputSetInfo()
+//        rpcClient.estimateSmartFee(1)
+        rpcClient.importMultipleAddresses(arrayListOf(AddressOrScript(object {
+            val address = "mxpejj3Wf2kvaiRUgz9CkWYwQx3HkxhiLf"
+        }, 1543599566)), ImportAddressOptions(true))
+    }
 
     override suspend fun syncBlockchain() {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -18,6 +40,10 @@ class BitcoinWallet(coldAddress: String, hotXPrv: String) : Wallet(coldAddress, 
     override suspend fun sendTo(address: String, amount: Long) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
+
+//    suspend fun estimateFee(): Long {
+//        rpcClient.est
+//    }
 
 }
 
