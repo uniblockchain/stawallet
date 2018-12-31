@@ -14,6 +14,9 @@ repositories {
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.0")
+    implementation("org.jetbrains.xodus:xodus-environment:1.2.3")
+    implementation("org.jetbrains.xodus:xodus-entity-store:1.2.3")
+
     compile(kotlin("stdlib-jdk8"))
     compile("com.typesafe:config:1.3.2")
     compile("com.github.briandilley.jsonrpc4j:jsonrpc4j:1.5.3")
@@ -29,6 +32,8 @@ dependencies {
     compile("org.apache.logging.log4j:log4j-simple:2.11.1")
     compile("org.apache.logging.log4j:log4j-1.2-api:2.11.1")
     compile("org.apache.logging.log4j:log4j-jcl:2.11.1")
+
+    compile("org.jetbrains.xodus:xodus-openAPI:1.2.3")
 }
 
 tasks.withType<KotlinCompile> {
