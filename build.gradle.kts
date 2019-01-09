@@ -20,7 +20,6 @@ dependencies {
     compile(kotlin("stdlib-jdk8"))
     compile("com.typesafe:config:1.3.2")
     compile("com.github.briandilley.jsonrpc4j:jsonrpc4j:1.5.3")
-    compile("org.web3j:core:4.0.0")
     compile("redis.clients:jedis:3.0.1")
     compile("org.slf4j:slf4j:1.7.5")
     compile("org.slf4j:slf4j-core:1.7.5")
@@ -34,6 +33,14 @@ dependencies {
     compile("org.apache.logging.log4j:log4j-jcl:2.11.1")
 
     compile("org.jetbrains.xodus:xodus-openAPI:1.2.3")
+
+//    compile("org.ethereum:ethereumj-core:1.9.1-RELEASE")
+    compile("org.web3j:core:4.0.0")
+
+    compile("org.bitcoinj:bitcoinj-core:0.14.7")
+    compile("io.github.novacrypto:BIP32:2018.10.06")
+    compile("io.github.novacrypto:BIP32derivation:2018.10.06")
+
 }
 
 tasks.withType<KotlinCompile> {

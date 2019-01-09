@@ -1,16 +1,9 @@
 import com.typesafe.config.*
-import jetbrains.exodus.entitystore.StoreTransaction
-import jetbrains.exodus.entitystore.StoreTransactionalExecutable
 //import jetbrains.exodus.env.Environments
-import jetbrains.exodus.env.Store
 import kotlinx.coroutines.*
 import redis.clients.jedis.Jedis
 import java.util.logging.*
-import jetbrains.exodus.env.StoreConfig
-import jetbrains.exodus.env.TransactionalComputable
-import org.jetbrains.annotations.NotNull
-import jetbrains.exodus.bindings.StringBinding.stringToEntry
-import jetbrains.exodus.bindings.StringBinding.entryToString
+import wallet.Wallet
 
 
 val config: Config = ConfigFactory.load()
