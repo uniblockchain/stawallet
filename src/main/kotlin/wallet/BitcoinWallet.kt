@@ -32,6 +32,7 @@ import org.bouncycastle.crypto.macs.HMac
 import org.bouncycastle.crypto.params.KeyParameter
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.math.ec.ECPoint
+import redis.clients.jedis.Jedis
 import java.nio.ByteBuffer
 import java.security.Security
 
@@ -42,6 +43,7 @@ data class NotEnoughFundException(val coin: String, val amountToPay: Long = 0L) 
     Exception("wallet.Wallet $coin does NOT have enough money to pay $amountToPay")
 
 class BitcoinWallet(val coldAddress: String, val hotXPrv: String) {
+
 
     val coin = "btc"
 
@@ -58,14 +60,29 @@ class BitcoinWallet(val coldAddress: String, val hotXPrv: String) {
         )
     }
 
+    /**
+     * Redis data structure for Bitcoin Wallet:
+     *
+     * * UTXOs                    : "btc:utxo"            : sortedSet(transactionId:vout, amount)
+     * * Deposit  Transactions Id : "btc:txi:d:{addr}"    : set
+     * * Overflow Transactions Id : "btc:txi:o"           : list
+     * * Deposit  Transactions    : "btc:tx:d:{txid}"     : hashMap("amount", "confirmationsLeft")
+     * * Withdraw Transactions    : "btc:tx:w:{txid}"     : hashMap("address", "sentAmount", "feeAmount")
+     * * Archived Addresses       : "btc:addr:a"          : sortedSet(address, index)
+     * * Deposit  Addresses       : "btc:addr:d"          : sortedSet(address, index)
+     * * Change   Addresses       : "btc:addr:c"          : sortedSet(address, index)
+     * * Cold     Addresses       : "btc:addr:o"          : list(address)
+     *
+     */
     private val database = object {
-        val store = PersistentEntityStores.newInstance("${config.getString("db.envPath")}/$coin")!!
 
-        val TYPE_UTXO = "utxo"
-        val TYPE_UTXO_TXHASH = "txhash"
-        val TYPE_UTXO_AMOUNT = "utxo"
-        val TYPE_UTXO_VOUT = "vout"
+        private val jedis = Jedis("localhost")
+        private val PREFIX = coin
+        private val KEY_UTXO = "utxo"
 
+        var balance: Int
+            get() = jedis.za
+            set() = {}
     }
 
     val cryptography = object {
