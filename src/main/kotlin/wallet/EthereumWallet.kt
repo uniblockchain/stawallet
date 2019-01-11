@@ -8,20 +8,40 @@ import jetbrains.exodus.core.dataStructures.hash.HashUtil
 import org.bouncycastle.util.encoders.Hex
 import org.web3j.crypto.RawTransaction
 import org.web3j.crypto.TransactionEncoder
+import redis.clients.jedis.Jedis
 
 
 class EthereumWallet(val coldAddress: String, val hotXPrv: String) {
 
     val coin = "eth"
 
+    /**
+     * Redis data structure for Bitcoin Wallet:
+     *
+     * * Last watched block height       : "eth:block:pointer" : value
+     *      Addresses from index 0 to this pointer should actively be watched
+     *
+     * * Last Issued Hot Address Index   : "eth:addr:pointer" : value
+     *      Addresses from index 0 to this pointer should actively be watched
+     *
+     * * Deposit  History                : "eth:deposits:{address}" : hashMap(txid, amount, warmTxid, coldTxid)
+     *      We just record fully-confirmed transactions here
+     *
+     * * Withdraw History                : "eth:withdraws:{address}" : set(txid)
+     *
+     * * Invoice  History                : "eth:invoices:{invoiceId}" : txid
+     *      InvoiceId is a unique id which sent by client to prevent double withdrawal
+     *
+     */
     private val database = object {
-        val store = PersistentEntityStores.newInstance("${config.getString("db.envPath")}/$coin")!!
 
-        val TYPE_UTXO = "utxo"
-        val TYPE_UTXO_TXHASH = "txhash"
-        val TYPE_UTXO_AMOUNT = "utxo"
-        val TYPE_UTXO_VOUT = "vout"
+        private val jedis = Jedis("localhost")
+        private val PREFIX = coin
+        private val KEY_UTXO = "utxo"
 
+        var balance: Int
+            get() = jedis.za
+            set() = {}
     }
 
     fun generateReceivingAddress(): String {
