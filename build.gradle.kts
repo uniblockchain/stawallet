@@ -1,5 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+val kethereumVersion=0.67
+
 plugins {
     kotlin("jvm") version "1.3.11"
 }
@@ -10,6 +12,7 @@ version = "1.0-SNAPSHOT"
 repositories {
     mavenCentral()
     jcenter()
+    maven("https://jitpack.io")
 }
 
 dependencies {
@@ -21,6 +24,11 @@ dependencies {
     compile("com.typesafe:config:1.3.2")
     compile("com.github.briandilley.jsonrpc4j:jsonrpc4j:1.5.3")
     compile("redis.clients:jedis:3.0.1")
+
+    compile("com.github.walleth.kethereum:bip32:$kethereumVersion")
+    compile("com.github.walleth.kethereum:functions:$kethereumVersion")
+    compile("com.github.walleth.kethereum:bip44:$kethereumVersion")
+
 //    compile("org.slf4j:slf4j:1.7.5")
 //    compile("org.slf4j:slf4j-core:1.7.5")
 //    compile("org.slf4j:slf4j-simple:1.7.5")

@@ -39,9 +39,9 @@ class EthereumWallet(val coldAddress: String, val hotXPrv: String) {
         private val PREFIX = coin
         private val KEY_UTXO = "utxo"
 
-        var balance: Int
-            get() = jedis.za
-            set() = {}
+//        var balance: Int
+//            get() = jedis.za
+//            set() = {}
     }
 
     fun generateReceivingAddress(): String {
@@ -59,7 +59,7 @@ class EthereumWallet(val coldAddress: String, val hotXPrv: String) {
 //        val gas = Hex.decode("4255")
 
 
-//        val transaction: Transaction(null, gasPrice, gas, ecKey.getAddress(), amountToSend.toByteArray(), null)
+//        val transaction: bitcoin.Transaction(null, gasPrice, gas, ecKey.getAddress(), amountToSend.toByteArray(), null)
 
         RawTransaction.createEtherTransaction(
             BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN, address,
