@@ -1,5 +1,5 @@
-
 import Wallet
+import bitcoin.OutPoint
 import config
 import jetbrains.exodus.entitystore.PersistentEntityStores
 import sumByLong
@@ -13,7 +13,15 @@ private val logger = Logger.getLogger("Wallet")
 data class NotEnoughFundException(val coin: String, val amountToPay: Long = 0L) :
     Exception("Wallet $coin does NOT have enough money to pay $amountToPay")
 
+
 class BitcoinWallet(name: String) : Wallet(name) {
+
+    companion object {
+        const val KEY_UTXO = "utxo"
+        const val KEY_TX = "tx"
+        const val KEY_TXID = "txid"
+        const val KEY_ADDR = "addr"
+    }
 
     private val BASE_FEE = 100L
     private val FEE_PER_EXTRA_INPUT = 10L
@@ -27,7 +35,7 @@ class BitcoinWallet(name: String) : Wallet(name) {
             tx.getAll(STORE_TYPE_UTXO).sumByLong { it.getProperty(STORE_TYPE_UTXO_AMOUNT) as Long }
         }
 
-    private val database = UtxoStorage(name)
+    private val storage = UtxoStorage(name)
 
 
     // Db:
@@ -87,48 +95,73 @@ class BitcoinWallet(name: String) : Wallet(name) {
     }
 
     override suspend fun sendTo(address: String, amountToSend: Long) {
-        store.computeInExclusiveTransaction {
-            val feeRate = 1 // TODO
+        storage.jedis.watch("$name:")
 
-            var estimatedFee = BASE_FEE * feeRate
-            var inputAmount = 0L
+        val outputs = mapOf(address to BigDecimal(amountToSend))
+        val inputs = ArrayList<OutPoint>()
 
-            val outputs = mapOf(address to BigDecimal(amountToSend))
-            val inputs = ArrayList<OutPoint>()
+        var estimatedFee = BASE_FEE * feeRate
+        var inputAmount = 0L
 
-            for (utxo in it.sort(STORE_TYPE_UTXO, STORE_TYPE_UTXO_AMOUNT, false)) {
-                inputs.add(
-                    OutPoint(
-                        utxo.getProperty(STORE_TYPE_UTXO_TXHASH).toString(),
-                        utxo.getProperty(STORE_TYPE_UTXO_VOUT) as Int
-                    )
-                )
-                estimatedFee += FEE_PER_EXTRA_INPUT * feeRate
-                inputAmount += utxo.getProperty(STORE_TYPE_UTXO_AMOUNT) as Long
-                if (inputAmount >= amountToSend + estimatedFee) break
-            }
 
-            if (inputAmount < amountToSend + estimatedFee) throw NotEnoughFundException(coin, amountToSend)
-
-            if (inputAmount > amountToSend + estimatedFee) outputs.plus(
-                Pair(
-//                    generateChangeAddress,
-                    null,
-                    inputAmount - amountToSend - estimatedFee
+        // Iterate UTXOs to make transaction:
+        storage.jedis.zscan("", "$name:$KEY_UTXO").result.forEach {
+            inputs.add(
+                OutPoint(
+                    utxo.getProperty(STORE_TYPE_UTXO_TXHASH).toString(),
+                    utxo.getProperty(STORE_TYPE_UTXO_VOUT) as Int
                 )
             )
-
-            var transaction = rpcClient.createRawTransaction(inputs = inputs, outputs = outputs)
-            //TODO sign
-            rpcClient.sendRawTransaction(transaction)
-
+            estimatedFee += FEE_PER_EXTRA_INPUT * feeRate
+            inputAmount += utxo.getProperty(STORE_TYPE_UTXO_AMOUNT) as Long
+            if (inputAmount >= amountToSend + estimatedFee) break
         }
 
-
-
-
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
+
+//    override suspend fun sendTo(address: String, amountToSend: Long) {
+//        store.computeInExclusiveTransaction {
+//            val feeRate = 1 // TODO
+//
+//            var estimatedFee = BASE_FEE * feeRate
+//            var inputAmount = 0L
+//
+//            val outputs = mapOf(address to BigDecimal(amountToSend))
+//            val inputs = ArrayList<OutPoint>()
+//
+//            for (utxo in it.sort(STORE_TYPE_UTXO, STORE_TYPE_UTXO_AMOUNT, false)) {
+//                inputs.add(
+//                    OutPoint(
+//                        utxo.getProperty(STORE_TYPE_UTXO_TXHASH).toString(),
+//                        utxo.getProperty(STORE_TYPE_UTXO_VOUT) as Int
+//                    )
+//                )
+//                estimatedFee += FEE_PER_EXTRA_INPUT * feeRate
+//                inputAmount += utxo.getProperty(STORE_TYPE_UTXO_AMOUNT) as Long
+//                if (inputAmount >= amountToSend + estimatedFee) break
+//            }
+//
+//            if (inputAmount < amountToSend + estimatedFee) throw NotEnoughFundException(coin, amountToSend)
+//
+//            if (inputAmount > amountToSend + estimatedFee) outputs.plus(
+//                Pair(
+////                    generateChangeAddress,
+//                    null,
+//                    inputAmount - amountToSend - estimatedFee
+//                )
+//            )
+//
+//            var transaction = rpcClient.createRawTransaction(inputs = inputs, outputs = outputs)
+//            //TODO sign
+//            rpcClient.sendRawTransaction(transaction)
+//
+//        }
+//
+//
+//
+//
+//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+//    }
 
 //    suspend fun estimateFee(): Long {
 //        rpcClient.est
