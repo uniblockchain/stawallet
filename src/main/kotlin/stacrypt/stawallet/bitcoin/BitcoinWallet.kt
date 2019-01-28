@@ -5,9 +5,6 @@ import jetbrains.exodus.entitystore.PersistentEntityStores
 import stacrypt.stawallet.*
 import stacrypt.stawallet.UtxoStorage.Companion.STORE_TYPE_UTXO
 import stacrypt.stawallet.UtxoStorage.Companion.STORE_TYPE_UTXO_AMOUNT
-import stacrypt.stawallet.UtxoStorage.Companion.STORE_TYPE_UTXO_TXHASH
-import stacrypt.stawallet.UtxoStorage.Companion.STORE_TYPE_UTXO_VOUT
-import java.math.BigDecimal
 import java.util.logging.Logger
 
 
@@ -24,9 +21,7 @@ class BitcoinWallet(name: String, config: Config) : Wallet(name, daemon, ConfigS
                 get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
                 set(value) {}
 
-            override fun createRpcClientt(): BitcoinRpcClient {
-                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-            }
+            override fun createRpcClient(): BitcoinRpcClient = BitcoinRpcClient.createNewWithDefaultConfig()
 
         }
 
@@ -37,24 +32,23 @@ class BitcoinWallet(name: String, config: Config) : Wallet(name, daemon, ConfigS
 
     }
 
-
     override val storage = UtxoStorage(name)
 
     private val BASE_FEE = 100L
     private val FEE_PER_EXTRA_INPUT = 10L
 
     override val coin = "btc"
-    val rpcClient = (daemon.createRpcClientt() as BitcoinRpcClient).commander
+    val rpcClient = (daemon.createRpcClient() as BitcoinRpcClient).commander
 
-    var balance: Long
-        set(_) = throw Exception("You can not change the balance manually!")
-        get() = store.computeInReadonlyTransaction { tx ->
-            tx.getAll(STORE_TYPE_UTXO).sumByLong { it.getProperty(STORE_TYPE_UTXO_AMOUNT) as Long }
-        }
+//    var balance: Long
+//        set(_) = throw Exception("You can not change the balance manually!")
+//        get() = store.computeInReadonlyTransaction { tx ->
+//            tx.getAll(STORE_TYPE_UTXO).sumByLong { it.getProperty(STORE_TYPE_UTXO_AMOUNT) as Long }
+//        }
 
 
     // Db:
-    private val store = PersistentEntityStores.newInstance("${config.getString("db.envPath")}/$coin")!!
+//    private val store = PersistentEntityStores.newInstance("${config.getString("db.envPath")}/$coin")!!
 
 //    /**
 //     * `btc:info` is a key-value store. Here is the usage:

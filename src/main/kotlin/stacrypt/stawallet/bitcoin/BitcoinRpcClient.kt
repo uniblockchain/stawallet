@@ -45,11 +45,11 @@ class BitcoinRpcClient(
     companion object Factory {
 
         fun createNewWithDefaultConfig() = BitcoinRpcClient(
-            username = config.getString("daemons.btc.rpc.username"),
-            password = config.getString("daemons.btc.rpc.password"),
-            host = config.getString("daemons.btc.rpc.host"),
-            port = config.getInt("daemons.btc.rpc.port"),
-            tls = config.getBoolean("daemons.btc.rpc.secure")
+            username = config.getString("daemons.bitcoind.rpc.username"),
+            password = config.getString("daemons.bitcoind.rpc.password"),
+            host = config.getString("daemons.bitcoind.rpc.host"),
+            port = config.getInt("daemons.bitcoind.rpc.port"),
+            tls = config.getBoolean("daemons.bitcoind.rpc.secure")
         )
 
         private fun createBitcoinClient(

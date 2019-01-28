@@ -9,14 +9,21 @@ abstract class RedisStorage(val name: String) {
 
 }
 
-class UtxoStorage(walletName: String) : RedisStorage(walletName) {
+class UtxoStorage(name: String) : RedisStorage(name) {
 
     companion object {
-        val STORE_TYPE_UTXO = "utxo"
-        val STORE_TYPE_UTXO_TXHASH = "txhash"
-        val STORE_TYPE_UTXO_AMOUNT = "utxo"
-        val STORE_TYPE_UTXO_VOUT = "vout"
+//        val STORE_TYPE_UTXO = "utxo"
+//        val STORE_TYPE_UTXO_TXHASH = "txhash"
+//        val STORE_TYPE_UTXO_AMOUNT = "utxo"
+//        val STORE_TYPE_UTXO_VOUT = "vout"
 
+        val UTXO = "utxo"
+        val ADDR = "addr"
+        val TX = "tx"
+        val DEPOSIT = "d"
+        val WITHDRAW = "w"
+        val CHANGE = "c"
+        val COLD = "o"
     }
 
 
@@ -37,5 +44,6 @@ class UtxoStorage(walletName: String) : RedisStorage(walletName) {
 
     val archivedAddresses: SortedSet<String>? = null
 
+    fun hotBalance(): Long = jedis.zrangeWithScores("$name:$UTXO", 0, -1).sumByLong { it.score.toLong() }
 
 }

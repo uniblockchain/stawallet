@@ -14,7 +14,7 @@ abstract class Wallet(val name: String, val daemon: WalletDaemon, private val se
 
         fun initFromConfig(): ArrayList<Wallet> {
             val all = ArrayList<Wallet>()
-            for (wc in config.getObject("coins").toList()) {
+            for (wc in config.getObject("wallets").toList()) {
 
                 when (config.getString("wallets.${wc.first}.cryptocurrency")) {
                     "bitcoin" -> all.add(BitcoinWallet(wc.first, config.getConfig("wallets.${wc.first}")))
