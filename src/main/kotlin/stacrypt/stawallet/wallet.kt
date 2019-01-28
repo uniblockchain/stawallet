@@ -21,7 +21,7 @@ abstract class Wallet(val name: String, val daemon: WalletDaemon, private val se
 //                    "litecoin" -> all.add(LitecoinWallet(address, xPrv))
 //                    "ethereum" -> all.add(EthereumWallet(address, xPrv))
 //                    "ripple" -> all.add(RippleWallet(address, xPrv))
-//                    else -> throw RuntimeException("Unsupported coin ${wc.first}!!!")
+//                    else -> throw RuntimeException("Unsupported wallet ${wc.first}!!!")
                 }
 
                 Logger.getLogger("Wallet Factory").log(Level.SEVERE, "wallet found: ${wc.first}")

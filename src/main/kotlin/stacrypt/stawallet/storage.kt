@@ -1,15 +1,37 @@
 package stacrypt.stawallet
 
-import org.bitcoinj.wallet.DeterministicKeyChain.watch
 import redis.clients.jedis.Jedis
 import redis.clients.jedis.Transaction
-import redis.clients.jedis.exceptions.JedisException
+import stacrypt.stawallet.bitcoin.NotEnoughFundException
 import java.lang.Exception
 import java.util.*
+import kotlin.collections.ArrayList
 
 abstract class RedisStorage(val name: String) {
 
-    val jedis: Jedis = Jedis(config.getString("storage.redis.server"))
+    open val jedis: Jedis = Jedis(config.getString("storage.redis.server"))
+
+}
+
+class UtxoJedis(val name: String) : Jedis(config.getString("storage.redis.server")) {
+    fun hotBalance(): Long? = stacrypt.stawallet.jedis.zrangeWithScores(
+        "$name:${UtxoStorage.UTXO}",
+        0,
+        -1
+    ).sumByLong { it.score.toLong() }
+
+    fun selectUtxo(amountToSend: Long, baseFee: Long, feePerExtraUtxo: Long): ArrayList<Pair<String, Long>> {
+        val outPuts: ArrayList<Pair<String, Long>> = ArrayList()
+        var estimatedFee = baseFee
+        var totalInputAmount = 0L
+        stacrypt.stawallet.jedis.zrangeWithScores("$name:${UtxoStorage.UTXO}", 0, -1).forEach {
+            totalInputAmount += it.score.toLong()
+            estimatedFee += feePerExtraUtxo
+            outPuts.add(Pair(it.element.toString(), it.score.toLong()))
+            if (totalInputAmount >= amountToSend + estimatedFee) return outPuts
+        }
+        throw NotEnoughFundException(name, amountToSend)
+    }
 
 }
 
@@ -30,6 +52,8 @@ class UtxoStorage(name: String) : RedisStorage(name) {
         val COLD = "o"
     }
 
+    override val jedis = UtxoJedis(name)
+
 
     /**
      * Redis data structure for Utxo wallet Storage:
@@ -48,40 +72,36 @@ class UtxoStorage(name: String) : RedisStorage(name) {
 
     val archivedAddresses: SortedSet<String>? = null
 
-    fun hotBalance(): Long? =
-        jedis.watch("$name:$UTXO") {
-            jedis.zrangeWithScores("$name:$UTXO", 0, -1).sumByLong { it.score.toLong() }
-        }
+    @Synchronized
+    fun <T> watch(exec: UtxoJedis.() -> T): T = watch("$name:*", exec = exec)
 
-    fun last(): Long = jedis.zrangeWithScores("$name:$UTXO", 0, -1).sumByLong { it.score.toLong() }
 
-}
-
-@Synchronized
-fun <T> Jedis.watch(vararg keys: String, exec: () -> T): T {
-
-    try {
-        jedis.watch(*keys)
-        return exec()
-    } catch (e: Exception) {
-        throw e
-    } finally {
-        jedis.unwatch()
-    }
-}
-
-@Synchronized
-fun Jedis.transaction(vararg keys: String, exec: Transaction.() -> Unit): List<Any>? {
-    var result: List<Any>? = null
-    watch(*keys) {
-        val transaction = jedis.multi()
+    @Synchronized
+    private fun <T> watch(vararg keys: String, exec: UtxoJedis.() -> T): T {
         try {
-            exec(transaction)
-            result = transaction.exec()
+            jedis.watch(*keys)
+            return exec(jedis)
         } catch (e: Exception) {
-            transaction.discard()
             throw e
+        } finally {
+            jedis.unwatch()
         }
     }
-    return result
+
+    @Synchronized
+    fun transaction(vararg keys: String, exec: Transaction.() -> Unit): List<Any>? {
+        var result: List<Any>? = null
+        watch(*keys) {
+            val transaction = multi()
+            try {
+                exec(transaction)
+                result = transaction.exec()
+            } catch (e: Exception) {
+                transaction.discard()
+                throw e
+            }
+        }
+        return result
+    }
 }
+

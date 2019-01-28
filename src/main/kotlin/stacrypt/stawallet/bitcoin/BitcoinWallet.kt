@@ -1,17 +1,14 @@
 package stacrypt.stawallet.bitcoin
 
 import com.typesafe.config.Config
-import jetbrains.exodus.entitystore.PersistentEntityStores
 import stacrypt.stawallet.*
-import stacrypt.stawallet.UtxoStorage.Companion.STORE_TYPE_UTXO
-import stacrypt.stawallet.UtxoStorage.Companion.STORE_TYPE_UTXO_AMOUNT
 import java.util.logging.Logger
 
 
 private val logger = Logger.getLogger("wallet")
 
-data class NotEnoughFundException(val coin: String, val amountToPay: Long = 0L) :
-    Exception("wallet $coin does NOT have enough money to pay $amountToPay")
+data class NotEnoughFundException(val wallet: String, val amountToPay: Long = 0L) :
+    Exception("wallet $wallet does NOT have enough money to pay $amountToPay")
 
 
 class BitcoinWallet(name: String, config: Config) : Wallet(name, daemon, ConfigSecretProvider(config, 0)) {
@@ -48,7 +45,7 @@ class BitcoinWallet(name: String, config: Config) : Wallet(name, daemon, ConfigS
 
 
     // Db:
-//    private val store = PersistentEntityStores.newInstance("${config.getString("db.envPath")}/$coin")!!
+//    private val store = PersistentEntityStores.newInstance("${config.getString("db.envPath")}/$wallet")!!
 
 //    /**
 //     * `btc:info` is a key-value store. Here is the usage:
@@ -58,22 +55,22 @@ class BitcoinWallet(name: String, config: Config) : Wallet(name, daemon, ConfigS
 //     * lastBlockHeight
 //     * hotBalance
 //     */
-//    val infoStore = db.computeInTransaction { db.openStore("$coin:info", StoreConfig.WITHOUT_DUPLICATES, it) }
+//    val infoStore = db.computeInTransaction { db.openStore("$wallet:info", StoreConfig.WITHOUT_DUPLICATES, it) }
 //
 //    /**
 //     * `btc:addr:watch` is a hashMap: address ->
 //     */
-//    val watchStore = db.computeInTransaction { db.openStore("$coin:addr:watch", StoreConfig.WITHOUT_DUPLICATES, it) }
+//    val watchStore = db.computeInTransaction { db.openStore("$wallet:addr:watch", StoreConfig.WITHOUT_DUPLICATES, it) }
 //
 //    /**
 //     * `btc:addr:watch` is a hashMap: address -> {index, time, }
 //     */
-//    val archiveStore = db.computeInTransaction { db.openStore("$coin:addr:all", StoreConfig.WITHOUT_DUPLICATES, it) }
+//    val archiveStore = db.computeInTransaction { db.openStore("$wallet:addr:all", StoreConfig.WITHOUT_DUPLICATES, it) }
 //
 //    /**
 //     * `btc:addr:utxo` is
 //     */
-//    val utxoStore = db.computeInTransaction { db.openStore("$coin:utxo", StoreConfig.WITHOUT_DUPLICATES, it) }
+//    val utxoStore = db.computeInTransaction { db.openStore("$wallet:utxo", StoreConfig.WITHOUT_DUPLICATES, it) }
 
     init {
 //        rpcClient.getMemoryInfo()
@@ -105,6 +102,11 @@ class BitcoinWallet(name: String, config: Config) : Wallet(name, daemon, ConfigS
 
 
     override suspend fun sendTo(address: String, amountToSend: Long) {
+        val inputs = ArrayList<OutPoint>()
+        storage.watch {
+            selectUtxo(amountToSend,)
+        }
+
 //        storage.jedis.watch("$name:")
 //
 //        val outputs = mapOf(address to BigDecimal(amountToSend))
@@ -151,7 +153,7 @@ class BitcoinWallet(name: String, config: Config) : Wallet(name, daemon, ConfigS
 //                if (inputAmount >= amountToSend + estimatedFee) break
 //            }
 //
-//            if (inputAmount < amountToSend + estimatedFee) throw stacrypt.stawallet.bitcoin.NotEnoughFundException(coin, amountToSend)
+//            if (inputAmount < amountToSend + estimatedFee) throw stacrypt.stawallet.bitcoin.NotEnoughFundException(wallet, amountToSend)
 //
 //            if (inputAmount > amountToSend + estimatedFee) outputs.plus(
 //                Pair(
