@@ -1,15 +1,16 @@
+package stacrypt.stawallet
+
 import com.typesafe.config.*
 //import jetbrains.exodus.env.Environments
 import kotlinx.coroutines.*
 import redis.clients.jedis.Jedis
 import java.util.logging.*
-import wallet.Wallet
 
 
 val config: Config = ConfigFactory.load()
 val jedis = Jedis()
 private val logger = Logger.getLogger("Application")
-//val db = Environments.newInstance(config.getString("db.envPath"))
+//val db = Environments.newInstance(stacrypt.stawallet.getConfig.getString("db.envPath"))
 
 
 fun main(args: Array<String>) {
@@ -22,13 +23,13 @@ fun main(args: Array<String>) {
 
     logger.log(Level.WARNING, "Initializing wallets:")
 
-    Wallet.init()
+    val wallets = Wallet.initFromConfig()
 
     logger.log(Level.WARNING, "Syncing wallets:")
 
-    Wallet.all.forEach {
+    wallets.forEach {
         runBlocking {
-            // TODO: Sync wallet
+            // TODO: Sync coins
         }
     }
 

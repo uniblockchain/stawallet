@@ -1,18 +1,27 @@
+package stacrypt.stawallet
+
+import redis.clients.jedis.Jedis
 import java.util.*
+
+abstract class RedisStorage(val name: String) {
+
+    val jedis: Jedis = Jedis(config.getString("storage.redis.server"))
+
+}
 
 class UtxoStorage(walletName: String) : RedisStorage(walletName) {
 
     companion object {
-        private val STORE_TYPE_UTXO = "utxo"
-        private val STORE_TYPE_UTXO_TXHASH = "txhash"
-        private val STORE_TYPE_UTXO_AMOUNT = "utxo"
-        private val STORE_TYPE_UTXO_VOUT = "vout"
+        val STORE_TYPE_UTXO = "utxo"
+        val STORE_TYPE_UTXO_TXHASH = "txhash"
+        val STORE_TYPE_UTXO_AMOUNT = "utxo"
+        val STORE_TYPE_UTXO_VOUT = "vout"
 
     }
 
 
     /**
-     * Redis data structure for Utxo Wallet Storage:
+     * Redis data structure for Utxo wallet Storage:
      *
      * * UTXOs                    : "btc:utxo"            : sortedSet(transactionId:vout, amount)
      * * Deposit  Transactions Id : "btc:txi:d:{addr}"    : set
@@ -27,7 +36,6 @@ class UtxoStorage(walletName: String) : RedisStorage(walletName) {
      */
 
     val archivedAddresses: SortedSet<String>? = null
-
 
 
 }

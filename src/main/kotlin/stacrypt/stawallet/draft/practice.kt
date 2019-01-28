@@ -1,3 +1,5 @@
+package stacrypt.stawallet.draft
+
 import org.kethereum.bip32.model.Seed
 import org.kethereum.bip32.toKey
 import org.kethereum.crypto.toAddress

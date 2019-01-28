@@ -1,13 +1,7 @@
-package wallet
+package stacrypt.stawallet.ethereum
 
-import config
-import jetbrains.exodus.entitystore.PersistentEntityStores
-import org.web3j.protocol.core.methods.request.Transaction
 import java.math.BigInteger
-import jetbrains.exodus.core.dataStructures.hash.HashUtil
-import org.bouncycastle.util.encoders.Hex
 import org.web3j.crypto.RawTransaction
-import org.web3j.crypto.TransactionEncoder
 import redis.clients.jedis.Jedis
 
 
@@ -16,7 +10,7 @@ class EthereumWallet(val coldAddress: String, val hotXPrv: String) {
     val coin = "eth"
 
     /**
-     * Redis data structure for Bitcoin Wallet:
+     * Redis data structure for Bitcoin wallet:
      *
      * * Last watched block height       : "eth:block:pointer" : value
      *      Addresses from index 0 to this pointer should actively be watched
@@ -40,7 +34,7 @@ class EthereumWallet(val coldAddress: String, val hotXPrv: String) {
         private val KEY_UTXO = "utxo"
 
 //        var balance: Int
-//            get() = jedis.za
+//            get() = stacrypt.stawallet.getJedis.za
 //            set() = {}
     }
 
@@ -59,7 +53,7 @@ class EthereumWallet(val coldAddress: String, val hotXPrv: String) {
 //        val gas = Hex.decode("4255")
 
 
-//        val transaction: bitcoin.Transaction(null, gasPrice, gas, ecKey.getAddress(), amountToSend.toByteArray(), null)
+//        val transaction: stacrypt.stawallet.bitcoin.Transaction(null, gasPrice, gas, ecKey.getAddress(), amountToSend.toByteArray(), null)
 
         RawTransaction.createEtherTransaction(
             BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN, address,
