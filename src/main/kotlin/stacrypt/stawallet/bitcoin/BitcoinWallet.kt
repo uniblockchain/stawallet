@@ -11,16 +11,16 @@ data class NotEnoughFundException(val wallet: String, val amountToPay: Long = 0L
     Exception("wallet $wallet does NOT have enough money to pay $amountToPay")
 
 
-class BitcoinWallet(name: String, config: Config) : Wallet(name, bitcoind, ConfigSecretProvider(config, 0)) {
+class BitcoinWallet(name: String, config: Config) : Wallet(name, ConfigSecretProvider(config, 0)) {
 
-    val TX_BASE_SIZE = 10 // Bytes
-    val TX_INPUT_SIZE = 148 // Bytes
-    val TX_OUTPUT_SIZE = 34 // Bytes
+    companion object {
+        const val TX_BASE_SIZE = 10 // Bytes
+        const val TX_INPUT_SIZE = 148 // Bytes
+        const val TX_OUTPUT_SIZE = 34 // Bytes
+    }
 
+    override val daemon = bitcoind
     override val storage = UtxoStorage(name)
-
-    override val coin = "btc"
-    val rpcClient = (daemon.createRpcClient() as BitcoinRpcClient).commander
 
 //    var balance: Long
 //        set(_) = throw Exception("You can not change the balance manually!")
@@ -88,8 +88,17 @@ class BitcoinWallet(name: String, config: Config) : Wallet(name, bitcoind, Confi
 
     override suspend fun sendTo(address: String, amountToSend: Long) {
         val inputs = ArrayList<OutPoint>()
+        val satPerByte = daemon.fairTxFeeRate()!!
         storage.watch {
-            selectUtxo(amountToSend,)
+            val inputs = selectUtxo(
+                amountToSend,
+                (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2) * satPerByte,
+                TX_INPUT_SIZE * satPerByte
+            ).map {
+                OutPoint(it.first.split(":")[0], it.first.split(":")[1].toInt())
+            }.toList()
+
+            removeUtxo(*inputs.map { "${it.txid}:${it.vout}" }.toTypedArray())
         }
 
 //        storage.jedis.watch("$name:")
@@ -158,10 +167,6 @@ class BitcoinWallet(name: String, config: Config) : Wallet(name, bitcoind, Confi
 //
 //
 //        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-//    }
-
-//    suspend fun estimateFee(): Long {
-//        rpcClient.est
 //    }
 
 }

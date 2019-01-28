@@ -24,7 +24,7 @@ class UtxoJedis(val name: String) : Jedis(config.getString("storage.redis.server
         val outPuts: ArrayList<Pair<String, Long>> = ArrayList()
         var estimatedFee = baseFee
         var totalInputAmount = 0L
-        stacrypt.stawallet.jedis.zrangeWithScores("$name:${UtxoStorage.UTXO}", 0, -1).forEach {
+        jedis.zrangeWithScores("$name:${UtxoStorage.UTXO}", 0, -1).forEach {
             totalInputAmount += it.score.toLong()
             estimatedFee += feePerExtraUtxo
             outPuts.add(Pair(it.element.toString(), it.score.toLong()))
@@ -32,6 +32,9 @@ class UtxoJedis(val name: String) : Jedis(config.getString("storage.redis.server
         }
         throw NotEnoughFundException(name, amountToSend)
     }
+
+    fun removeUtxo(vararg utxo: String) = zrem("$name:$utxo", *utxo)
+
 
 }
 
