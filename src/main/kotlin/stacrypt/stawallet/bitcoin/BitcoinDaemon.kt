@@ -7,12 +7,12 @@ import kotlinx.coroutines.withContext
 import stacrypt.stawallet.DaemonState
 import stacrypt.stawallet.WalletDaemon
 
-object Bitcoind : WalletDaemon() {
+object bitcoind : WalletDaemon() {
     override var status: DaemonState
         get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
         set(value) {}
 
-    val rpcClient: BitcoinRpcClient = BitcoinRpcClientFactory.createBitcoinClientWithDefaultConfig()
+    val rpcClient: BitcoinRpcClient = BitcoiFa.createBitcoinClientWithDefaultConfig()
 
     /**
      * Satoshis per bytes

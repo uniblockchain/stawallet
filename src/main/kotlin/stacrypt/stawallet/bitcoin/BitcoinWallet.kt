@@ -11,10 +11,7 @@ data class NotEnoughFundException(val wallet: String, val amountToPay: Long = 0L
     Exception("wallet $wallet does NOT have enough money to pay $amountToPay")
 
 
-class BitcoinWallet(name: String, config: Config) : Wallet(name, daemon, ConfigSecretProvider(config, 0)) {
-    companion object {
-        val daemon = BitcoinDaemon()
-    }
+class BitcoinWallet(name: String, config: Config) : Wallet(name, bitcoind, ConfigSecretProvider(config, 0)) {
 
     val TX_BASE_SIZE = 10 // Bytes
     val TX_INPUT_SIZE = 148 // Bytes
