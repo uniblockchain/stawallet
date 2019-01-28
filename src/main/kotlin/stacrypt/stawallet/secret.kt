@@ -24,7 +24,11 @@ abstract class SecretProvider(private val walletNumber: Int = 0) {
         Seed(hotSeed).toKey(makePath(index, change)).serialize(true)
     }
 
-    fun getHotPrivateKey(index: Int, change: Int?) {
+    fun signTxWithHotPrivateKey(message: ByteArray, index: Int, change: Int?) {
+
+    }
+
+    private fun getHotPrivateKey(index: Int, change: Int?) {
         Seed(hotSeed).toKey(makePath(index, change)).serialize(false)
     }
 }

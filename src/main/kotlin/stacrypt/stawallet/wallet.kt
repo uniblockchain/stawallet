@@ -4,7 +4,7 @@ import stacrypt.stawallet.bitcoin.BitcoinWallet
 import java.util.logging.Level
 import java.util.logging.Logger
 
-abstract class Wallet(val name: String, private val secretProvider: SecretProvider) {
+abstract class Wallet(val name: String, val secretProvider: SecretProvider) {
 
     private val logger = Logger.getLogger("Wallet $name")
     abstract val storage: RedisStorage

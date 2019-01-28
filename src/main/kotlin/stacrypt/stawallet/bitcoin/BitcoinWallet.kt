@@ -2,6 +2,7 @@ package stacrypt.stawallet.bitcoin
 
 import com.typesafe.config.Config
 import stacrypt.stawallet.*
+import java.math.BigDecimal
 import java.util.logging.Logger
 
 
@@ -87,18 +88,29 @@ class BitcoinWallet(name: String, config: Config) : Wallet(name, ConfigSecretPro
 
 
     override suspend fun sendTo(address: String, amountToSend: Long) {
-        val inputs = ArrayList<OutPoint>()
+        val outputs = mapOf(address to BigDecimal(amountToSend))
+
         val satPerByte = daemon.fairTxFeeRate()!!
         storage.watch {
-            val inputs = selectUtxo(
-                amountToSend,
-                (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2) * satPerByte,
-                TX_INPUT_SIZE * satPerByte
-            ).map {
+            val utxos =
+                selectUtxo(amountToSend, (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2) * satPerByte, TX_INPUT_SIZE * satPerByte)
+            val inputs = utxos.map {
                 OutPoint(it.first.split(":")[0], it.first.split(":")[1].toInt())
             }.toList()
 
+            val amountToChange = utxos.sumByLong { it.second } -
+                    amountToSend -
+                    (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2) * satPerByte -
+                    utxos.size * TX_INPUT_SIZE * satPerByte
+            if (amountToChange > 0) {
+                val newChangeAddress = secretProvider.getHotAddress(nextChangeAddressIndex().toInt(), 1)
+                outputs.plus(Pair(newChangeAddress, amountToChange))
+            }
+
             removeUtxo(*inputs.map { "${it.txid}:${it.vout}" }.toTypedArray())
+            var transaction = daemon.rpcClient.createRawTransaction(inputs = inputs, outputs = outputs)
+
+
         }
 
 //        storage.jedis.watch("$name:")

@@ -14,8 +14,20 @@ abstract class RedisStorage(val name: String) {
 }
 
 class UtxoJedis(val name: String) : Jedis(config.getString("storage.redis.server")) {
+
+    companion object {
+        val UTXO = "utxo"
+        val ADDR = "addr"
+        val ADDRINDEX = "addr"
+        val TX = "tx"
+        val DEPOSIT = "d"
+        val WITHDRAW = "w"
+        val CHANGE = "c"
+        val COLD = "o"
+    }
+
     fun hotBalance(): Long? = stacrypt.stawallet.jedis.zrangeWithScores(
-        "$name:${UtxoStorage.UTXO}",
+        "$name:${UTXO}",
         0,
         -1
     ).sumByLong { it.score.toLong() }
@@ -24,7 +36,7 @@ class UtxoJedis(val name: String) : Jedis(config.getString("storage.redis.server
         val outPuts: ArrayList<Pair<String, Long>> = ArrayList()
         var estimatedFee = baseFee
         var totalInputAmount = 0L
-        jedis.zrangeWithScores("$name:${UtxoStorage.UTXO}", 0, -1).forEach {
+        jedis.zrangeWithScores("$name:${UTXO}", 0, -1).forEach {
             totalInputAmount += it.score.toLong()
             estimatedFee += feePerExtraUtxo
             outPuts.add(Pair(it.element.toString(), it.score.toLong()))
@@ -35,31 +47,24 @@ class UtxoJedis(val name: String) : Jedis(config.getString("storage.redis.server
 
     fun removeUtxo(vararg utxo: String) = zrem("$name:$utxo", *utxo)
 
+    fun nextChangeAddressIndex() = incr("$name:$ADDRINDEX:$CHANGE")
+
+    fun nextDepositAddressIndex() = incr("$name:$ADDRINDEX:$DEPOSIT")
+
 
 }
 
 class UtxoStorage(name: String) : RedisStorage(name) {
 
-    companion object {
-//        val STORE_TYPE_UTXO = "utxo"
-//        val STORE_TYPE_UTXO_TXHASH = "txhash"
-//        val STORE_TYPE_UTXO_AMOUNT = "utxo"
-//        val STORE_TYPE_UTXO_VOUT = "vout"
-
-        val UTXO = "utxo"
-        val ADDR = "addr"
-        val TX = "tx"
-        val DEPOSIT = "d"
-        val WITHDRAW = "w"
-        val CHANGE = "c"
-        val COLD = "o"
-    }
 
     override val jedis = UtxoJedis(name)
 
 
     /**
      * Redis data structure for Utxo wallet Storage:
+     *
+     * * Last Issued Change Address Index  : "btc:addri:d"    : inc key-value
+     * * Last Issued Deposit Address Index : "btc:addri:c"    : inc key-value
      *
      * * UTXOs                    : "btc:utxo"            : sortedSet(transactionId:vout, amount)
      * * Deposit  Transactions Id : "btc:txi:d:{addr}"    : set
