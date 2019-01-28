@@ -1,6 +1,10 @@
 package stacrypt.stawallet
 
+import org.bitcoinj.wallet.DeterministicKeyChain.watch
 import redis.clients.jedis.Jedis
+import redis.clients.jedis.Transaction
+import redis.clients.jedis.exceptions.JedisException
+import java.lang.Exception
 import java.util.*
 
 abstract class RedisStorage(val name: String) {
@@ -44,6 +48,40 @@ class UtxoStorage(name: String) : RedisStorage(name) {
 
     val archivedAddresses: SortedSet<String>? = null
 
-    fun hotBalance(): Long = jedis.zrangeWithScores("$name:$UTXO", 0, -1).sumByLong { it.score.toLong() }
+    fun hotBalance(): Long? =
+        jedis.watch("$name:$UTXO") {
+            jedis.zrangeWithScores("$name:$UTXO", 0, -1).sumByLong { it.score.toLong() }
+        }
 
+    fun last(): Long = jedis.zrangeWithScores("$name:$UTXO", 0, -1).sumByLong { it.score.toLong() }
+
+}
+
+@Synchronized
+fun <T> Jedis.watch(vararg keys: String, exec: () -> T): T {
+
+    try {
+        jedis.watch(*keys)
+        return exec()
+    } catch (e: Exception) {
+        throw e
+    } finally {
+        jedis.unwatch()
+    }
+}
+
+@Synchronized
+fun Jedis.transaction(vararg keys: String, exec: Transaction.() -> Unit): List<Any>? {
+    var result: List<Any>? = null
+    watch(*keys) {
+        val transaction = jedis.multi()
+        try {
+            exec(transaction)
+            result = transaction.exec()
+        } catch (e: Exception) {
+            transaction.discard()
+            throw e
+        }
+    }
+    return result
 }
