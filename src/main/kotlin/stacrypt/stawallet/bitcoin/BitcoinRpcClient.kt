@@ -7,7 +7,6 @@ import com.googlecode.jsonrpc4j.JsonRpcHttpClient
 import com.googlecode.jsonrpc4j.JsonRpcMethod
 import com.googlecode.jsonrpc4j.ProxyUtil
 import org.web3j.protocol.ObjectMapperFactory
-import stacrypt.stawallet.RpcClient
 import stacrypt.stawallet.config
 import java.math.BigDecimal
 import java.net.URL
@@ -18,99 +17,7 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
-class BitcoinRpcClient(
-    username: String,
-    password: String,
-    host: String,
-    port: Int,
-    tls: Boolean = false
-) : RpcClient(username, password, host, port, tls) {
-
-    val commander: IBitcoinRpcClient
-
-    init {
-        commander = createBitcoinClient(
-            user = username,
-            password = password,
-            host = host,
-            port = port,
-            secure = tls
-        )!!
-    }
-
-    override fun ping() {
-        TODO("not implemented")
-    }
-
-    companion object Factory {
-
-        fun createNewWithDefaultConfig() = BitcoinRpcClient(
-            username = config.getString("daemons.bitcoind.rpc.username"),
-            password = config.getString("daemons.bitcoind.rpc.password"),
-            host = config.getString("daemons.bitcoind.rpc.host"),
-            port = config.getInt("daemons.bitcoind.rpc.port"),
-            tls = config.getBoolean("daemons.bitcoind.rpc.secure")
-        )
-
-        private fun createBitcoinClient(
-            user: String,
-            password: String,
-            host: String,
-            port: Int,
-            secure: Boolean = false,
-            sslContext: SSLContext = createUnsafeSslContext()
-        ): IBitcoinRpcClient? {
-
-            val jsonRpcHttpClient: IJsonRpcClient
-
-            jsonRpcHttpClient = JsonRpcHttpClient(
-                ObjectMapperFactory.getObjectMapper().configure(
-                    SerializationFeature.WRITE_NULL_MAP_VALUES,
-                    false
-                ).setSerializationInclusion(
-                    JsonInclude.Include.NON_NULL
-                ),
-                URL("${if (secure) "https" else "http"}://$user@$host:$port"),
-                mapOf(
-                    Pair(
-                        "Authorization",
-                        BitcoinRpcClient.Factory.computeBasicAuth(user, password)
-                    )
-                )
-            )
-
-            jsonRpcHttpClient.setSslContext(sslContext)
-
-            return ProxyUtil.createClientProxy(
-                BitcoinRpcClient::class.java.classLoader,
-                IBitcoinRpcClient::class.java,
-                jsonRpcHttpClient
-            )
-        }
-
-        private fun createUnsafeSslContext(): SSLContext {
-            val dummyTrustManager = arrayOf<TrustManager>(object : X509TrustManager {
-                override fun checkClientTrusted(p0: Array<out X509Certificate>?, p1: String?) {}
-                override fun checkServerTrusted(p0: Array<out X509Certificate>?, p1: String?) {}
-                override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
-            })
-
-            val sslContext = SSLContext.getInstance("SSL")
-            sslContext.init(null, dummyTrustManager, SecureRandom())
-            return sslContext
-        }
-
-        private fun computeBasicAuth(user: String, password: String) =
-            "Basic ${BASE64.encodeToString("$user:$password".toByteArray())}"
-
-        private val BASE64 = Base64.getEncoder()
-
-    }
-
-}
-
-
-interface IBitcoinRpcClient {
+interface BitcoinRpcClient {
 
     @JsonRpcMethod("estimatesmartfee")
     fun estimateSmartFee(

@@ -13,26 +13,14 @@ data class NotEnoughFundException(val wallet: String, val amountToPay: Long = 0L
 
 class BitcoinWallet(name: String, config: Config) : Wallet(name, daemon, ConfigSecretProvider(config, 0)) {
     companion object {
-        val daemon = object : WalletDaemon() {
-            override var status: DaemonState
-                get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
-                set(value) {}
-
-            override fun createRpcClient(): BitcoinRpcClient = BitcoinRpcClient.createNewWithDefaultConfig()
-
-        }
-
-        private const val KEY_UTXO = "utxo"
-        private const val KEY_TX = "tx"
-        private const val KEY_TXID = "txid"
-        private const val KEY_ADDR = "addr"
-
+        val daemon = BitcoinDaemon()
     }
 
-    override val storage = UtxoStorage(name)
+    val TX_BASE_SIZE = 10 // Bytes
+    val TX_INPUT_SIZE = 148 // Bytes
+    val TX_OUTPUT_SIZE = 34 // Bytes
 
-    private val BASE_FEE = 100L
-    private val FEE_PER_EXTRA_INPUT = 10L
+    override val storage = UtxoStorage(name)
 
     override val coin = "btc"
     val rpcClient = (daemon.createRpcClient() as BitcoinRpcClient).commander

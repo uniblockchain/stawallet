@@ -14,6 +14,4 @@ enum class DaemonState {
  */
 abstract class WalletDaemon {
     abstract var status: DaemonState
-    abstract fun createRpcClient(): RpcClient
-
 }
