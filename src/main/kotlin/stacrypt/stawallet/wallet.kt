@@ -35,6 +35,7 @@ abstract class Wallet(val name: String, val secretProvider: SecretProvider) {
 
     abstract suspend fun syncBlockchain(): Unit
     abstract suspend fun subscribe(): Unit
+    abstract suspend fun lastUnpaidInvoice(user: String, purpose: InvoicePurpose): InvoiceDao?
     abstract suspend fun issueInvoice(user: String, purpose: InvoicePurpose): InvoiceDao
     abstract suspend fun sendTo(address: String, amount: Long): Unit
 }
