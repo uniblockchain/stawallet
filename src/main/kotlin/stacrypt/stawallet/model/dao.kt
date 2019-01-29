@@ -1,0 +1,2 @@
+package stacrypt.stawallet.model
+

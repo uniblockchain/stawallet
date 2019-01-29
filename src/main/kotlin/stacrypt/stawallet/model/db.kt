@@ -1,10 +1,9 @@
-package stacrypt.stawallet
+package stacrypt.stawallet.model
 
 import org.jetbrains.exposed.dao.IntIdTable
 import org.jetbrains.exposed.sql.Table
 
 enum class AddressSide { DEPOSIT, CHANGE, OVERFLOW, WITHDRAW }
-
 
 /**
  * Each wallet could only handle one type of crypto-assets. But they may derived from a unique master seed
@@ -45,7 +44,7 @@ object walletTable : Table("wallet") {
      * Unconfirmed balance, which we are waiting for it to be confirmed in the new feature
      */
     val unconfirmedBalance = KeyTable.long("unconfirmed_balance").default(0)
-    
+
 }
 
 /**
