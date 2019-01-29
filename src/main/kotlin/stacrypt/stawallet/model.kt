@@ -1,14 +1,10 @@
 package stacrypt.stawallet
 
 import org.jetbrains.exposed.dao.IntIdTable
-import org.jetbrains.exposed.sql.Table
-import stacrypt.stawallet.addressTable.nullable
 
-enum class AddressSide {
-    DEPOSIT, CHANGE, OVERFLOW, WITHDRAW
-}
+enum class AddressSide { DEPOSIT, CHANGE, OVERFLOW, WITHDRAW }
 
-object addressTable : IntIdTable() {
+object AddressTable : IntIdTable() {
     val wallet = varchar("wallet", 12)
     val wif = varchar("wif", 128)
     val path = varchar("path", 32)
@@ -18,47 +14,39 @@ object addressTable : IntIdTable() {
     val userId = varchar("user_id", 128).nullable()
 }
 
-enum class TaskType {
-    WITHDRAW, OVERFLOW
-}
+enum class TaskType { WITHDRAW, OVERFLOW }
+enum class TaskStatus { FINISHED, CONFIRMING, PUSHED, WAITING_MANUAL, WAITING_LOW_BALANCE, ERROR, QUEUED }
 
-enum class TaskStatus {
-    FINISHED, CONFIRMING, PUSHED, WAITING_MANUAL, WAITING_LOW_BALANCE, ERROR, QUEUED
-}
-
-object taskTable : IntIdTable() {
+object TaskTable : IntIdTable() {
     val wallet = varchar("wallet", 12)
     val taget = varchar("target", 128)
     val amount = long("amount")
     val type = enumeration("type", TaskType::class)
-    val txid = eventTable.varchar("txid", 256).nullable()
+    val status = enumeration("status", TaskStatus::class)
+    val txid = varchar("txid", 256).nullable()
     val trace = varchar("trace", 10_000)
 }
 
-object depositTable : IntIdTable() {
+object DepositTable : IntIdTable() {
     val wallet = varchar("wallet", 12)
     val amount = long("amount")
-    val userId = varchar("user_id", 128).nullable()
     val addressId = integer("address_id")
-    val invoiceId = varchar("invoice_id", 64)
-    val trace = varchar("trace", 10_000)
+    val txid = varchar("txid", 256).nullable()
 }
 
-enum class EventSide {
-    RECEIVED, SENT
-}
+enum class EventSide { RECEIVED, SENT }
+enum class EventType { CONFIRMATION, DISCOVER }
 
-enum class EventType {
-    CONFIRMATION, DISCOVER
-}
-
-object eventTable : IntIdTable() {
-    val addressId = integer("address_id")
-
+object EventTable : IntIdTable() {
+    val addressId = integer("address_id") 
     val txid = varchar("txid", 256)
+    val message = varchar("message", 256)
+    val payload = varchar("payload", 256)
+    val side = TaskTable.enumeration("side", EventSide::class)
+    val type = TaskTable.enumeration("type", EventType::class)
 }
 
-object utxoTable : IntIdTable() {
+object UtxoTable : IntIdTable() {
     val wallet = varchar("wallet", 12)
     val addressId = integer("address_id")
     val amount = long("amount")
