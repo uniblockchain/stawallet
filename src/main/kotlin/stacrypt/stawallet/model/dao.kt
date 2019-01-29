@@ -57,9 +57,3 @@ class Utxo(id: EntityID<Int>) : IntEntity(id) {
     var vout by UtxoTable.vout
     var isSpent by UtxoTable.isSpent
 }
-
-object UserTable : UUIDTable("users") {
-    val email = varchar("email", 50).uniqueIndex()
-    val password = varchar("password", 128)
-    val role = enumeration("role", UserRole::class).default(UserRole.CLIENT)
-}
