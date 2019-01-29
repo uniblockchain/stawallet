@@ -16,7 +16,7 @@ object WalletTable : IdTable<String>("wallet") {
     /**
      * Unique name to identify the wallet (e.g. `my-lovely-bitcoins`)
      */
-    override val id: Column<EntityID<String>> = varchar("name", 32).primaryKey().entityId()
+    override val id: Column<EntityID<String>> = varchar("id", 32).primaryKey().entityId()
 
     /**
      * Short code of the related cryptocurrency (e.g. `btc`). Always LOWERCASE

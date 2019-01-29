@@ -2,7 +2,7 @@ package stacrypt.stawallet.model
 
 import org.jetbrains.exposed.dao.*
 
-class Wallet(name: EntityID<String>) : Entity<String>(name) {
+class Wallet(id: EntityID<String>) : Entity<String>(id) {
     companion object : EntityClass<String, Wallet>(WalletTable)
 
     var currency by WalletTable.currency
