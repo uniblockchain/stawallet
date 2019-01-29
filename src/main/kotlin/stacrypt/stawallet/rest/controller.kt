@@ -4,6 +4,7 @@ import io.ktor.application.call
 import io.ktor.http.ContentType.Application.FormUrlEncoded
 import io.ktor.http.Parameters
 import io.ktor.request.receive
+import io.ktor.request.receiveParameters
 import io.ktor.response.respond
 import io.ktor.routing.*
 import org.jetbrains.exposed.sql.stringParam
@@ -35,14 +36,15 @@ fun Routing.walletsRouting() {
 fun Route.invoicesRout() = route("/invoices") {
     contentType(FormUrlEncoded) {
         post {
-            val form: Parameters = call.receive()
+            val form: Parameters = call.receiveParameters()
             val user = form["user"]!!
+            val force = form["force"]!!
             val purpose = InvoicePurpose.valueOf(form["purpose"]!!.toUpperCase())
             try {
                 val wallet = wallets.findLast { it.name == call.parameters["wallet"] }!!
+                
+                val lastIssuedInvoice = wallet.
                 wallet.issueInvoice(user, purpose)
-            }catch(e: Exception){
-
             }catch(e: Exception){
 
             }

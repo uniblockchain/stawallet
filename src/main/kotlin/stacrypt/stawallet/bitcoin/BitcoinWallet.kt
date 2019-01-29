@@ -3,6 +3,7 @@ package stacrypt.stawallet.bitcoin
 import com.typesafe.config.Config
 import org.jetbrains.exposed.dao.EntityID
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -22,7 +23,7 @@ data class NotEnoughFundException(val wallet: String, val amountToPay: Long = 0L
 class BitcoinWallet(name: String, config: Config) : Wallet(name, ConfigSecretProvider(config, 0)) {
     override suspend fun lastUnpaidInvoice(user: String, purpose: InvoicePurpose): InvoiceDao? = transaction {
         InvoiceTable.innerJoin(AddressTable).select {
-            (InvoiceTable.user eq user) and (InvoiceTable.purpose eq purpose) and (AddressTable.isActive eq true)
+            (InvoiceTable.wallet eq name) and (InvoiceTable.user eq user) and (InvoiceTable.purpose eq purpose) and (AddressTable.isActive eq true) and (InvoiceTable.expiration.isNotNull() or (InvoiceTable.expiration greater DateTime.now()))
         }.lastOrNull()?.run { InvoiceDao.wrapRow(this) }
     }
 
