@@ -1,11 +1,11 @@
 package stacrypt.stawallet.rest
 
 import io.ktor.application.call
+import io.ktor.http.ContentType.Application.FormUrlEncoded
+import io.ktor.http.Parameters
+import io.ktor.request.receive
 import io.ktor.response.respond
-import io.ktor.routing.Route
-import io.ktor.routing.Routing
-import io.ktor.routing.get
-import io.ktor.routing.route
+import io.ktor.routing.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import stacrypt.stawallet.model.Wallet
 
@@ -19,7 +19,7 @@ fun Routing.walletsRouting() {
             get("") {
                 return@get call.respond(transaction { Wallet[call.parameters["id"].toString()] }.export())
             }
-            addressesRout()
+            invoicesRout()
             depositsRout()
             withdrawsRout()
         }
@@ -28,8 +28,13 @@ fun Routing.walletsRouting() {
 }
 
 
-fun Route.addressesRout() = route("/addresses") {
-
+fun Route.invoicesRout() = route("/invoices") {
+    contentType(FormUrlEncoded){
+        post{
+            val form: Parameters = call.receive()
+            form["type"]
+        }
+    }
 }
 
 fun Route.depositsRout() = route("/deposits") {

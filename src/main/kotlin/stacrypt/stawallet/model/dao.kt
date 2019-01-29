@@ -25,6 +25,17 @@ class Address(id: EntityID<Int>) : IntEntity(id) {
     var nonce by AddressTable.nonce
 }
 
+class Invoice(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<Invoice>(InvoiceTable)
+
+    var wallet by Wallet referencedOn InvoiceTable.wallet
+    var extra by InvoiceTable.extra
+    var purpose by InvoiceTable.purpose
+    val user by InvoiceTable.user
+    val creation by InvoiceTable.creation
+    val expiration by InvoiceTable.expiration
+}
+
 class Task(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<Task>(TaskTable)
 
