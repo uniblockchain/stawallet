@@ -11,8 +11,8 @@ import stacrypt.stawallet.model.Wallet
 
 fun Routing.walletsRouting() {
     route("/wallets") {
-        get("") {
-            return@get call.respond(transaction { Wallet.all() }.map { it.export() })
+        get {
+            return@get call.respond(transaction { Wallet.all().toList() }.map { it.export() })
         }
 
         route("/{id}") {

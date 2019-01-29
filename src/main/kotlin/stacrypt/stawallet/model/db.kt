@@ -41,12 +41,12 @@ object WalletTable : IdTable<String>("wallet") {
     /**
      * Confirmed amount which is payable
      */
-    val balance = AddressTable.long("balance").default(0)
+    val balance = long("balance").default(0)
 
     /**
      * Unconfirmed balance, which we are waiting for it to be confirmed in the new feature
      */
-    val unconfirmedBalance = AddressTable.long("unconfirmed_balance").default(0)
+    val unconfirmedBalance = long("unconfirmed_balance").default(0)
 
 }
 
@@ -241,7 +241,7 @@ object EventTable : IntIdTable("event") {
     /**
      * Which wallet?
      */
-    val wallet = InvoiceTable.varchar("wallet", 12)
+    val wallet = varchar("wallet", 12)
 
     /**
      * Which key is related to?

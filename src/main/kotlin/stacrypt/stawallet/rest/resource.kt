@@ -4,8 +4,8 @@ import stacrypt.stawallet.model.Wallet
 
 enum class ClientRole
 
-fun Wallet.export(role: ClientRole? = null) {
-    WalletResource(
+fun Wallet.export(role: ClientRole? = null): WalletResource {
+    return WalletResource(
         id = id.toString(),
         balance = WalletBalanceResource(balance, unconfirmedBalance),
         secret = WalletSecretResource(seedFingerprint, path),
