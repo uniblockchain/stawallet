@@ -1,7 +1,13 @@
 package stacrypt.stawallet.bitcoin
 
 import com.typesafe.config.Config
+import org.jetbrains.exposed.dao.EntityID
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.joda.time.DateTime
 import stacrypt.stawallet.*
+import stacrypt.stawallet.model.*
 import java.math.BigDecimal
 import java.util.logging.Logger
 
@@ -13,6 +19,34 @@ data class NotEnoughFundException(val wallet: String, val amountToPay: Long = 0L
 
 
 class BitcoinWallet(name: String, config: Config) : Wallet(name, ConfigSecretProvider(config, 0)) {
+
+    override suspend fun issueInvoice(user: String, purpose: InvoicePurpose): InvoiceDao = transaction {
+        val q = AddressTable.select { AddressTable.wallet eq name }.orderBy(AddressTable.id, false).firstOrNull()
+        var newIndex = 0
+        if (q != null) {
+            val lastIssuedAddress = AddressDao.wrapRow(q)
+            newIndex = lastIssuedAddress.path.split("/").last().toInt() + 1
+        }
+
+        val newPath = secretProvider.makePath(newIndex, if (purpose == InvoicePurpose.CHANGE) 1 else 0)
+        val newPublicKey = secretProvider.getHotPublicKey(newPath)
+        val newAddress = AddressDao.new {
+            this.wallet = WalletDao[name]
+            this.publicKey = newPublicKey
+            this.provision = "" //TODO
+            this.path = newPath
+        }
+
+        InvoiceDao.new {
+            this.wallet = WalletDao[name]
+            this.address = newAddress
+            this.purpose = purpose
+            this.user = user
+            this.creation = DateTime.now()
+        }
+
+
+    }
 
     companion object {
         const val TX_BASE_SIZE = 10 // Bytes

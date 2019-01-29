@@ -16,12 +16,16 @@ abstract class SecretProvider(private val walletNumber: Int = 0) {
     abstract var hotSeed: ByteArray
     abstract var coldAddress: String
 
-    private fun makePath(index: Int, change: Int?) =
-        "m/$MAGIC_NUMBER'/$coinType'/$walletNumber'/${if (change != null) "$index/$change" else "$index"}"
+    fun makePath(index: Int, change: Int?) =
+        "m/$MAGIC_NUMBER'/$coinType'/$walletNumber'/${if (change != null) "$change/$index" else "$index"}"
 
 
-    fun getHotAddress(index: Int, change: Int?) {
-        Seed(hotSeed).toKey(makePath(index, change)).serialize(true)
+    fun getHotAddress(index: Int, change: Int?): String {
+        return Seed(hotSeed).toKey(makePath(index, change)).serialize(true)
+    }
+
+    fun getHotPublicKey(path: String): ByteArray {
+        return Seed(hotSeed).toKey(path).keyPair.publicKey.key.toByteArray()
     }
 
     fun signTxWithHotPrivateKey(message: ByteArray, index: Int, change: Int?) {

@@ -29,11 +29,12 @@ class InvoiceDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<InvoiceDao>(InvoiceTable)
 
     var wallet by WalletDao referencedOn InvoiceTable.wallet
+    var address by AddressDao referencedOn InvoiceTable.addressId
     var extra by InvoiceTable.extra
     var purpose by InvoiceTable.purpose
-    val user by InvoiceTable.user
-    val creation by InvoiceTable.creation
-    val expiration by InvoiceTable.expiration
+    var user by InvoiceTable.user
+    var creation by InvoiceTable.creation
+    var expiration by InvoiceTable.expiration
 }
 
 class TaskDao(id: EntityID<Int>) : IntEntity(id) {

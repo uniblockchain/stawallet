@@ -114,6 +114,11 @@ object InvoiceTable : IntIdTable("invoice") {
     /**
      * invoiceId, data, payload, etc.
      */
+    val addressId = integer("addressId")
+
+        /**
+     * invoiceId, data, payload, etc.
+     */
     val extra = varchar("data", 1_000).nullable()
 
     /**
