@@ -1,26 +1,16 @@
 package com.perfect.apartmentrental
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.ktor.application.Application
 import io.ktor.config.MapApplicationConfig
 import io.ktor.http.*
-import io.ktor.http.HttpMethod.Companion.Delete
 import io.ktor.http.HttpMethod.Companion.Get
-import io.ktor.http.HttpMethod.Companion.Post
-import io.ktor.http.HttpMethod.Companion.Put
-import io.ktor.http.HttpStatusCode.Companion.BadRequest
-import io.ktor.http.HttpStatusCode.Companion.Forbidden
-import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.HttpStatusCode.Companion.OK
-import io.ktor.http.HttpStatusCode.Companion.Unauthorized
 import kotlin.test.*
 import io.ktor.server.testing.*
 import io.ktor.util.KtorExperimentalAPI
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.joda.time.DateTime
 import org.junit.Test
 import stacrypt.stawallet.model.Wallet
-import java.util.*
 
 
 @KtorExperimentalAPI
@@ -42,13 +32,13 @@ class RestServiceTest : BaseApiTest() {
         super.mockup(app)
 
         transaction {
-            wallet1 = Wallet.new("testwallet1") {
+            wallet1 = Wallet.new("test-btc-wallet") {
                 this.currency = "btc"
                 this.network = "testnet3"
                 this.seedFingerprint = "00:00:00:00:00:00:00:00"
                 this.path = "m/44'/0'/0"
             }
-            wallet2 = Wallet.new("testwallet2") {
+            wallet2 = Wallet.new("test-eth-wallet") {
                 this.currency = "eth"
                 this.network = "rinkeby"
                 this.seedFingerprint = "11:11:11:11:11:11:11:11"
@@ -71,6 +61,20 @@ class RestServiceTest : BaseApiTest() {
             }.apply {
                 assertEquals(OK, response.status())
                 assertEquals(2, response.content?.toJson()?.toList()?.size)
+            }
+        }
+    }
+
+    @Test
+    fun testWallet(): Unit {
+        testEngine!!.apply {
+            handleRequest(Get, "$walletsUrl/test-btc-wallet") {
+            }.apply {
+                assertEquals(OK, response.status())
+                assertEquals("test-btc-wallet", response.content?.toJson()!!["id"].asText())
+                assertNotNull(response.content?.toJson()!!["balance"].asText())
+                assertNotNull(response.content?.toJson()!!["secret"].asText())
+//                assertNotNull(response.content?.toJson()!!["onchainStatus"].asText())
             }
         }
     }
