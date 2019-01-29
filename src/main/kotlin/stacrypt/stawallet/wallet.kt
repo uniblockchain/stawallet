@@ -7,7 +7,7 @@ import java.util.logging.Logger
 abstract class Wallet(val name: String, val secretProvider: SecretProvider) {
 
     private val logger = Logger.getLogger("Wallet $name")
-    abstract val storage: RedisStorage
+    //    abstract val storage: RedisStorage
     abstract val daemon: WalletDaemon
 
     companion object Factory {

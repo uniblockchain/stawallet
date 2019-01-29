@@ -37,7 +37,8 @@ import java.util.logging.*
 
 val config: Config = ConfigFactory.load()
 lateinit var applicationConfig: ApplicationConfig
-val jedis = Jedis()
+//val jedis = Jedis()
+lateinit var wallets : List<Wallet>
 private val logger = Logger.getLogger("Application")
 //val db = Environments.newInstance(stacrypt.stawallet.getConfig.getString("db.envPath"))
 //lateinit var restApplicationJob: Job
@@ -53,7 +54,7 @@ fun main(args: Array<String>) {
 
     logger.log(Level.WARNING, "Initializing wallets:")
 
-    val wallets = Wallet.initFromConfig()
+    wallets = Wallet.initFromConfig()
 
     logger.log(Level.WARNING, "Syncing wallets:")
 

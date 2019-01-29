@@ -10,7 +10,7 @@ import io.ktor.server.testing.*
 import io.ktor.util.KtorExperimentalAPI
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.Test
-import stacrypt.stawallet.model.Wallet
+import stacrypt.stawallet.model.WalletDao
 
 
 @KtorExperimentalAPI
@@ -18,8 +18,8 @@ class RestServiceTest : BaseApiTest() {
 
     private val walletsUrl = "/wallets"
 
-    private lateinit var wallet1: Wallet
-    private lateinit var wallet2: Wallet
+    private lateinit var wallet1: WalletDao
+    private lateinit var wallet2: WalletDao
 
     override fun config(app: Application) {
         super.config(app)
@@ -32,13 +32,13 @@ class RestServiceTest : BaseApiTest() {
         super.mockup(app)
 
         transaction {
-            wallet1 = Wallet.new("test-btc-wallet") {
+            wallet1 = WalletDao.new("test-btc-wallet") {
                 this.currency = "btc"
                 this.network = "testnet3"
                 this.seedFingerprint = "00:00:00:00:00:00:00:00"
                 this.path = "m/44'/0'/0"
             }
-            wallet2 = Wallet.new("test-eth-wallet") {
+            wallet2 = WalletDao.new("test-eth-wallet") {
                 this.currency = "eth"
                 this.network = "rinkeby"
                 this.seedFingerprint = "11:11:11:11:11:11:11:11"

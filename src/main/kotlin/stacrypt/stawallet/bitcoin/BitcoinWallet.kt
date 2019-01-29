@@ -21,7 +21,7 @@ class BitcoinWallet(name: String, config: Config) : Wallet(name, ConfigSecretPro
     }
 
     override val daemon = bitcoind
-    override val storage = UtxoStorage(name)
+//    override val storage = UtxoStorage(name)
 
 //    var balance: Long
 //        set(_) = throw Exception("You can not change the balance manually!")

@@ -7,17 +7,18 @@ import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.*
 import org.jetbrains.exposed.sql.transactions.transaction
-import stacrypt.stawallet.model.Wallet
+import stacrypt.stawallet.model.InvoicePurpose
+import stacrypt.stawallet.model.WalletDao
 
 fun Routing.walletsRouting() {
     route("/wallets") {
         get {
-            return@get call.respond(transaction { Wallet.all().toList() }.map { it.export() })
+            return@get call.respond(transaction { WalletDao.all().toList() }.map { it.export() })
         }
 
         route("/{id}") {
             get("") {
-                return@get call.respond(transaction { Wallet[call.parameters["id"].toString()] }.export())
+                return@get call.respond(transaction { WalletDao[call.parameters["id"].toString()] }.export())
             }
             invoicesRout()
             depositsRout()
@@ -29,10 +30,13 @@ fun Routing.walletsRouting() {
 
 
 fun Route.invoicesRout() = route("/invoices") {
-    contentType(FormUrlEncoded){
-        post{
+    contentType(FormUrlEncoded) {
+        post {
             val form: Parameters = call.receive()
-            form["type"]
+            val purpose = InvoicePurpose.valueOf(form["purpose"]!!.toUpperCase())
+            transaction {
+
+            }
         }
     }
 }

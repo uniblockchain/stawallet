@@ -1,10 +1,10 @@
 package stacrypt.stawallet.rest
 
-import stacrypt.stawallet.model.Wallet
+import stacrypt.stawallet.model.WalletDao
 
 enum class ClientRole
 
-fun Wallet.export(role: ClientRole? = null): WalletResource {
+fun WalletDao.export(role: ClientRole? = null): WalletResource {
     return WalletResource(
         id = id.toString(),
         balance = WalletBalanceResource(balance, unconfirmedBalance),
