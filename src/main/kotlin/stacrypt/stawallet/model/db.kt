@@ -1,6 +1,9 @@
 package stacrypt.stawallet.model
 
+import org.jetbrains.exposed.dao.EntityID
+import org.jetbrains.exposed.dao.IdTable
 import org.jetbrains.exposed.dao.IntIdTable
+import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.Table
 
 enum class AddressSide { DEPOSIT, CHANGE, OVERFLOW, WITHDRAW }
@@ -8,12 +11,12 @@ enum class AddressSide { DEPOSIT, CHANGE, OVERFLOW, WITHDRAW }
 /**
  * Each wallet could only handle one type of crypto-assets. But they may derived from a unique master seed
  */
-object walletTable : Table("wallet") {
+object WalletTable : IdTable<String>("wallet") {
 
     /**
      * Unique name to identify the wallet (e.g. `my-lovely-bitcoins`)
      */
-    val name = varchar("name", 32).primaryKey()
+    override val id: Column<EntityID<String>> = varchar("name", 32).primaryKey().entityId()
 
     /**
      * Short code of the related cryptocurrency (e.g. `btc`). Always LOWERCASE
@@ -38,29 +41,29 @@ object walletTable : Table("wallet") {
     /**
      * Confirmed amount which is payable
      */
-    val balance = KeyTable.long("balance").default(0)
+    val balance = AddressTable.long("balance").default(0)
 
     /**
      * Unconfirmed balance, which we are waiting for it to be confirmed in the new feature
      */
-    val unconfirmedBalance = KeyTable.long("unconfirmed_balance").default(0)
+    val unconfirmedBalance = AddressTable.long("unconfirmed_balance").default(0)
 
 }
 
 /**
  *  Any key which being created to deposit, change... (just HOT wallet)
  */
-object KeyTable : IntIdTable() {
+object AddressTable : IntIdTable() {
 
     /**
      * Public Key in binary format
      */
-    val wallet = binary("public", 512)
+    val wallet = varchar("wallet", 12)
 
     /**
      * Public Key in binary format
      */
-    val public = binary("public", 512)
+    val publicKey = binary("public_key", 512)
 
     /**
      * The way address being shown in the related cryptocurrency
@@ -243,7 +246,7 @@ object EventTable : IntIdTable("event") {
     /**
      * Which key is related to?
      */
-    val keyId = integer("key_id").nullable()
+    val addressId = integer("address_id")
 
     /**
      * What is the transaction id in blockchain?
@@ -285,7 +288,7 @@ object UtxoTable : IntIdTable("utxo") {
     /**
      * Id of the related key
      */
-    val keyId = integer("key_id")
+    val addressId = integer("address_id")
 
     /**
      * Amount
