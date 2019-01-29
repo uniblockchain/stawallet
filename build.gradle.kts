@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-val kethereumVersion=0.67
+val kethereumVersion = 0.67
 
 plugins {
     kotlin("jvm") version "1.3.11"
@@ -13,6 +13,7 @@ repositories {
     mavenCentral()
     jcenter()
     maven("https://jitpack.io")
+    maven("https://kotlin.bintray.com/ktor")
 }
 
 dependencies {
@@ -20,10 +21,22 @@ dependencies {
     implementation("org.jetbrains.xodus:xodus-environment:1.2.3")
     implementation("org.jetbrains.xodus:xodus-entity-store:1.2.3")
 
+    compile("io.ktor:ktor-server-netty:1.0.0")
+    compile("io.ktor:ktor-server-core:1.0.0")
+    compile("io.ktor:ktor-auth:1.0.0")
+    compile("io.ktor:ktor-auth-jwt:1.0.0")
+    compile("io.ktor:ktor-jackson:1.0.0")
+    compile("io.ktor:ktor-locations:1.0.0")
+    compile("ch.qos.logback:logback-classic:1.2.3")
+
+
     compile(kotlin("stdlib-jdk8"))
     compile("com.typesafe:config:1.3.2")
     compile("com.github.briandilley.jsonrpc4j:jsonrpc4j:1.5.3")
     compile("redis.clients:jedis:3.0.1")
+
+    compile("org.postgresql:postgresql:42.2.5")
+    compile("org.jetbrains.exposed:exposed:0.11.2")
 
     compile("com.github.walleth.kethereum:bip32:$kethereumVersion")
     compile("com.github.walleth.kethereum:functions:$kethereumVersion")
@@ -48,6 +61,9 @@ dependencies {
     compile("org.bitcoinj:bitcoinj-core:0.14.7")
     compile("io.github.novacrypto:BIP32:2018.10.06")
     compile("io.github.novacrypto:BIP32derivation:2018.10.06")
+
+    testCompile("io.ktor:ktor-server-test-host:1.0.0")
+    testCompile("com.opentable.components:otj-pg-embedded:0.13.0")
 
 }
 
