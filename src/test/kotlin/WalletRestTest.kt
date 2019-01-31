@@ -4,9 +4,7 @@ import io.ktor.application.Application
 import io.ktor.config.MapApplicationConfig
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.formUrlEncode
 import io.ktor.server.testing.handleRequest
-import io.ktor.server.testing.setBody
 import io.ktor.util.KtorExperimentalAPI
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.Test

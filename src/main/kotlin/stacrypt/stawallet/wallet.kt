@@ -36,7 +36,15 @@ abstract class Wallet(val name: String, val secretProvider: SecretProvider) {
 
     abstract suspend fun syncBlockchain(): Unit
     abstract suspend fun subscribe(): Unit
+
+    /**
+     * @Return the last usable invoice
+     */
     abstract suspend fun lastUsableInvoice(user: String): InvoiceDao?
+
+    /**
+     * @Return the deposit records which were recorded for a specific invoiceId
+     */
     abstract suspend fun invoiceDeposits(invoiceId: Int): List< DepositDao>
     abstract suspend fun issueNewInvoice(user: String): InvoiceDao
     abstract suspend fun sendTo(address: String, amount: Long): Unit

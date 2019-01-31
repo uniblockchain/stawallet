@@ -7,7 +7,11 @@ import io.ktor.http.Parameters
 import io.ktor.request.receiveParameters
 import io.ktor.response.respond
 import io.ktor.routing.*
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import stacrypt.stawallet.model.InvoiceDao
+import stacrypt.stawallet.model.InvoiceTable
 import stacrypt.stawallet.model.WalletDao
 import stacrypt.stawallet.wallets
 import java.lang.Exception
@@ -36,7 +40,7 @@ fun Route.invoicesRout() = route("/invoices") {
         /**
          * This service will generate a invoice for the user.
          *
-         * The `force` parameter is true, it will create a new invoice for the user. Othervise the service will response
+         * The `force` parameter is true, it will create a new invoice for the user. Otherwise the service will response
          * a 409 status code which means that there is at least one active and unused invoice for this user. You could
          */
         post {
@@ -68,7 +72,23 @@ fun Route.invoicesRout() = route("/invoices") {
      * new invoice for this user.
      * 404 Not Found exception. So you should try to post an invoice first.
      */
-    get("usable") {
+    get {
+        val user = call.request.queryParameters["user"]!!.toString()
+
+        try {
+            val wallet = wallets.findLast { it.name == call.request.queryParameters["wallet"].toString() }!!
+
+            return@get call.respond(
+                transaction {
+                    InvoiceDao.wrapRows(InvoiceTable.select {
+                        (InvoiceTable.wallet eq wallet.name) and (InvoiceTable.user eq user)
+                    }.orderBy(InvoiceTable.creation, false))
+                }.toList().map { it.export() }
+            )
+
+        } catch (e: Exception) {
+            return@get call.respond(HttpStatusCode.InternalServerError, e.toString())
+        }
 
     }
 
