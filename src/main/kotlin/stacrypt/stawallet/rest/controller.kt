@@ -76,7 +76,7 @@ fun Route.invoicesRout() = route("/invoices") {
         val user = call.request.queryParameters["user"]!!.toString()
 
         try {
-            val wallet = wallets.findLast { it.name == call.request.queryParameters["wallet"].toString() }!!
+            val wallet = wallets.findLast { it.name == call.parameters["wallet"].toString() }!!
 
             return@get call.respond(
                 transaction {
@@ -86,6 +86,20 @@ fun Route.invoicesRout() = route("/invoices") {
                 }.toList().map { it.export() }
             )
 
+        } catch (e: Exception) {
+            return@get call.respond(HttpStatusCode.InternalServerError, e.toString())
+        }
+
+    }
+
+    get("{invoiceId}") {
+        val user = call.request.queryParameters["user"]!!.toString()
+
+        try {
+            val wallet = wallets.findLast { it.name == call.parameters["wallet"].toString() }!!
+            val invoice = InvoiceDao[call.parameters["invoiceId"]!!.toInt()]
+            if (invoice.wallet.id.value != wallet.name) return@get call.respond(HttpStatusCode.NotFound)
+            return@get call.respond(invoice.export())
         } catch (e: Exception) {
             return@get call.respond(HttpStatusCode.InternalServerError, e.toString())
         }

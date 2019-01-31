@@ -50,7 +50,7 @@ class TaskDao(id: EntityID<Int>) : IntEntity(id) {
 class DepositDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<DepositDao>(DepositTable)
 
-    var wallet by DepositTable.invoiceId
+    var invoice by DepositTable.invoiceId
     var grossAmount by DepositTable.grossAmount
     var netAmount by DepositTable.netAmount
     var txid by DepositTable.txid
