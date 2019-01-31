@@ -2,14 +2,12 @@ package stacrypt.stawallet.rest
 
 import io.ktor.application.call
 import io.ktor.http.ContentType.Application.FormUrlEncoded
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
-import io.ktor.request.receive
 import io.ktor.request.receiveParameters
 import io.ktor.response.respond
 import io.ktor.routing.*
-import org.jetbrains.exposed.sql.stringParam
 import org.jetbrains.exposed.sql.transactions.transaction
-import stacrypt.stawallet.model.InvoicePurpose
 import stacrypt.stawallet.model.WalletDao
 import stacrypt.stawallet.wallets
 import java.lang.Exception
@@ -38,15 +36,19 @@ fun Route.invoicesRout() = route("/invoices") {
         post {
             val form: Parameters = call.receiveParameters()
             val user = form["user"]!!
-            val force = form["force"]!!
-            val purpose = InvoicePurpose.valueOf(form["purpose"]!!.toUpperCase())
+            val force = form["force"]?.toBoolean() ?: false
+
             try {
                 val wallet = wallets.findLast { it.name == call.parameters["wallet"] }!!
-                
-                val lastIssuedInvoice = wallet.
-                wallet.issueInvoice(user, purpose)
-            }catch(e: Exception){
+                val lastUsableInvoice = wallet.lastUsableInvoice(user)
+                val invoice =
+                    if (force || lastUsableInvoice == null || wallet.invoiceDeposits(lastUsableInvoice.id.value).isNotEmpty())
+                        wallet.issueNewInvoice(user)
+                    else lastUsableInvoice
 
+                return@post call.respond(invoice.export())
+            } catch (e: Exception) {
+                return@post call.respond(HttpStatusCode.InternalServerError, e.toString())
             }
         }
     }

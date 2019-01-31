@@ -5,8 +5,6 @@ import org.jetbrains.exposed.dao.IdTable
 import org.jetbrains.exposed.dao.IntIdTable
 import org.jetbrains.exposed.sql.Column
 
-enum class AddressSide { DEPOSIT, CHANGE, OVERFLOW, WITHDRAW }
-
 /**
  * Each wallet could only handle one type of crypto-assets. But they may derived from a unique master seed
  */
@@ -85,23 +83,6 @@ object AddressTable : IntIdTable() {
     val nonce = integer("nonce").default(0)
 }
 
-enum class InvoicePurpose {
-    /**
-     * For clients to charge their account
-     */
-    DEPOSIT,
-
-    /**
-     * Generated for administrators to charge the hot wallet in case of low-balance
-     */
-    CHARGE,
-
-    /**
-     * Change address for utxo-based currencies
-     */
-    CHANGE
-}
-
 /**
  * Invoice for users to track their payments
  */
@@ -116,15 +97,10 @@ object InvoiceTable : IntIdTable("invoice") {
      */
     val addressId = integer("addressId")
 
-        /**
+    /**
      * invoiceId, data, payload, etc.
      */
     val extra = varchar("data", 1_000).nullable()
-
-    /**
-     * Why was this invoiced issued?
-     */
-    val purpose = enumeration("purpose", InvoicePurpose::class)
 
     /**
      * This invoice issued for which user id? (user is just a reference and not related to us)
@@ -134,7 +110,7 @@ object InvoiceTable : IntIdTable("invoice") {
     /**
      * The creation time
      */
-    val creation = datetime("creation").nullable() // time to be expired
+    val creation = datetime("creation")
 
     /**
      * The expiration time:
@@ -142,7 +118,7 @@ object InvoiceTable : IntIdTable("invoice") {
      * - null means not expired and doesnt have any expiration time
      * - In the future means will be expired at this time
      */
-    val expiration = datetime("expiration").nullable() // time to be expired
+    val expiration = datetime("expiration").nullable()
 }
 
 /**
@@ -152,25 +128,27 @@ object DepositTable : IntIdTable() {
     /**
      * The invoice of the this deposit is based on (if any, might be anonymous. We will appreciate!)
      */
-    val invoice = integer("invoice").nullable()
+    val invoiceId = integer("invoice").nullable()
 
     /**
      * The amount we really received
      */
-    val grossAmount = long("amount")
+    val grossAmount = long("grossAmount")
 
     /**
      * Amount the user will be charged in our system (whether any fee or commission decreased)
      */
-    val netAmount = long("amount")
+    val netAmount = long("netAmount")
 
     /**
-     *
+     * Origin of this deposit on the related blockchain
      */
-    val address = integer("address") // Origin of this deposit on the related blockchain
-    val txid = varchar("txid", 256).nullable() // Origin of this deposit on the related blockchain
-    val registered = bool("registered").default(false) // Is it registered on main server?
-    val error = varchar("user", 128).nullable() // Reason of unacceptance, `null` means acceptable
+    val txid = varchar("txid", 256).nullable()
+
+    /**
+     * Reason of unacceptance, `null` means acceptable
+     */
+    val error = varchar("user", 128).nullable()
 }
 
 enum class TaskType {

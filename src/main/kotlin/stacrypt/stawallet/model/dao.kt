@@ -31,7 +31,6 @@ class InvoiceDao(id: EntityID<Int>) : IntEntity(id) {
     var wallet by WalletDao referencedOn InvoiceTable.wallet
     var address by AddressDao referencedOn InvoiceTable.addressId
     var extra by InvoiceTable.extra
-    var purpose by InvoiceTable.purpose
     var user by InvoiceTable.user
     var creation by InvoiceTable.creation
     var expiration by InvoiceTable.expiration
@@ -46,6 +45,16 @@ class TaskDao(id: EntityID<Int>) : IntEntity(id) {
     var type by TaskTable.type
     var status by TaskTable.status
     var txid by TaskTable.txid
+}
+
+class DepositDao(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<DepositDao>(DepositTable)
+
+    var wallet by DepositTable.invoiceId
+    var grossAmount by DepositTable.grossAmount
+    var netAmount by DepositTable.netAmount
+    var txid by DepositTable.txid
+    var error by DepositTable.error
 }
 
 class EventDao(id: EntityID<Int>) : IntEntity(id) {
@@ -65,6 +74,7 @@ class UtxoDao(id: EntityID<Int>) : IntEntity(id) {
 
     var wallet by WalletDao referencedOn UtxoTable.wallet
     var keyId by AddressDao referencedOn UtxoTable.addressId
+    var amount by UtxoTable.amount
     var txid by UtxoTable.txid
     var vout by UtxoTable.vout
     var isSpent by UtxoTable.isSpent

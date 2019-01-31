@@ -1,11 +1,9 @@
 package stacrypt.stawallet.bitcoin
 
 import com.typesafe.config.Config
-import org.jetbrains.exposed.dao.EntityID
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
 import stacrypt.stawallet.*
@@ -21,13 +19,20 @@ data class NotEnoughFundException(val wallet: String, val amountToPay: Long = 0L
 
 
 class BitcoinWallet(name: String, config: Config) : Wallet(name, ConfigSecretProvider(config, 0)) {
-    override suspend fun lastUnpaidInvoice(user: String, purpose: InvoicePurpose): InvoiceDao? = transaction {
+
+    override suspend fun invoiceDeposits(invoiceId: Int): List<DepositDao> = transaction {
+        DepositDao.wrapRows(
+            DepositTable.select { DepositTable.invoiceId eq invoiceId }.orderBy(DepositTable.id, false)
+        )
+    }.toList()
+
+    override suspend fun lastUsableInvoice(user: String): InvoiceDao? = transaction {
         InvoiceTable.innerJoin(AddressTable).select {
-            (InvoiceTable.wallet eq name) and (InvoiceTable.user eq user) and (InvoiceTable.purpose eq purpose) and (AddressTable.isActive eq true) and (InvoiceTable.expiration.isNotNull() or (InvoiceTable.expiration greater DateTime.now()))
+            (InvoiceTable.wallet eq name) and (InvoiceTable.user eq user) and (AddressTable.isActive eq true) and (InvoiceTable.expiration.isNotNull() or (InvoiceTable.expiration greater DateTime.now()))
         }.lastOrNull()?.run { InvoiceDao.wrapRow(this) }
     }
 
-    override suspend fun issueInvoice(user: String, purpose: InvoicePurpose): InvoiceDao = transaction {
+    override suspend fun issueNewInvoice(user: String): InvoiceDao = transaction {
         val q = AddressTable.select { AddressTable.wallet eq name }.orderBy(AddressTable.id, false).firstOrNull()
         var newIndex = 0
         if (q != null) {
@@ -35,7 +40,8 @@ class BitcoinWallet(name: String, config: Config) : Wallet(name, ConfigSecretPro
             newIndex = lastIssuedAddress.path.split("/").last().toInt() + 1
         }
 
-        val newPath = secretProvider.makePath(newIndex, if (purpose == InvoicePurpose.CHANGE) 1 else 0)
+        val newPath = secretProvider.makePath(newIndex, 0)
+
         val newPublicKey = secretProvider.getHotPublicKey(newPath)
         val newAddress = AddressDao.new {
             this.wallet = WalletDao[name]
@@ -47,7 +53,6 @@ class BitcoinWallet(name: String, config: Config) : Wallet(name, ConfigSecretPro
         InvoiceDao.new {
             this.wallet = WalletDao[name]
             this.address = newAddress
-            this.purpose = purpose
             this.user = user
             this.creation = DateTime.now()
         }
@@ -129,30 +134,32 @@ class BitcoinWallet(name: String, config: Config) : Wallet(name, ConfigSecretPro
 
 
     override suspend fun sendTo(address: String, amountToSend: Long) {
-        val outputs = mapOf(address to BigDecimal(amountToSend))
-
-        val satPerByte = daemon.fairTxFeeRate()!!
-        storage.watch {
-            val utxos =
-                selectUtxo(amountToSend, (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2) * satPerByte, TX_INPUT_SIZE * satPerByte)
-            val inputs = utxos.map {
-                OutPoint(it.first.split(":")[0], it.first.split(":")[1].toInt())
-            }.toList()
-
-            val amountToChange = utxos.sumByLong { it.second } -
-                    amountToSend -
-                    (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2) * satPerByte -
-                    utxos.size * TX_INPUT_SIZE * satPerByte
-            if (amountToChange > 0) {
-                val newChangeAddress = secretProvider.getHotAddress(nextChangeAddressIndex().toInt(), 1)
-                outputs.plus(Pair(newChangeAddress, amountToChange))
-            }
-
-            removeUtxo(*inputs.map { "${it.txid}:${it.vout}" }.toTypedArray())
-            var transaction = daemon.rpcClient.createRawTransaction(inputs = inputs, outputs = outputs)
-
-
-        }
+    }
+//    override suspend fun sendTo(address: String, amountToSend: Long) {
+//        val outputs = mapOf(address to BigDecimal(amountToSend))
+//
+//        val satPerByte = daemon.fairTxFeeRate()!!
+//        storage.watch {
+//            val utxos =
+//                selectUtxo(amountToSend, (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2) * satPerByte, TX_INPUT_SIZE * satPerByte)
+//            val inputs = utxos.map {
+//                OutPoint(it.first.split(":")[0], it.first.split(":")[1].toInt())
+//            }.toList()
+//
+//            val amountToChange = utxos.sumByLong { it.second } -
+//                    amountToSend -
+//                    (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2) * satPerByte -
+//                    utxos.size * TX_INPUT_SIZE * satPerByte
+//            if (amountToChange > 0) {
+//                val newChangeAddress = secretProvider.getHotAddress(nextChangeAddressIndex().toInt(), 1)
+//                outputs.plus(Pair(newChangeAddress, amountToChange))
+//            }
+//
+//            removeUtxo(*inputs.map { "${it.txid}:${it.vout}" }.toTypedArray())
+//            var transaction = daemon.rpcClient.createRawTransaction(inputs = inputs, outputs = outputs)
+//
+//
+//        }
 
 //        storage.jedis.watch("$name:")
 //
@@ -176,7 +183,6 @@ class BitcoinWallet(name: String, config: Config) : Wallet(name, ConfigSecretPro
 //            if (inputAmount >= amountToSend + estimatedFee) break
 //        }
 //
-    }
 
 //    override suspend fun sendTo(address: String, amountToSend: Long) {
 //        store.computeInExclusiveTransaction {

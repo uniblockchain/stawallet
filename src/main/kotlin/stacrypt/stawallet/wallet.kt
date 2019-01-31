@@ -1,8 +1,9 @@
 package stacrypt.stawallet
 
 import stacrypt.stawallet.bitcoin.BitcoinWallet
+import stacrypt.stawallet.model.DepositDao
+import stacrypt.stawallet.model.DepositTable
 import stacrypt.stawallet.model.InvoiceDao
-import stacrypt.stawallet.model.InvoicePurpose
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -35,7 +36,8 @@ abstract class Wallet(val name: String, val secretProvider: SecretProvider) {
 
     abstract suspend fun syncBlockchain(): Unit
     abstract suspend fun subscribe(): Unit
-    abstract suspend fun lastUnpaidInvoice(user: String, purpose: InvoicePurpose): InvoiceDao?
-    abstract suspend fun issueInvoice(user: String, purpose: InvoicePurpose): InvoiceDao
+    abstract suspend fun lastUsableInvoice(user: String): InvoiceDao?
+    abstract suspend fun invoiceDeposits(invoiceId: Int): List< DepositDao>
+    abstract suspend fun issueNewInvoice(user: String): InvoiceDao
     abstract suspend fun sendTo(address: String, amount: Long): Unit
 }
