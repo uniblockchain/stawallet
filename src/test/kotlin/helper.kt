@@ -2,9 +2,12 @@ package com.perfect.apartmentrental
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
+import com.typesafe.config.ConfigFactory
 import io.ktor.application.Application
-import io.ktor.config.MapApplicationConfig
+import io.ktor.config.HoconApplicationConfig
+import io.ktor.server.engine.applicationEngineEnvironment
 import io.ktor.server.testing.TestApplicationEngine
+import io.ktor.server.testing.withApplication
 import io.ktor.server.testing.withTestApplication
 import io.ktor.util.KtorExperimentalAPI
 import org.junit.Ignore
@@ -12,6 +15,7 @@ import org.junit.Rule
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
+import org.slf4j.LoggerFactory
 import stacrypt.stawallet.module
 
 @KtorExperimentalAPI
@@ -26,36 +30,35 @@ abstract class BaseApiTest {
     var testEngine: TestApplicationEngine? = null
 
     @Ignore
-    open fun config(app: Application) {
-        // TODO: Load application.conf file
-        (app.environment.config as MapApplicationConfig).apply {
-            put("db.uri", "postgresql://postgres:postgres@localhost:${pg.embeddedPostgres.port}/postgres")
-        }
-    }
+    open fun configure(): MutableMap<String, String> = mutableMapOf(
+        "ktor.deployment.environment" to "test",
+        "db.uri" to "postgresql://postgres:postgres@localhost:${pg.embeddedPostgres.port}/postgres"
+    )
 
     @Ignore
     open fun mockup(app: Application) {
     }
-
 
     inner class TestApplicationRule : TestRule {
         override fun apply(base: Statement?, description: Description?): Statement {
             return object : Statement() {
                 @Throws(Throwable::class)
                 override fun evaluate() {
-                    withTestApplication({
-                        config(this)
-                        module(testing = true)
-                        mockup(this)
-                    }) {
+                    withApplication(applicationEngineEnvironment {
+                        config = HoconApplicationConfig(ConfigFactory.parseMap(configure()))
+                        log = LoggerFactory.getLogger("ktor.test")
+                    })
+                    {
+                        application.module(testing = true)
+                        mockup(application)
                         testEngine = this
                         base?.evaluate()
                     }
+
                 }
             }
         }
     }
-
 
 }
 

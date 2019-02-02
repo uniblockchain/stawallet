@@ -1,9 +1,20 @@
 package stacrypt.stawallet.model
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.dao.EntityID
 import org.jetbrains.exposed.dao.IdTable
 import org.jetbrains.exposed.dao.IntIdTable
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.joda.time.DateTime
+import stacrypt.stawallet.model.AddressTable.entityId
+import stacrypt.stawallet.model.AddressTable.references
+
+suspend fun <T> dbQuery(block: () -> T): T =
+    withContext(Dispatchers.IO) {
+        transaction { block() }
+    }
 
 /**
  * Each wallet could only handle one type of crypto-assets. But they may derived from a unique master seed
@@ -55,7 +66,7 @@ object AddressTable : IntIdTable() {
     /**
      * Public Key in binary format
      */
-    val wallet = varchar("wallet", 12)
+    val wallet = reference("wallet", WalletTable)
 
     /**
      * Public Key in binary format
@@ -65,7 +76,7 @@ object AddressTable : IntIdTable() {
     /**
      * The way address being shown in the related cryptocurrency
      */
-    val provision = varchar("wif", 128)
+    val provision = varchar("provision", 128)
 
     /**
      * BIP-44 derivation path (from the wallet seed)
@@ -90,12 +101,12 @@ object InvoiceTable : IntIdTable("invoice") {
     /**
      * The wallet of this invoice
      */
-    val wallet = varchar("wallet", 12)
+    val wallet = reference("wallet", WalletTable)
 
     /**
-     * invoiceId, data, payload, etc.
+     * The address to be paid
      */
-    val addressId = integer("addressId")
+    val addressId = reference("addressId", AddressTable)
 
     /**
      * invoiceId, data, payload, etc.
@@ -110,7 +121,7 @@ object InvoiceTable : IntIdTable("invoice") {
     /**
      * The creation time
      */
-    val creation = datetime("creation")
+    val creation = datetime("creation").default(DateTime.now())
 
     /**
      * The expiration time:
@@ -179,7 +190,7 @@ object TaskTable : IntIdTable("task") {
     /**
      * Pay from this wallet
      */
-    val wallet = varchar("wallet", 12)
+    val wallet = reference("wallet", WalletTable.id)
 
     /**
      * Pay to this address
@@ -223,7 +234,7 @@ object EventTable : IntIdTable("event") {
     /**
      * Which wallet?
      */
-    val wallet = varchar("wallet", 12)
+    val wallet = reference("wallet", WalletTable.id)
 
     /**
      * Which key is related to?
@@ -265,7 +276,7 @@ object UtxoTable : IntIdTable("utxo") {
     /**
      * Which wallet it belongs to
      */
-    val wallet = varchar("wallet", 12)
+    val wallet = reference("wallet", WalletTable.id)
 
     /**
      * Id of the related key

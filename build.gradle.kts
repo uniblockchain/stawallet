@@ -31,7 +31,7 @@ dependencies {
 
 
     compile(kotlin("stdlib-jdk8"))
-    compile("com.typesafe:config:1.3.2")
+//    compile("com.typesafe:config:1.3.2")
     compile("com.github.briandilley.jsonrpc4j:jsonrpc4j:1.5.3")
     compile("redis.clients:jedis:3.0.1")
 
@@ -64,6 +64,8 @@ dependencies {
 
     testCompile("io.ktor:ktor-server-test-host:1.0.0")
     testCompile("com.opentable.components:otj-pg-embedded:0.13.0")
+
+    testImplementation("io.mockk:mockk:1.9")
 
 }
 

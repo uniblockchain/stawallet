@@ -1,5 +1,6 @@
 package stacrypt.stawallet.rest
 
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
 import stacrypt.stawallet.model.AddressDao
 import stacrypt.stawallet.model.InvoiceDao
@@ -57,21 +58,21 @@ data class AddressResource(
     val isActive: Boolean
 )
 
-fun InvoiceDao.export(role: ClientRole? = null): InvoiceResource {
-    return InvoiceResource(
+fun InvoiceDao.export(role: ClientRole? = null) =
+    InvoiceResource(
         id = id.value,
-        wallet = this.wallet.id.value,
-        extra = this.extra,
-        user = this.user,
-        creation = this.creation,
-        expiration = this.expiration,
-        address = this.address.export(role)
+        walletId = wallet.id.value,
+        extra = extra,
+        user = user,
+        creation = creation,
+        expiration = expiration,
+        address = address.export(role)
     )
-}
+
 
 data class InvoiceResource(
     val id: Int,
-    val wallet: String,
+    val walletId: String,
     val extra: String?,
     val user: String?,
     val creation: DateTime,

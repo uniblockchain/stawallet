@@ -6,19 +6,25 @@ import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
+import org.kethereum.encodings.encodeToBase58WithChecksum
+import org.kethereum.extensions.toMinimalByteArray
+import org.kethereum.hashes.sha256
+import org.kethereum.ripemd160.calculateRIPEMD160
 import stacrypt.stawallet.*
 import stacrypt.stawallet.model.*
-import java.math.BigDecimal
 import java.util.logging.Logger
 
+
+const val NETWORK_MAINNET = "mainnet"
+const val NETWORK_TESTNET_3 = "testnet"
 
 private val logger = Logger.getLogger("wallet")
 
 data class NotEnoughFundException(val wallet: String, val amountToPay: Long = 0L) :
     Exception("wallet $wallet does NOT have enough money to pay $amountToPay")
 
-
-class BitcoinWallet(name: String, config: Config) : Wallet(name, ConfigSecretProvider(config, 0)) {
+class BitcoinWallet(name: String, config: Config, network: String) :
+    Wallet(name, ConfigSecretProvider(config, if (network == NETWORK_MAINNET) 0 else 1), network) {
 
     override suspend fun invoiceDeposits(invoiceId: Int): List<DepositDao> = transaction {
         DepositDao.wrapRows(
@@ -26,13 +32,12 @@ class BitcoinWallet(name: String, config: Config) : Wallet(name, ConfigSecretPro
         )
     }.toList()
 
-    override suspend fun lastUsableInvoice(user: String): InvoiceDao? = transaction {
+    override suspend fun lastUsableInvoice(user: String): InvoiceDao? =
         InvoiceTable.innerJoin(AddressTable).select {
             (InvoiceTable.wallet eq name) and (InvoiceTable.user eq user) and (AddressTable.isActive eq true) and (InvoiceTable.expiration.isNotNull() or (InvoiceTable.expiration greater DateTime.now()))
         }.lastOrNull()?.run { InvoiceDao.wrapRow(this) }
-    }
 
-    override suspend fun issueNewInvoice(user: String): InvoiceDao = transaction {
+    override suspend fun issueNewInvoice(user: String): InvoiceDao {
         val q = AddressTable.select { AddressTable.wallet eq name }.orderBy(AddressTable.id, false).firstOrNull()
         var newIndex = 0
         if (q != null) {
@@ -44,21 +49,21 @@ class BitcoinWallet(name: String, config: Config) : Wallet(name, ConfigSecretPro
 
         val newPublicKey = secretProvider.getHotPublicKey(newPath)
         val newAddress = AddressDao.new {
-            this.wallet = WalletDao[name]
+            this.wallet = WalletDao.findById(name)!!
             this.publicKey = newPublicKey
-            this.provision = "" //TODO
+            this.provision = generateP2pkhAddress(newPublicKey)
             this.path = newPath
         }
 
-        InvoiceDao.new {
-            this.wallet = WalletDao[name]
+        return InvoiceDao.new {
+            this.wallet = WalletDao.findById(name)!!
             this.address = newAddress
             this.user = user
-            this.creation = DateTime.now()
         }
-
-
     }
+
+    fun generateP2pkhAddress(publicKey: ByteArray) =
+        publicKey.toBitcoinAddress(if (this@BitcoinWallet.network == NETWORK_TESTNET_3) VERSION_BYTE_P2PKH_MAINNET else VERSION_BYTE_P2PKH_TESTNET3)
 
     companion object {
         const val TX_BASE_SIZE = 10 // Bytes
@@ -229,3 +234,19 @@ class BitcoinWallet(name: String, config: Config) : Wallet(name, ConfigSecretPro
 //    }
 
 }
+
+const val VERSION_BYTE_P2PKH_MAINNET = 0
+const val VERSION_BYTE_P2PKH_TESTNET3 = 111
+
+/**
+ * Resources:
+ *  * https://en.bitcoin.it/wiki/List_of_address_prefixes
+ *  * https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses
+ */
+fun ByteArray.toBitcoinAddress(versionByte: Int) = this
+    .getCompressedPublicKey()
+    .sha256()
+    .calculateRIPEMD160()
+    .run { versionByte.toMinimalByteArray() + this }
+    .encodeToBase58WithChecksum()
+

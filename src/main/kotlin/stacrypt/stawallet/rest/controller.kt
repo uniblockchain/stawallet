@@ -9,6 +9,8 @@ import io.ktor.response.respond
 import io.ktor.routing.*
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.DEFAULT_ISOLATION_LEVEL
+import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import stacrypt.stawallet.model.InvoiceDao
 import stacrypt.stawallet.model.InvoiceTable
@@ -19,12 +21,16 @@ import java.lang.Exception
 fun Routing.walletsRouting() {
     route("/wallets") {
         get {
-            return@get call.respond(transaction { WalletDao.all().toList() }.map { it.export() })
+            val t = TransactionManager.manager.newTransaction()
+            call.respond(WalletDao.all().toList().map { it.export() })
+            t.commit()
         }
 
-        route("/{wallet}") {
+        route("/{walletId}") {
             get("") {
-                return@get call.respond(transaction { WalletDao[call.parameters["id"].toString()] }.export())
+                val t = TransactionManager.manager.newTransaction()
+                call.respond(WalletDao[call.parameters["walletId"].toString()].export())
+                t.commit()
             }
             invoicesRout()
             depositsRout()
@@ -49,7 +55,7 @@ fun Route.invoicesRout() = route("/invoices") {
             val force = call.request.queryParameters["force"]?.toBoolean() ?: false
 
             try {
-                val wallet = wallets.findLast { it.name == call.parameters["wallet"] }!!
+                val wallet = wallets.findLast { it.name == call.parameters["walletId"] }!!
                 val lastUsableInvoice = wallet.lastUsableInvoice(user)
                 if (force || lastUsableInvoice == null || wallet.invoiceDeposits(lastUsableInvoice.id.value).isNotEmpty())
                     return@post call.respond(wallet.issueNewInvoice(user).export())
@@ -66,7 +72,7 @@ fun Route.invoicesRout() = route("/invoices") {
     }
 
     /**
-     * Get typically give us the invoice list of the mentioned user.
+     * Give us the invoice list of the mentioned user.
      * If there is not any invoice for this user, this Api will return an empty list.
      * If the result was empty or there ws not any active invoice fot the user, you should call Post method to request a
      * new invoice for this user.
@@ -76,14 +82,12 @@ fun Route.invoicesRout() = route("/invoices") {
         val user = call.request.queryParameters["user"]!!.toString()
 
         try {
-            val wallet = wallets.findLast { it.name == call.parameters["wallet"].toString() }!!
+            val wallet = wallets.findLast { it.name == call.parameters["walletId"].toString() }!!
 
             return@get call.respond(
-                transaction {
-                    InvoiceDao.wrapRows(InvoiceTable.select {
-                        (InvoiceTable.wallet eq wallet.name) and (InvoiceTable.user eq user)
-                    }.orderBy(InvoiceTable.creation, false))
-                }.toList().map { it.export() }
+                InvoiceDao.wrapRows(InvoiceTable.select {
+                    (InvoiceTable.wallet eq wallet.name) and (InvoiceTable.user eq user)
+                }.orderBy(InvoiceTable.creation, false)).toList().map { it.export() }
             )
 
         } catch (e: Exception) {
@@ -96,7 +100,7 @@ fun Route.invoicesRout() = route("/invoices") {
         val user = call.request.queryParameters["user"]!!.toString()
 
         try {
-            val wallet = wallets.findLast { it.name == call.parameters["wallet"].toString() }!!
+            val wallet = wallets.findLast { it.name == call.parameters["walletId"].toString() }!!
             val invoice = InvoiceDao[call.parameters["invoiceId"]!!.toInt()]
             if (invoice.wallet.id.value != wallet.name) return@get call.respond(HttpStatusCode.NotFound)
             return@get call.respond(invoice.export())

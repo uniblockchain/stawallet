@@ -10,7 +10,7 @@ object bitcoind : WalletDaemon() {
         get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
         set(value) {}
 
-    val rpcClient: BitcoinRpcClient = BitcoinRpcClientFactory.createBitcoinClientWithDefaultConfig()
+    val rpcClient: BitcoinRpcClient by lazy { BitcoinRpcClientFactory.createBitcoinClientWithDefaultConfig() }
 
     /**
      * Satoshis per bytes
