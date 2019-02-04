@@ -33,7 +33,7 @@ class BitcoinWallet(name: String, config: Config, network: String) :
 
     override suspend fun lastUsableInvoice(user: String): InvoiceDao? =
         InvoiceTable.innerJoin(AddressTable).select {
-            (InvoiceTable.wallet eq name) and (InvoiceTable.user eq user) and (AddressTable.isActive eq true) and (InvoiceTable.expiration.isNotNull() or (InvoiceTable.expiration greater DateTime.now()))
+            (InvoiceTable.wallet eq name) and (InvoiceTable.user eq user) and (AddressTable.isActive eq true) and (InvoiceTable.expiration.isNull() or (InvoiceTable.expiration greater DateTime.now()))
         }.lastOrNull()?.run { InvoiceDao.wrapRow(this) }
 
     override suspend fun issueNewInvoice(user: String): InvoiceDao {

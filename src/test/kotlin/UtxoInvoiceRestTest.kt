@@ -18,8 +18,6 @@ import org.junit.Test
 import stacrypt.stawallet.bitcoin.BitcoinRpcClientFactory
 import stacrypt.stawallet.bitcoin.NETWORK_TESTNET_3
 import stacrypt.stawallet.bitcoin.bitcoind
-import stacrypt.stawallet.model.AddressDao
-import stacrypt.stawallet.model.InvoiceDao
 import stacrypt.stawallet.model.WalletDao
 
 
@@ -105,6 +103,7 @@ class UtxoInvoiceRestTest : BaseApiTest() {
          */
         testEngine!!.apply {
             handleRequest(Post, "$walletsUrl/test-btc-wallet/invoices") {
+                addHeader(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded.toString())
                 setBody(listOf("user" to "1").formUrlEncode())
             }.apply {
                 assertEquals(Conflict, response.status())
