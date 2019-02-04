@@ -97,7 +97,7 @@ object InvoiceTable : IntIdTable("invoice") {
     /**
      * The address to be paid
      */
-    val addressId = reference("addressId", AddressTable)
+    val address = reference("address", AddressTable.id)
 
     /**
      * invoiceId, data, payload, etc.
@@ -130,7 +130,7 @@ object DepositTable : IntIdTable() {
     /**
      * The invoice of the this deposit is based on (if any, might be anonymous. We will appreciate!)
      */
-    val invoiceId = integer("invoice").nullable()
+    val invoice = reference("invoice", InvoiceTable.id).nullable()
 
     /**
      * The amount we really received
@@ -230,7 +230,7 @@ object EventTable : IntIdTable("event") {
     /**
      * Which key is related to?
      */
-    val addressId = integer("address_id")
+    val address = reference("address", AddressTable.id)
 
     /**
      * What is the transaction id in blockchain?
@@ -272,7 +272,7 @@ object UtxoTable : IntIdTable("utxo") {
     /**
      * Id of the related key
      */
-    val addressId = integer("address_id")
+    val address = reference("address", AddressTable.id)
 
     /**
      * Amount

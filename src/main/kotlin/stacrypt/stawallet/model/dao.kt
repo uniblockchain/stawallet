@@ -73,7 +73,7 @@ class UtxoDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<UtxoDao>(UtxoTable)
 
     var wallet by WalletDao referencedOn UtxoTable.wallet
-    var keyId by AddressDao referencedOn UtxoTable.addressId
+    var address by AddressDao referencedOn UtxoTable.address
     var amount by UtxoTable.amount
     var txid by UtxoTable.txid
     var vout by UtxoTable.vout
