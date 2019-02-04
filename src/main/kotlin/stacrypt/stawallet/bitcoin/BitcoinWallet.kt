@@ -4,7 +4,6 @@ import com.typesafe.config.Config
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
 import org.kethereum.encodings.encodeToBase58WithChecksum
 import org.kethereum.extensions.toMinimalByteArray
@@ -13,10 +12,11 @@ import org.kethereum.ripemd160.calculateRIPEMD160
 import stacrypt.stawallet.*
 import stacrypt.stawallet.model.*
 import java.util.logging.Logger
+import kotlin.math.roundToLong
 
 
 const val NETWORK_MAINNET = "mainnet"
-const val NETWORK_TESTNET_3 = "testnet"
+const val NETWORK_TESTNET_3 = "testnet3"
 
 private val logger = Logger.getLogger("wallet")
 
@@ -26,11 +26,10 @@ data class NotEnoughFundException(val wallet: String, val amountToPay: Long = 0L
 class BitcoinWallet(name: String, config: Config, network: String) :
     Wallet(name, ConfigSecretProvider(config, if (network == NETWORK_MAINNET) 0 else 1), network) {
 
-    override suspend fun invoiceDeposits(invoiceId: Int): List<DepositDao> = transaction {
+    override suspend fun invoiceDeposits(invoiceId: Int): List<DepositDao> =
         DepositDao.wrapRows(
             DepositTable.select { DepositTable.invoiceId eq invoiceId }.orderBy(DepositTable.id, false)
-        )
-    }.toList()
+        ).toList()
 
     override suspend fun lastUsableInvoice(user: String): InvoiceDao? =
         InvoiceTable.innerJoin(AddressTable).select {
@@ -51,7 +50,7 @@ class BitcoinWallet(name: String, config: Config, network: String) :
         val newAddress = AddressDao.new {
             this.wallet = WalletDao.findById(name)!!
             this.publicKey = newPublicKey
-            this.provision = generateP2pkhAddress(newPublicKey)
+            this.provision = formatP2pkh(newPublicKey)
             this.path = newPath
         }
 
@@ -62,8 +61,10 @@ class BitcoinWallet(name: String, config: Config, network: String) :
         }
     }
 
-    fun generateP2pkhAddress(publicKey: ByteArray) =
-        publicKey.toBitcoinAddress(if (this@BitcoinWallet.network == NETWORK_TESTNET_3) VERSION_BYTE_P2PKH_MAINNET else VERSION_BYTE_P2PKH_TESTNET3)
+    private fun formatP2pkh(publicKey: ByteArray) =
+        publicKey.toBitcoinAddressBinary(
+            if (this@BitcoinWallet.network == NETWORK_MAINNET) VERSION_BYTE_P2PKH_MAINNET else VERSION_BYTE_P2PKH_TESTNET3
+        )
 
     companion object {
         const val TX_BASE_SIZE = 10 // Bytes
@@ -243,10 +244,11 @@ const val VERSION_BYTE_P2PKH_TESTNET3 = 111
  *  * https://en.bitcoin.it/wiki/List_of_address_prefixes
  *  * https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses
  */
-fun ByteArray.toBitcoinAddress(versionByte: Int) = this
+fun ByteArray.toBitcoinAddressBinary(versionByte: Int) = this
     .getCompressedPublicKey()
     .sha256()
     .calculateRIPEMD160()
     .run { versionByte.toMinimalByteArray() + this }
     .encodeToBase58WithChecksum()
 
+fun Double.btcToSat() = (this * 100_000_000.0).roundToLong()

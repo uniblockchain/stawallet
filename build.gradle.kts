@@ -36,7 +36,7 @@ dependencies {
     compile("redis.clients:jedis:3.0.1")
 
     compile("org.postgresql:postgresql:42.2.5")
-    compile("org.jetbrains.exposed:exposed:0.11.2")
+    compile("org.jetbrains.exposed:exposed:0.12.1")
 
     compile("com.github.walleth.kethereum:bip32:$kethereumVersion")
     compile("com.github.walleth.kethereum:functions:$kethereumVersion")

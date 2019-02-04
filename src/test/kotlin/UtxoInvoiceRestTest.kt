@@ -37,7 +37,7 @@ class UtxoInvoiceRestTest : BaseApiTest() {
         put("wallets.test-btc-wallet.network", "testnet3")
         put(
             "wallets.test-btc-wallet.seed",
-            "0x5c6e14e58ad94121498ea9535795967a7b0339a7e3206fb2c9e52de0bb8c76dfd2e783435cbded4fc9939720386dee90db32b36bd56b85750c4d6825f8cc2e8a" // `enhance before small`
+            "0x5c6e14e58ad94121498ea9535795967a7b0339a7e3206fb2c9e52de0bb8c76dfd2e783435cbded4fc9939720386dee90db32b36bd56b85750c4d6825f8cc2e8a" // BIP39: `enhance before small`
         )
         put("wallets.test-btc-wallet.coldAddress", "coldAddress")
         put("wallets.test-btc-wallet.requiredConfirmations", "4")
@@ -86,7 +86,10 @@ class UtxoInvoiceRestTest : BaseApiTest() {
                 assertEquals(OK, response.status())
                 assertEquals("test-btc-wallet", response.content?.toJson()!!["walletId"].asText())
                 assertEquals("1", response.content?.toJson()!!["user"].asText())
-                assertEquals("mhXKmTxYhA5bb6yVPs95RJ8J2ELWr6Qowp", response.content?.toJson()!!["address"].asText())
+                assertEquals(
+                    "mhXKmTxYhA5bb6yVPs95RJ8J2ELWr6Qowp",
+                    response.content?.toJson()!!["address"]["address"].asText()
+                )
                 assertNotNull(response.content?.toJson()!!["id"].asText())
                 assertNotNull(response.content?.toJson()!!["creation"].asText())
 

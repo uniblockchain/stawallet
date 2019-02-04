@@ -1,20 +1,11 @@
 package stacrypt.stawallet.model
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.dao.EntityID
 import org.jetbrains.exposed.dao.IdTable
 import org.jetbrains.exposed.dao.IntIdTable
 import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
-import stacrypt.stawallet.model.AddressTable.entityId
-import stacrypt.stawallet.model.AddressTable.references
 
-suspend fun <T> dbQuery(block: () -> T): T =
-    withContext(Dispatchers.IO) {
-        transaction { block() }
-    }
 
 /**
  * Each wallet could only handle one type of crypto-assets. But they may derived from a unique master seed

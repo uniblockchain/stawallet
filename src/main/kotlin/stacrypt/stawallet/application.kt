@@ -1,40 +1,25 @@
 package stacrypt.stawallet
 
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.typesafe.config.*
 import io.ktor.application.Application
-import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.application.install
-import io.ktor.auth.Authentication
-import io.ktor.auth.jwt.JWTPrincipal
-import io.ktor.auth.jwt.jwt
-import io.ktor.config.ApplicationConfig
 import io.ktor.config.HoconApplicationConfig
 import io.ktor.features.*
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.jackson.jackson
-import io.ktor.locations.Locations
-import io.ktor.pipeline.PipelineInterceptor
 import io.ktor.request.path
 import io.ktor.response.respondText
-import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.routing.routing
 import io.ktor.util.KtorExperimentalAPI
-import io.ktor.util.pipeline.PipelinePhase
-//import jetbrains.exodus.env.Environments
 import kotlinx.coroutines.*
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.transactions.DEFAULT_ISOLATION_LEVEL
-import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
-import redis.clients.jedis.Jedis
 import stacrypt.stawallet.model.*
 import stacrypt.stawallet.rest.walletsRouting
 import java.net.URI
@@ -42,35 +27,18 @@ import java.sql.Connection
 import java.util.logging.*
 
 
-private lateinit var applicationConfig: ApplicationConfig
-val config: Config
-    get() = (applicationConfig as HoconApplicationConfig).getTypesafeConfig()
-//val jedis = Jedis()
+lateinit var config: Config
 lateinit var wallets: List<Wallet>
 private val logger = Logger.getLogger("Application")
-//val db = Environments.newInstance(stacrypt.stawallet.getConfig.getString("db.envPath"))
-//lateinit var restApplicationJob: Job
 
-fun main(args: Array<String>) {
+fun main(args: Array<String>) = io.ktor.server.netty.EngineMain.main(args)
 
-
-//    val store = db.computeInTransaction { db.openStore("ltc", StoreConfig.WITHOUT_DUPLICATES, it) }
-
-//    db.executeInTransaction { store.put(it, stringToEntry("Hello"), stringToEntry("World!")) }
-
-//    println(db.computeInTransaction { entryToString(store.get(it, stringToEntry("Hello"))!!) })
-
-
-    return io.ktor.server.netty.EngineMain.main(args)
-
-//    db.close()
-}
 
 @UseExperimental(KtorExperimentalAPI::class)
 @kotlin.jvm.JvmOverloads
 fun Application.module(testing: Boolean = false) {
     logger.log(Level.INFO, "Loading config...")
-    applicationConfig = environment.config
+    config = (environment.config as HoconApplicationConfig).getTypesafeConfig()
 
     logger.log(Level.WARNING, "Initializing wallets:")
 
@@ -113,10 +81,6 @@ fun Application.module(testing: Boolean = false) {
         }
     }
 
-    val Call = PipelinePhase("Call") // Phase for processing a call and sending a response
-    intercept(Call){
-
-    }
     initDatabase()
 
     routing {
@@ -152,15 +116,6 @@ fun initDatabase(dropIfExists: Boolean = false) {
         SchemaUtils.create(*tables)
         commit()
     }
-}
-
-
-inline fun <T> Iterable<T>.sumByLong(selector: (T) -> Long): Long {
-    var sum = 0L
-    for (element in this) {
-        sum += selector(element)
-    }
-    return sum
 }
 
 fun HoconApplicationConfig.getTypesafeConfig(): Config {

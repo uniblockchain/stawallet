@@ -9,9 +9,7 @@ import io.ktor.response.respond
 import io.ktor.routing.*
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.DEFAULT_ISOLATION_LEVEL
-import org.jetbrains.exposed.sql.transactions.TransactionManager
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.transactions.experimental.transaction
 import stacrypt.stawallet.model.InvoiceDao
 import stacrypt.stawallet.model.InvoiceTable
 import stacrypt.stawallet.model.WalletDao
@@ -21,16 +19,16 @@ import java.lang.Exception
 fun Routing.walletsRouting() {
     route("/wallets") {
         get {
-            val t = TransactionManager.manager.newTransaction()
-            call.respond(WalletDao.all().toList().map { it.export() })
-            t.commit()
+            transaction {
+                call.respond(WalletDao.all().toList().map { it.export() })
+            }
         }
 
         route("/{walletId}") {
             get("") {
-                val t = TransactionManager.manager.newTransaction()
-                call.respond(WalletDao[call.parameters["walletId"].toString()].export())
-                t.commit()
+                transaction {
+                    call.respond(WalletDao[call.parameters["walletId"].toString()].export())
+                }
             }
             invoicesRout()
             depositsRout()
@@ -55,18 +53,23 @@ fun Route.invoicesRout() = route("/invoices") {
             val force = call.request.queryParameters["force"]?.toBoolean() ?: false
 
             try {
-                val wallet = wallets.findLast { it.name == call.parameters["walletId"] }!!
-                val lastUsableInvoice = wallet.lastUsableInvoice(user)
-                if (force || lastUsableInvoice == null || wallet.invoiceDeposits(lastUsableInvoice.id.value).isNotEmpty())
-                    return@post call.respond(wallet.issueNewInvoice(user).export())
-                else
-                    return@post call.respond(
-                        HttpStatusCode.Conflict,
-                        "There is at least one active and unused invoice for this user"
-                    )
+                transaction {
+                    val wallet = wallets.findLast { it.name == call.parameters["walletId"] }!!
+                    val lastUsableInvoice = wallet.lastUsableInvoice(user)
+                    flushCache()
+
+                    if (force || lastUsableInvoice == null || wallet.invoiceDeposits(lastUsableInvoice.id.value).isNotEmpty()) {
+                        call.respond(wallet.issueNewInvoice(user).export())
+                    } else {
+                        call.respond(
+                            HttpStatusCode.Conflict,
+                            "There is at least one active and unused invoice for this user"
+                        )
+                    }
+                }
 
             } catch (e: Exception) {
-                return@post call.respond(HttpStatusCode.InternalServerError, e.toString())
+                call.respond(HttpStatusCode.InternalServerError, e.toString())
             }
         }
     }
@@ -82,16 +85,17 @@ fun Route.invoicesRout() = route("/invoices") {
         val user = call.request.queryParameters["user"]!!.toString()
 
         try {
-            val wallet = wallets.findLast { it.name == call.parameters["walletId"].toString() }!!
+            transaction {
+                val wallet = wallets.findLast { it.name == call.parameters["walletId"].toString() }!!
 
-            return@get call.respond(
-                InvoiceDao.wrapRows(InvoiceTable.select {
-                    (InvoiceTable.wallet eq wallet.name) and (InvoiceTable.user eq user)
-                }.orderBy(InvoiceTable.creation, false)).toList().map { it.export() }
-            )
-
+                call.respond(
+                    InvoiceDao.wrapRows(InvoiceTable.select {
+                        (InvoiceTable.wallet eq wallet.name) and (InvoiceTable.user eq user)
+                    }.orderBy(InvoiceTable.creation, false)).toList().map { it.export() }
+                )
+            }
         } catch (e: Exception) {
-            return@get call.respond(HttpStatusCode.InternalServerError, e.toString())
+            call.respond(HttpStatusCode.InternalServerError, e.toString())
         }
 
     }
@@ -100,12 +104,14 @@ fun Route.invoicesRout() = route("/invoices") {
         val user = call.request.queryParameters["user"]!!.toString()
 
         try {
-            val wallet = wallets.findLast { it.name == call.parameters["walletId"].toString() }!!
-            val invoice = InvoiceDao[call.parameters["invoiceId"]!!.toInt()]
-            if (invoice.wallet.id.value != wallet.name) return@get call.respond(HttpStatusCode.NotFound)
-            return@get call.respond(invoice.export())
+            transaction {
+                val wallet = wallets.findLast { it.name == call.parameters["walletId"].toString() }!!
+                val invoice = InvoiceDao[call.parameters["invoiceId"]!!.toInt()]
+                if (invoice.wallet.id.value != wallet.name) call.respond(HttpStatusCode.NotFound)
+                call.respond(invoice.export())
+            }
         } catch (e: Exception) {
-            return@get call.respond(HttpStatusCode.InternalServerError, e.toString())
+            call.respond(HttpStatusCode.InternalServerError, e.toString())
         }
 
     }
