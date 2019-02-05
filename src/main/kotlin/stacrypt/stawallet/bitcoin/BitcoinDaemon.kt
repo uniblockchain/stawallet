@@ -87,9 +87,10 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
      */
     private fun findAssociatedAddress(vout: TransactionOutput) = transaction {
         AddressTable
-            .select {
-                (AddressTable.isActive eq true) and (AddressTable.provision eq (vout.scriptPubKey?.addresses?.lastOrNull() as String))
-            }.lastOrNull()?.run { AddressDao.wrapRow(this) }
+            .select { AddressTable.isActive eq true }
+            .andWhere { AddressTable.wallet eq WalletDao[walletName].id }
+            .andWhere { AddressTable.provision eq (vout.scriptPubKey?.addresses?.lastOrNull() as String) }
+            .lastOrNull()?.run { AddressDao.wrapRow(this) }
     }
 
     /**
@@ -183,6 +184,7 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
 
     private fun processConfirmedTransaction(tx: Transaction) {
         tx.vout
+            ?.asSequence()
             ?.map { vout -> Pair(findAssociatedAddress(vout), vout) }
             ?.filter { it.first != null }
             ?.map {
@@ -233,7 +235,7 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
 
     }
 
-    fun processTransaction(tx: Transaction, confirmations: Int?, confirmationsRequires: Int) {
+    private fun processTransaction(tx: Transaction, confirmations: Int?, confirmationsRequires: Int) {
         return when {
             confirmations == null -> this.processOrphanTransaction(tx, confirmationsRequires)
             confirmations >= confirmationsRequires -> this.processConfirmedTransaction(tx)
