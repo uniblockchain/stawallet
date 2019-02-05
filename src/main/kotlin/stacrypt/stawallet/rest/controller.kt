@@ -8,11 +8,10 @@ import io.ktor.request.receiveParameters
 import io.ktor.response.respond
 import io.ktor.routing.*
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.transaction
-import stacrypt.stawallet.model.InvoiceDao
-import stacrypt.stawallet.model.InvoiceTable
-import stacrypt.stawallet.model.WalletDao
+import stacrypt.stawallet.model.*
 import stacrypt.stawallet.wallets
 import java.lang.Exception
 
@@ -119,7 +118,30 @@ fun Route.invoicesRout() = route("/invoices") {
 }
 
 fun Route.depositsRout() = route("/deposits") {
+    get {
+        val user = call.request.queryParameters["user"]
+        val wallet = call.request.queryParameters["wallet"]
+        val acceptedOnly = call.request.queryParameters["acceptedOnly"]?.toBoolean() ?: true
+        val page = call.request.queryParameters["page"]?.toInt() ?: 0
 
+        try {
+            transaction {
+                call.respond(
+                    DepositTable.leftJoin(InvoiceTable)
+                        .select { InvoiceTable.wallet eq wallet }
+                        .andWhere { InvoiceTable.user eq user}
+                        .andWhere { InvoiceTable.user eq user}
+                )
+
+                val wallet = wallets.findLast { it.name == call.parameters["walletId"].toString() }!!
+                val invoice = InvoiceDao[call.parameters["invoiceId"]!!.toInt()]
+                if (invoice.wallet.id.value != wallet.name) call.respond(HttpStatusCode.NotFound)
+                call.respond(invoice.export())
+            }
+        } catch (e: Exception) {
+            call.respond(HttpStatusCode.InternalServerError, e.toString())
+        }
+    }
 }
 
 fun Route.withdrawsRout() = route("/withdraws") {

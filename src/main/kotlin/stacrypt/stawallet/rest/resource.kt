@@ -3,6 +3,7 @@ package stacrypt.stawallet.rest
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
 import stacrypt.stawallet.model.AddressDao
+import stacrypt.stawallet.model.DepositDao
 import stacrypt.stawallet.model.InvoiceDao
 import stacrypt.stawallet.model.WalletDao
 import java.util.*
@@ -78,4 +79,28 @@ data class InvoiceResource(
     val creation: DateTime,
     val expiration: DateTime?,
     val address: AddressResource
+)
+
+fun DepositDao.export(role: ClientRole? = null) =
+    DepositResource(
+        id = id.value,
+        invoice = invoice.export(role),
+        grossAmount = grossAmount,
+        netAmount = netAmount,
+        confirmationsLeft = invoice.export(role),
+        status = when{
+
+        },
+        error = error,
+    )
+
+data class DepositResource(
+    val id: Int,
+    val invoice: InvoiceResource,
+    val grossAmount: Long,
+    val netAmount: Long,
+    val txhash: String,
+    val confirmationsLeft: Int,
+    val status: String?, // `orphan`, `confirmed`, `unconfirmed`, `failed`, `unacceptable`
+    val error: String?
 )

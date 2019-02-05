@@ -124,7 +124,48 @@ object InvoiceTable : IntIdTable("invoice") {
 }
 
 /**
- * Any payment which is found (just to our HOT wallet)
+ * It is a proof for a reality of a transaction or deposit or etc. in the real world blockchain.
+ * Contains the block details, transaction detail and more.
+ *
+ * Note: These records are accepted unless is referred by a `deposit`.
+ * So we can find the information of pending or unaccepted transactions here
+ */
+object ProofTable : IntIdTable("proof") {
+
+    /**
+     * The invoice of the this deposit is based on
+     */
+    val invoice = reference("invoice", InvoiceTable)
+
+    /**
+     * Exact amount in the transaction
+     */
+    val amount = varchar("amount", 32)
+
+    /**
+     * Block hash of where the transaction located at
+     */
+    val txHash = varchar("tx_hash", 256)
+
+    /**
+     * Block hash of where the transaction located at
+     */
+    val blockHash = varchar("block_hash", 256).nullable()
+
+    /**
+     * Block height of where the transaction located at
+     */
+    val blockHeight = integer("block_height").nullable()
+
+    /**
+     * Extra information, link, etc
+     */
+    val extra = varchar("extra", 1_000).nullable()
+
+}
+
+/**
+ * Any payment which is found (just to our HOT wallet). These deposits are 100% accepted by us.
  */
 object DepositTable : IntIdTable() {
 
@@ -132,6 +173,11 @@ object DepositTable : IntIdTable() {
      * The invoice of the this deposit is based on
      */
     val invoice = reference("invoice", InvoiceTable)
+
+    /**
+     * The proof of this deposit on the related blockchain  on the real world
+     */
+    val proof = reference("proof", ProofTable)
 
     /**
      * The amount we really received
@@ -144,14 +190,9 @@ object DepositTable : IntIdTable() {
     val netAmount = long("netAmount")
 
     /**
-     * Origin of this deposit on the related blockchain
+     * Extra information (if required)
      */
-    val txid = varchar("txid", 256)
-
-    /**
-     * Reason of unacceptance, `null` means acceptable
-     */
-    val error = varchar("error", 128).nullable()
+    val extra = varchar("description", 1_000).nullable()
 }
 
 enum class TaskType {
@@ -213,51 +254,6 @@ object TaskTable : IntIdTable("task") {
      * Some type of stacktrace for the actions, errors, etc.
      */
     val trace = varchar("trace", 10_000)
-}
-
-enum class EventSide { RECEIVED, SENT }
-enum class EventSeverity { INFO, WARNING, ERROR, KILLER }
-
-/**
- * Whatever happened to the blockchain which has any effect on our wallet
- */
-object EventTable : IntIdTable("event") {
-
-    /**
-     * Which wallet?
-     */
-    val wallet = reference("wallet", WalletTable.id)
-
-    /**
-     * Which key is related to?
-     */
-    val address = reference("address", AddressTable.id)
-
-    /**
-     * What is the transaction id in blockchain?
-     */
-    val txid = varchar("txid", 256).nullable()
-
-    /**
-     * Height of the block which this happened
-     */
-    val blocHeight = long("blockHeight").nullable()
-
-    /**
-     * Any message?
-     */
-    val message = varchar("message", 256).nullable()
-
-    /**
-     * Any extra data?
-     */
-    val payload = varchar("payload", 256).nullable()
-
-    /**
-     * Severity
-     */
-    val severity = enumeration("severity", EventSeverity::class).default(EventSeverity.INFO)
-
 }
 
 /**

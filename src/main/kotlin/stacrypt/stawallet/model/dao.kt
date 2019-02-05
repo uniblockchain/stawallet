@@ -47,26 +47,26 @@ class TaskDao(id: EntityID<Int>) : IntEntity(id) {
     var txid by TaskTable.txid
 }
 
+class ProofDao(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<ProofDao>(ProofTable)
+
+    var invoice by InvoiceDao referencedOn ProofTable.invoice
+    var amount by ProofTable.amount
+    var txHash by ProofTable.txHash
+    var blockHash by ProofTable.blockHash
+    var blockHeight by ProofTable.blockHeight
+    var extra by ProofTable.extra
+
+}
+
 class DepositDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<DepositDao>(DepositTable)
 
     var invoice by InvoiceDao referencedOn DepositTable.invoice
+    var proof by ProofDao referencedOn DepositTable.proof
     var grossAmount by DepositTable.grossAmount
     var netAmount by DepositTable.netAmount
-    var txid by DepositTable.txid
-    var error by DepositTable.error
-}
-
-class EventDao(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<EventDao>(EventTable)
-
-    var wallet by WalletDao referencedOn EventTable.wallet
-    var address by AddressDao referencedOn EventTable.address
-    var txid by EventTable.txid
-    var blocHeight by EventTable.blocHeight
-    var message by EventTable.message
-    var payload by EventTable.payload
-    var severity by EventTable.severity
+    var extra by DepositTable.extra
 }
 
 class UtxoDao(id: EntityID<Int>) : IntEntity(id) {
