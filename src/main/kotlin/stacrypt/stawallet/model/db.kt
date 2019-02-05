@@ -97,7 +97,7 @@ object InvoiceTable : IntIdTable("invoice") {
     /**
      * The address to be paid
      */
-    val address = reference("address", AddressTable.id)
+    val address = reference("address", AddressTable)
 
     /**
      * invoiceId, data, payload, etc.
@@ -136,7 +136,7 @@ object DepositTable : IntIdTable() {
     /**
      * The invoice of the this deposit is based on (if any, might be anonymous. We will appreciate!)
      */
-    val invoice = reference("invoice", InvoiceTable.id).nullable()
+    val invoice = reference("invoice", InvoiceTable).nullable()
 
     /**
      * The amount we really received
