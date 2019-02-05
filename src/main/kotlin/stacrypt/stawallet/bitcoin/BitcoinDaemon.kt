@@ -35,82 +35,110 @@ object bitcoind : WalletDaemon() {
         }
     }
 
-}
-
-const val WATCHER_TRANSACTION_DELAY = 1_000L
-const val WATCHER_BLOCK_DELAY = 10_000L
-
-suspend fun startBitcoindWatcher() {
-    coroutineScope {
-        supervisorScope {}
+    const val WATCHER_TRANSACTION_DELAY = 1_000L
+    const val WATCHER_BLOCK_DELAY = 10_000L
 
 
-        val transactionJob = launch {
-            while (true) {
-                delay(WATCHER_TRANSACTION_DELAY)
+    suspend fun startWatchers() {
+        coroutineScope {
+            supervisorScope {}
 
+            val blockWatcherJob = startBlockWatcherJob(this)
+            val transactionWatcherJob = startBlockWatcherJob(this)
+        }
 
-                (bitcoind.rpcClient.getMempoolDescendants() as List<Transaction>).forEach { tx ->
-                    tx.vout
-                        ?.map { vout ->
-                            var associatedAddress: AddressDao? = null
-                            transaction {
-                                associatedAddress = AddressTable
-                                    .select {
-                                        (AddressTable.isActive eq true) and (AddressTable.provision eq (vout.scriptPubKey?.addresses?.lastOrNull() as String))
-                                    }.lastOrNull()?.run { AddressDao.wrapRow(this) }
-                            }
-                            Pair(associatedAddress, vout)
-                        }
-                        ?.filter { it.first != null }
-                        ?.forEach {
-                            // Insert new UTXO
-                            try {
-                                transaction {
-                                    if (UtxoTable.select { (UtxoTable.txid eq tx.hash!!) and (UtxoTable.vout eq it.second.n!!.toInt()) }.count() == 0) {
-                                        // This is new UTXO!
-                                        UtxoDao.new {
-                                            this.address = it.first!!
-                                            this.wallet = it.first!!.wallet
-                                            this.txid = tx.hash!!
-                                            this.vout = it.second.n!!.toInt()
-                                            this.amount = it.second.value!!.toLong()
-                                        }
-                                    }
-                                }
-                            } catch (e: Exception) {
+    }
 
-                            }
+    private fun startTransactionWatcherJob(scope: CoroutineScope) = scope.launch {
+        delay(WATCHER_TRANSACTION_DELAY)
+        (bitcoind.rpcClient.getMempoolDescendants() as List<Transaction>).forEach { tx ->
 
+        }
+    }
 
-                            // Insert new Deposit
-                            try {
-                                transaction {
-                                    // Find the related invoice
-                                    val relatedInvoice = InvoiceTable
-                                        .select { InvoiceTable.wallet eq it.first!!.wallet.id }
-                                        .andWhere { InvoiceTable.address eq it.first!!.id }
-                                        .andWhere { InvoiceTable.expiration.isNull() or (InvoiceTable.expiration greater DateTime.now()) }
-                                        .lastOrNull()?.run { InvoiceDao.wrapRow(this) }
+    private fun findAssociatedAddress(vout: TransactionOutput) = transaction {
+        AddressTable
+            .select {
+                (AddressTable.isActive eq true) and (AddressTable.provision eq (vout.scriptPubKey?.addresses?.lastOrNull() as String))
+            }.lastOrNull()?.run { AddressDao.wrapRow(this) }
+    }
 
-                                    if (DepositTable.select { DepositTable.invoice eq relatedInvoice!!.id }.count() == 0) {
-                                        // This is new UTXO!
-                                        UtxoDao.new {
-                                            this.address = it.first!!
-                                            this.wallet = it.first!!.wallet
-                                            this.txid = tx.hash!!
-                                            this.vout = it.second.n!!.toInt()
-                                            this.amount = it.second.value!!.toLong()
-                                        }
-                                    }
-                                }
-                            } catch (e: Exception) {
+    
 
-                            }
-                        }
+    /**
+     * Here we make a new utxo record, because we are SURE that it is a fully confirmed utxo
+     */
+    private fun insertNewUtxo(address: AddressDao, transaction: Transaction, transactionOutput: TransactionOutput) =
+        transaction {
+            if (UtxoTable.select { (UtxoTable.txid eq transaction.hash!!) and (UtxoTable.vout eq transactionOutput.n!!.toInt()) }.count() == 0) {
+                // This is new UTXO!
+                UtxoDao.new {
+                    this.address = address
+                    this.wallet = address.wallet
+                    this.txid = transaction.hash!!
+                    this.vout = transactionOutput.n!!.toInt()
+                    this.amount = transactionOutput.value!!.toLong()
+                }
+            }
+
+        }
+
+    /**
+     * Here we make a new deposit record, because we are SURE that it is a fully confirmed transaction.
+     */
+    private fun insertNewDeposit(address: AddressDao, transaction: Transaction, transactionOutput: TransactionOutput) =
+        transaction {
+            transaction {
+                // Find the related invoice
+                val relatedInvoice = InvoiceTable
+                    .select { InvoiceTable.wallet eq address.wallet.id }
+                    .andWhere { InvoiceTable.address eq address.id }
+                    .andWhere { InvoiceTable.expiration.isNull() or (InvoiceTable.expiration greater DateTime.now()) }
+                    .lastOrNull()?.run { InvoiceDao.wrapRow(this) }
+
+                if (DepositTable.select { DepositTable.invoice eq relatedInvoice!!.id }.count() == 0) {
+                    // This is new UTXO!
+                    UtxoDao.new {
+                        this.address = address
+                        this.wallet = address.wallet
+                        this.txid = transaction.hash!!
+                        this.vout = transactionOutput.n!!.toInt()
+                        this.amount = transactionOutput.value!!.toLong()
+                    }
                 }
             }
         }
+
+
+    private fun startBlockWatcherJob(scope: CoroutineScope) = scope.launch {
+        while (true) {
+            delay(WATCHER_BLOCK_DELAY)
+
+
+            (bitcoind.rpcClient.getMempoolDescendants() as List<Transaction>).forEach { tx ->
+                tx.vout
+                    ?.map { vout -> Pair(findAssociatedAddress(vout), vout) }
+                    ?.filter { it.first != null }
+                    ?.forEach {
+                        // Insert new UTXO
+                        try {
+                            insertNewUtxo(it.first!!, tx, it.second)
+                        } catch (e: Exception) {
+
+                        }
+
+
+                        // Insert new Deposit
+                        try {
+                            insertNewDeposit(it.first!!, tx, it.second)
+                        } catch (e: Exception) {
+
+                        }
+                    }
+            }
+        }
     }
+
+
 }
 
