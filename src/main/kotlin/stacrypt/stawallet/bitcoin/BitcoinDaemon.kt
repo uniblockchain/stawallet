@@ -10,7 +10,9 @@ import org.joda.time.DateTime
 import stacrypt.stawallet.DaemonState
 import stacrypt.stawallet.WalletDaemon
 import stacrypt.stawallet.model.*
+import stacrypt.stawallet.sumByLong
 import java.lang.Exception
+import kotlin.math.max
 
 object bitcoind : WalletDaemon() {
 
@@ -47,13 +49,6 @@ object bitcoind : WalletDaemon() {
             val transactionWatcherJob = startBlockWatcherJob(this)
         }
 
-    }
-
-    private fun startTransactionWatcherJob(scope: CoroutineScope) = scope.launch {
-        delay(WATCHER_TRANSACTION_DELAY)
-        (bitcoind.rpcClient.getMempoolDescendants() as List<Transaction>).forEach { tx ->
-
-        }
     }
 
     /**
@@ -98,9 +93,20 @@ object bitcoind : WalletDaemon() {
                     this.vout = transactionOutput.n!!.toInt()
                     this.amount = transactionOutput.value!!.toLong()
                 }
+            } else {
+                // We are reading a blockchain again. This is dangerous!!!
+
             }
 
         }
+
+    private fun findRelatedInvoice(address: AddressDao): InvoiceDao? = transaction {
+        InvoiceTable
+            .select { InvoiceTable.wallet eq address.wallet.id }
+            .andWhere { InvoiceTable.address eq address.id }
+            .andWhere { InvoiceTable.expiration.isNull() or (InvoiceTable.expiration greater DateTime.now()) }
+            .lastOrNull()?.run { InvoiceDao.wrapRow(this) }
+    }
 
     /**
      * Here we make a new deposit record, because we are SURE that it is a fully confirmed transaction.
@@ -113,53 +119,95 @@ object bitcoind : WalletDaemon() {
      * call this method. It means we have a unique constraint by transaction hash and invoice.
      *
      */
-    private fun insertNewDeposit(address: AddressDao, transaction: Transaction, transactionOutput: TransactionOutput) =
+    private fun insertNewDeposit(
+        relatedInvoice: InvoiceDao?,
+        transactionHash: String,
+        amount: Long,
+        feeAmount: Long = 0L
+    ) =
         transaction {
             // Find the related invoice
-            val relatedInvoice = InvoiceTable
-                .select { InvoiceTable.wallet eq address.wallet.id }
-                .andWhere { InvoiceTable.address eq address.id }
-                .andWhere { InvoiceTable.expiration.isNull() or (InvoiceTable.expiration greater DateTime.now()) }
-                .lastOrNull()?.run { InvoiceDao.wrapRow(this) }
-
-            if (DepositTable.select { DepositTable.invoice eq relatedInvoice!!.id }.count() == 0) {
-                // This is new UTXO!
-                UtxoDao.new {
-                    this.address = address
-                    this.wallet = address.wallet
-                    this.txid = transaction.hash!!
-                    this.vout = transactionOutput.n!!.toInt()
-                    this.amount = transactionOutput.value!!.toLong()
+            when {
+                relatedInvoice == null -> {
+                    // It is a anonymous receiving amount. We could'nt proceed this deposit.
+                    // Just throw an exception to inform the admin
+                    // TODO Report to the boss
+                }
+                DepositTable
+                    .select { DepositTable.invoice eq relatedInvoice.id }
+                    .andWhere { DepositTable.txid eq transactionHash }
+                    .count() == 0 -> // This is new UTXO!
+                    DepositDao.new {
+                        this.grossAmount = amount
+                        this.netAmount = max(0, amount - feeAmount)
+                        this.invoice = relatedInvoice
+                        this.txid = transactionHash
+                    }
+                else -> {
+                    // We are reading a blockchain again. This is dangerous!!!
+                    // TODO Report to the boss
                 }
             }
         }
+
+    private fun processConfirmedTransaction(tx: Transaction) {
+        tx.vout
+            ?.map { vout -> Pair(findAssociatedAddress(vout), vout) }
+            ?.filter { it.first != null }
+            ?.map {
+
+                /**
+                 * Insert new UTXOs
+                 */
+
+                try {
+                    insertNewUtxo(it.first!!, tx, it.second)
+                } catch (e: Exception) {
+
+                    // TODO Report to the boss
+                }
+                it
+            }
+            ?.map {
+                Pair(findRelatedInvoice(it.first!!), it.second)
+            }?.filter {
+                it.first != null
+            }?.groupBy {
+                it.first!!.id.value
+            }?.forEach { _, v ->
+
+                /**
+                 * Insert new Deposit
+                 */
+
+                try {
+                    insertNewDeposit(
+                        relatedInvoice = v.firstOrNull()?.first,
+                        transactionHash = tx.hash!!,
+                        amount = v.sumByLong { it.second.value!!.toLong() }
+                    )
+                } catch (e: Exception) {
+
+                    // TODO Report to the boss
+                }
+
+            }
+    }
+
+    private fun startTransactionWatcherJob(scope: CoroutineScope) = scope.launch {
+        delay(WATCHER_TRANSACTION_DELAY)
+        (bitcoind.rpcClient.getMempoolDescendants() as List<Transaction>).forEach { tx ->
+
+        }
+    }
 
 
     private fun startBlockWatcherJob(scope: CoroutineScope) = scope.launch {
         while (true) {
             delay(WATCHER_BLOCK_DELAY)
 
-
             (bitcoind.rpcClient.getMempoolDescendants() as List<Transaction>).forEach { tx ->
-                tx.vout
-                    ?.map { vout -> Pair(findAssociatedAddress(vout), vout) }
-                    ?.filter { it.first != null }
-                    ?.forEach {
-                        // Insert new UTXO
-                        try {
-                            insertNewUtxo(it.first!!, tx, it.second)
-                        } catch (e: Exception) {
-
-                        }
-
-
-                        // Insert new Deposit
-                        try {
-                            insertNewDeposit(it.first!!, tx, it.second)
-                        } catch (e: Exception) {
-
-                        }
-                    }
+                processConfirmedTransaction(tx)
             }
         }
     }

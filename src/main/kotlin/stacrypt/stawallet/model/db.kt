@@ -129,14 +129,9 @@ object InvoiceTable : IntIdTable("invoice") {
 object DepositTable : IntIdTable() {
 
     /**
-     * The related wallet
+     * The invoice of the this deposit is based on
      */
-    val wallet = reference("wallet", WalletTable)
-
-    /**
-     * The invoice of the this deposit is based on (if any, might be anonymous. We will appreciate!)
-     */
-    val invoice = reference("invoice", InvoiceTable).nullable()
+    val invoice = reference("invoice", InvoiceTable)
 
     /**
      * The amount we really received
@@ -151,12 +146,12 @@ object DepositTable : IntIdTable() {
     /**
      * Origin of this deposit on the related blockchain
      */
-    val txid = varchar("txid", 256).nullable()
+    val txid = varchar("txid", 256)
 
     /**
      * Reason of unacceptance, `null` means acceptable
      */
-    val error = varchar("user", 128).nullable()
+    val error = varchar("error", 128).nullable()
 }
 
 enum class TaskType {
