@@ -9,6 +9,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
 import stacrypt.stawallet.DaemonState
 import stacrypt.stawallet.WalletDaemon
+import stacrypt.stawallet.config
 import stacrypt.stawallet.model.*
 import stacrypt.stawallet.sumByLong
 import java.lang.Exception
@@ -16,7 +17,7 @@ import kotlin.math.max
 
 object bitcoind : WalletDaemon() {
 
-    fun retrieveDispatcher() = newSingleThreadContext("bitcoind-watcher")
+    private val blockchainWatchers: ArrayList<Pair<CoroutineScope, BitcoinBlockchainWatcher>> = ArrayList()
 
     override var status: DaemonState
         get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
@@ -31,24 +32,54 @@ object bitcoind : WalletDaemon() {
         rpcClient.estimateSmartFee(6).feerate?.btcToSat()
     }
 
-    fun startWatcher() {
-        runBlocking(retrieveDispatcher()) {
+    fun startBlockchainWatcher(walletName: String, requiresConfirmations: Int) {
+        runBlocking {
+            supervisorScope {
+                val watcher = BitcoinBlockchainWatcher(walletName, requiresConfirmations)
+                blockchainWatchers.add(Pair(this, watcher))
+                watcher.startWatcher()
+            }
 
         }
     }
 
-    const val WATCHER_TRANSACTION_DELAY = 1_000L
-    const val WATCHER_BLOCK_DELAY = 10_000L
+}
 
+class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions: Int) {
 
-    suspend fun startWatchers() {
-        coroutineScope {
-            supervisorScope {}
+    companion object {
+        const val WATCHER_TRANSACTION_DELAY = 1_000L
+        const val WATCHER_BLOCK_DELAY = 10_000L
+    }
 
-            val blockWatcherJob = startBlockWatcherJob(this)
-            val transactionWatcherJob = startBlockWatcherJob(this)
+    val dispatcher: CoroutineDispatcher = newSingleThreadContext("$walletName-watcher")
+
+    private fun startMempoolWatcherJob(scope: CoroutineScope) = scope.launch {
+        while (true) {
+            delay(WATCHER_TRANSACTION_DELAY)
+            (bitcoind.rpcClient.getMempoolDescendants() as List<Transaction>).forEach { tx ->
+                processTransaction(tx, null, requiresTransactions)
+            }
         }
+    }
 
+
+    private fun startBlockWatcherJob(scope: CoroutineScope) = scope.launch {
+        while (true) {
+            delay(WATCHER_BLOCK_DELAY)
+
+            (bitcoind.rpcClient.getMempoolDescendants() as List<Transaction>).forEach { tx ->
+                processTransaction(tx, 0, requiresTransactions)
+            }
+        }
+    }
+
+    fun startWatcher() {
+        runBlocking(this.dispatcher) {
+            val blockWatcherJob = startBlockWatcherJob(this)
+            val mempoolWatcherJob = startMempoolWatcherJob(this)
+
+        }
     }
 
     /**
@@ -67,7 +98,7 @@ object bitcoind : WalletDaemon() {
      * Since the transaction fully confirmed, regardless of the previous event of the transaction, we'll insert a new
      * confirmation event for the transaction and related invoice.
      */
-    private fun addNewConfirmationEvent(
+    private fun insertNewConfirmationEvent(
         address: AddressDao,
         transaction: Transaction,
         transactionOutput: TransactionOutput
@@ -194,22 +225,21 @@ object bitcoind : WalletDaemon() {
             }
     }
 
-    private fun startTransactionWatcherJob(scope: CoroutineScope) = scope.launch {
-        delay(WATCHER_TRANSACTION_DELAY)
-        (bitcoind.rpcClient.getMempoolDescendants() as List<Transaction>).forEach { tx ->
+    private fun processUnconfirmedTransaction(tx: Transaction, confirmations: Int, confirmationsRequires: Int) {
 
-        }
     }
 
+    private fun processOrphanTransaction(tx: Transaction, confirmationsRequires: Int) {
 
-    private fun startBlockWatcherJob(scope: CoroutineScope) = scope.launch {
-        while (true) {
-            delay(WATCHER_BLOCK_DELAY)
+    }
 
-            (bitcoind.rpcClient.getMempoolDescendants() as List<Transaction>).forEach { tx ->
-                processConfirmedTransaction(tx)
-            }
+    fun processTransaction(tx: Transaction, confirmations: Int?, confirmationsRequires: Int) {
+        return when {
+            confirmations == null -> this.processOrphanTransaction(tx, confirmationsRequires)
+            confirmations >= confirmationsRequires -> this.processConfirmedTransaction(tx)
+            else -> this.processUnconfirmedTransaction(tx, confirmations, confirmationsRequires)
         }
+
     }
 
 
