@@ -13,6 +13,9 @@ import stacrypt.stawallet.model.*
 import java.lang.Exception
 
 object bitcoind : WalletDaemon() {
+
+    fun retrieveDispatcher() = newSingleThreadContext("bitcoind-watcher")
+
     override var status: DaemonState
         get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
         set(value) {}
@@ -27,7 +30,7 @@ object bitcoind : WalletDaemon() {
     }
 
     fun startWatcher() {
-        runBlocking(BicoinDaemonWatcher.retrieveDispatcher()) {
+        runBlocking(retrieveDispatcher()) {
 
         }
     }
@@ -86,11 +89,11 @@ suspend fun startBitcoindWatcher() {
                                     // Find the related invoice
                                     val relatedInvoice = InvoiceTable
                                         .select { InvoiceTable.wallet eq it.first!!.wallet.id }
-                                        .andWhere { InvoiceTable.address eq it.first!!.id}
-                                        .andWhere { InvoiceTable.expiration.isNull() or (InvoiceTable.expiration greater DateTime.now())}
+                                        .andWhere { InvoiceTable.address eq it.first!!.id }
+                                        .andWhere { InvoiceTable.expiration.isNull() or (InvoiceTable.expiration greater DateTime.now()) }
                                         .lastOrNull()?.run { InvoiceDao.wrapRow(this) }
 
-                                    if (DepositTable.select { DepositTable.invoice eq relatedInvoice!!.id}.count() == 0) {
+                                    if (DepositTable.select { DepositTable.invoice eq relatedInvoice!!.id }.count() == 0) {
                                         // This is new UTXO!
                                         UtxoDao.new {
                                             this.address = it.first!!
@@ -111,20 +114,3 @@ suspend fun startBitcoindWatcher() {
     }
 }
 
-class BicoinDaemonWatcher(private val daemon: WalletDaemon) {
-
-    companion object {
-        fun retrieveDispatcher() = newSingleThreadContext("bitcoind-watcher")
-    }
-
-    private val dispatcher: ExecutorCoroutineDispatcher =
-        private
-    val supervisorJob: Job
-    private val transactionWatcherJob: Job
-    private val blockWatcherJob: Job
-
-    init {
-
-    }
-
-}

@@ -28,7 +28,7 @@ class BitcoinWallet(name: String, config: Config, network: String) :
 
     override suspend fun invoiceDeposits(invoiceId: Int): List<DepositDao> =
         DepositDao.wrapRows(
-            DepositTable.select { DepositTable.invoiceId eq invoiceId }.orderBy(DepositTable.id, false)
+            DepositTable.select { DepositTable.invoice eq InvoiceDao[invoiceId].id }.orderBy(DepositTable.id, false)
         ).toList()
 
     override suspend fun lastUsableInvoice(user: String): InvoiceDao? =

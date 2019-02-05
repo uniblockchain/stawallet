@@ -29,7 +29,7 @@ class InvoiceDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<InvoiceDao>(InvoiceTable)
 
     var wallet by WalletDao referencedOn InvoiceTable.wallet
-    var address by AddressDao referencedOn InvoiceTable.addressId
+    var address by AddressDao referencedOn InvoiceTable.address
     var extra by InvoiceTable.extra
     var user by InvoiceTable.user
     var creation by InvoiceTable.creation
@@ -50,7 +50,8 @@ class TaskDao(id: EntityID<Int>) : IntEntity(id) {
 class DepositDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<DepositDao>(DepositTable)
 
-    var invoice by DepositTable.invoiceId
+    var wallet by WalletDao referencedOn DepositTable.wallet
+    var invoice by InvoiceDao optionalReferencedOn DepositTable.invoice
     var grossAmount by DepositTable.grossAmount
     var netAmount by DepositTable.netAmount
     var txid by DepositTable.txid
@@ -61,7 +62,7 @@ class EventDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<EventDao>(EventTable)
 
     var wallet by WalletDao referencedOn EventTable.wallet
-    var address by AddressDao referencedOn EventTable.addressId
+    var address by AddressDao referencedOn EventTable.address
     var txid by EventTable.txid
     var blocHeight by EventTable.blocHeight
     var message by EventTable.message

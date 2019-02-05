@@ -127,6 +127,12 @@ object InvoiceTable : IntIdTable("invoice") {
  * Any payment which is found (just to our HOT wallet)
  */
 object DepositTable : IntIdTable() {
+
+    /**
+     * The related wallet
+     */
+    val wallet = reference("wallet", WalletTable)
+
     /**
      * The invoice of the this deposit is based on (if any, might be anonymous. We will appreciate!)
      */
