@@ -11,6 +11,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.transaction
+import org.joda.time.DateTime
 import stacrypt.stawallet.model.*
 import stacrypt.stawallet.wallets
 import java.lang.Exception
@@ -194,10 +195,11 @@ fun Route.withdrawsRout() = route("/withdraws") {
 
             try {
                 transaction {
-                    if (TaskTable.select { TaskTable.businessUid eq businessUid }.count() > 0)
+                    val taskWithSameBusinessId = TaskTable.select { TaskTable.businessUid eq businessUid }.firstOrNull()
+                    if (taskWithSameBusinessId != null)
                         call.respond(
                             HttpStatusCode.Conflict,
-                            "This business id has been used before"
+                            "This business id has been already used by withdraw with id:$taskWithSameBusinessId"
                         )
                     else
                         call.respond(
@@ -214,6 +216,63 @@ fun Route.withdrawsRout() = route("/withdraws") {
                                 this.trace = "Issued"
                             }
                         )
+                }
+
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, e.toString())
+            }
+        }
+
+        put("/{id}") {
+            val form: Parameters = call.receiveParameters()
+            val isManual = form["isManual"]?.toBoolean()
+            val finalNetworkFee = form["finalNetworkFee"]?.toLong()
+            val txid = form["txid"]
+
+            try {
+                transaction {
+                    val task = TaskDao.findById(call.parameters["id"]!!.toInt())
+                    if (task == null || task.wallet.id.value != call.parameters["walletId"]!!) {
+                        call.respond(
+                            HttpStatusCode.NotFound,
+                            "Withdraw record not found"
+                        )
+                    } else {
+                        if (isManual == true && arrayOf(
+                                TaskStatus.QUEUED,
+                                TaskStatus.ERROR,
+                                TaskStatus.WAITING_LOW_BALANCE
+                            ).contains(task.status)
+                        )
+                            task.status = TaskStatus.WAITING_MANUAL
+                        else if (isManual == false && task.status == TaskStatus.WAITING_MANUAL)
+                            task.status = TaskStatus.QUEUED
+                        else if (isManual != null)
+                            return@transaction call.respond(
+                                HttpStatusCode.BadRequest,
+                                "The withdraw task is in ${task.status} state and can not change to ${if (isManual) "manual" else "automat"}."
+                            )
+
+
+                        if (finalNetworkFee != null && txid != null) {
+                            if (task.status == TaskStatus.WAITING_MANUAL)
+                                return@transaction call.respond(
+                                    HttpStatusCode.BadRequest,
+                                    "The withdraw task is in ${task.status} state and can not be submitted manually."
+                                )
+
+                            task.txid = txid
+                            task.finalNetworkFee = finalNetworkFee
+                            task.paidAt = DateTime.now()
+                            task.status = TaskStatus.PUSHED
+                        } else if (finalNetworkFee != null || txid != null) {
+                            return@transaction call.respond(
+                                HttpStatusCode.BadRequest,
+                                "Please provide valid values 'finalNetworkFee' and 'txid' to submit a manual withdrawal."
+                            )
+                        }
+                    }
+                    call.respond(task!!)
                 }
 
             } catch (e: Exception) {
