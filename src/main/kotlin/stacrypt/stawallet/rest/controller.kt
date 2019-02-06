@@ -120,23 +120,34 @@ fun Route.invoicesRout() = route("/invoices") {
 fun Route.depositsRout() = route("/deposits") {
     get {
         val user = call.request.queryParameters["user"]
-        val wallet = call.request.queryParameters["wallet"]
-        val acceptedOnly = call.request.queryParameters["acceptedOnly"]?.toBoolean() ?: true
+        val isAccepted = call.request.queryParameters["isAccepted"]?.toBoolean() ?: true
         val page = call.request.queryParameters["page"]?.toInt() ?: 0
 
         try {
             transaction {
-                call.respond(
-                    DepositTable.leftJoin(InvoiceTable)
-                        .select { InvoiceTable.wallet eq wallet }
-                        .andWhere { InvoiceTable.user eq user}
-                        .andWhere { InvoiceTable.user eq user}
-                )
+                val wallet = wallets.findLast { it.name == call.parameters["wallet"].toString() }!!
 
-                val wallet = wallets.findLast { it.name == call.parameters["walletId"].toString() }!!
-                val invoice = InvoiceDao[call.parameters["invoiceId"]!!.toInt()]
-                if (invoice.wallet.id.value != wallet.name) call.respond(HttpStatusCode.NotFound)
-                call.respond(invoice.export())
+                if (isAccepted)
+                    call.respond(
+                        DepositDao.wrapRows(
+                            DepositTable.leftJoin(InvoiceTable)
+                                .select { InvoiceTable.wallet eq wallet.name }
+                                .andWhere { InvoiceTable.user eq user }
+                                .orderBy(DepositTable.id)
+                                .limit(DepositResource.PAGE_SIZE, DepositResource.PAGE_SIZE * page)
+                        ).forEach { it.export(null, wallet) }
+                    )
+                else
+                    call.respond(
+                        ProofDao.wrapRows(
+                            ProofTable.leftJoin(InvoiceTable)
+                                .select { InvoiceTable.wallet eq wallet.name }
+                                .andWhere { InvoiceTable.user eq user }
+                                .orderBy(ProofTable.id)
+                                .limit(ProofResource.PAGE_SIZE, ProofResource.PAGE_SIZE * page)
+                        ).forEach { it.exportAsDeposit(null, wallet) }
+                    )
+
             }
         } catch (e: Exception) {
             call.respond(HttpStatusCode.InternalServerError, e.toString())
