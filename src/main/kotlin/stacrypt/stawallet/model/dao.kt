@@ -56,6 +56,7 @@ class ProofDao(id: EntityID<Int>) : IntEntity(id) {
     var blockHash by ProofTable.blockHash
     var blockHeight by ProofTable.blockHeight
     var extra by ProofTable.extra
+    var error by ProofTable.error
 
 }
 

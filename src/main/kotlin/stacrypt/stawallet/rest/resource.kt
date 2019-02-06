@@ -84,12 +84,7 @@ fun DepositDao.export(role: ClientRole? = null, wallet: stacrypt.stawallet.Walle
         grossAmount = this.grossAmount,
         netAmount = this.netAmount,
         confirmationsLeft = confirmationsLeft,
-        status = when {
-            (confirmationsLeft != null) && (confirmationsLeft >= wallet.requiredConfirmations) -> DepositStatusResource.ACCEPTED
-            (confirmationsLeft != null) && (confirmationsLeft < wallet.requiredConfirmations) -> DepositStatusResource.WAITING_TO_BE_CONFIRMED
-            confirmationsLeft == null -> DepositStatusResource.ORPHAN
-            else -> DepositStatusResource.FAILED
-        },
+        status = ProofResource.status(this.proof, wallet.requiredConfirmations, confirmationsLeft),
         proof = this.proof.export(role, wallet),
         extra = this.extra
     )
@@ -100,27 +95,63 @@ fun ProofDao.export(role: ClientRole? = null, wallet: stacrypt.stawallet.Wallet)
         txHash = this.txHash,
         blockHeight = this.blockHeight,
         blockHash = this.blockHash,
-        link = wallet.blockchainExplorerTxLink(this.txHash)
+        link = wallet.blockchainExplorerTxLink(this.txHash),
+        extra = this.extra,
+        error = this.error
     )
+
+fun ProofDao.exportAsDeposit(role: ClientRole? = null, wallet: stacrypt.stawallet.Wallet): DepositResource {
+    val confirmationsLeft = this.blockHeight?.minus(wallet.latestBlockHeight)?.unaryMinus()
+    return DepositResource(
+        id = null,
+        invoice = invoice.export(role),
+        grossAmount = this.amount.toLong(),
+        netAmount = null,
+        confirmationsLeft = confirmationsLeft,
+        status = ProofResource.status(this, wallet.requiredConfirmations, confirmationsLeft),
+        proof = this.export(role, wallet),
+        extra = null
+    )
+}
 
 enum class DepositStatusResource {
     ACCEPTED, WAITING_TO_BE_CONFIRMED, ORPHAN, FAILED, UNACCEPTABLE
 }
 
 data class DepositResource(
-    val id: Int,
+    val id: Int?,
     val invoice: InvoiceResource,
     val grossAmount: Long,
-    val netAmount: Long,
+    val netAmount: Long?,
     val proof: ProofResource,
     val confirmationsLeft: Int?,
     val status: DepositStatusResource,
     val extra: String?
-)
+) {
+    companion object {
+        val PAGE_SIZE = 20
+    }
+}
 
 data class ProofResource(
     val txHash: String?,
     val blockHash: String?,
     val blockHeight: Int?,
-    val link: String?
-)
+    val link: String?,
+    val extra: String?,
+    val error: String?
+) {
+    companion object {
+        val PAGE_SIZE = 20
+
+        fun status(proof: ProofDao, requiredConfirmations: Int, confirmationsLeft: Int?) = when {
+            (proof.error != null) -> DepositStatusResource.UNACCEPTABLE
+            (confirmationsLeft != null) && (confirmationsLeft >= requiredConfirmations) -> DepositStatusResource.ACCEPTED
+            (confirmationsLeft != null) && (confirmationsLeft < requiredConfirmations) -> DepositStatusResource.WAITING_TO_BE_CONFIRMED
+            confirmationsLeft == null -> DepositStatusResource.ORPHAN
+            else -> DepositStatusResource.FAILED
+        }
+
+    }
+
+}

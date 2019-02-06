@@ -162,6 +162,11 @@ object ProofTable : IntIdTable("proof") {
      */
     val extra = varchar("extra", 1_000).nullable()
 
+    /**
+     * Reason of unacceptability (`null` means `without-error`)
+     */
+    val error = varchar("error", 1_000).nullable()
+
 }
 
 /**
