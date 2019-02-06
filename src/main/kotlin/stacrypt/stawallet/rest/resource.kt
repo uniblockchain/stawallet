@@ -7,7 +7,7 @@ enum class ClientRole
 
 fun WalletDao.export(role: ClientRole? = null): WalletResource {
     return WalletResource(
-        id = id.toString(),
+        id = this.id.value,
         balance = WalletBalanceResource(balance, unconfirmedBalance),
         secret = WalletSecretResource(seedFingerprint, path),
         onchainStatus = null
@@ -129,7 +129,7 @@ data class DepositResource(
     val extra: String?
 ) {
     companion object {
-        val PAGE_SIZE = 20
+        const val PAGE_SIZE = 20
     }
 }
 
@@ -142,7 +142,7 @@ data class ProofResource(
     val error: String?
 ) {
     companion object {
-        val PAGE_SIZE = 20
+        const val PAGE_SIZE = 20
 
         fun status(proof: ProofDao, requiredConfirmations: Int, confirmationsLeft: Int?) = when {
             (proof.error != null) -> DepositStatusResource.UNACCEPTABLE
@@ -152,6 +152,45 @@ data class ProofResource(
             else -> DepositStatusResource.FAILED
         }
 
+    }
+
+}
+
+fun TaskDao.export(role: ClientRole? = null, wallet: stacrypt.stawallet.Wallet): WithdrawResource =
+    WithdrawResource(
+        id = this.id.value,
+        wallet = this.wallet.id.value,
+        netAmount = this.netAmount,
+        grossAmount = this.grossAmount,
+        estimatedNetworkFee = this.estimatedNetworkFee,
+        finalNetworkFee = this.finalNetworkFee,
+        type = this.type.toString().toLowerCase(),
+        status = this.status.toString().toLowerCase(),
+        txid = this.txid,
+        issuedAt = this.issuedAt,
+        paidAt = this.paidAt,
+        trace = this.trace,
+        proof = this.proof?.export(role, wallet)
+    )
+
+
+data class WithdrawResource(
+    val id: Int,
+    val wallet: String,
+    val netAmount: Long,
+    val grossAmount: Long,
+    val estimatedNetworkFee: Long,
+    val finalNetworkFee: Long?,
+    val type: String,
+    val status: String,
+    val txid: String?,
+    val proof: ProofResource?,
+    val issuedAt: DateTime,
+    val paidAt: DateTime?,
+    val trace: String?
+) {
+    companion object {
+        const val PAGE_SIZE = 20
     }
 
 }
