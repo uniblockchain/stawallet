@@ -192,7 +192,7 @@ object DepositTable : IntIdTable() {
     /**
      * Extra information (if required)
      */
-    val extra = varchar("description", 1_000).nullable()
+    val extra = varchar("extra", 1_000).nullable()
 }
 
 enum class TaskType {

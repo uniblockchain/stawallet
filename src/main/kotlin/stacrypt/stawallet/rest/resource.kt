@@ -1,12 +1,7 @@
 package stacrypt.stawallet.rest
 
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
-import stacrypt.stawallet.model.AddressDao
-import stacrypt.stawallet.model.DepositDao
-import stacrypt.stawallet.model.InvoiceDao
-import stacrypt.stawallet.model.WalletDao
-import java.util.*
+import stacrypt.stawallet.model.*
 
 enum class ClientRole
 
@@ -81,26 +76,51 @@ data class InvoiceResource(
     val address: AddressResource
 )
 
-fun DepositDao.export(role: ClientRole? = null) =
-    DepositResource(
+fun DepositDao.export(role: ClientRole? = null, wallet: stacrypt.stawallet.Wallet): DepositResource {
+    val confirmationsLeft = this.proof.blockHeight?.minus(wallet.latestBlockHeight)?.unaryMinus()
+    return DepositResource(
         id = id.value,
         invoice = invoice.export(role),
-        grossAmount = grossAmount,
-        netAmount = netAmount,
-        confirmationsLeft = invoice.export(role),
-        status = when{
-
+        grossAmount = this.grossAmount,
+        netAmount = this.netAmount,
+        confirmationsLeft = confirmationsLeft,
+        status = when {
+            (confirmationsLeft != null) && (confirmationsLeft >= wallet.requiredConfirmations) -> DepositStatusResource.ACCEPTED
+            (confirmationsLeft != null) && (confirmationsLeft < wallet.requiredConfirmations) -> DepositStatusResource.WAITING_TO_BE_CONFIRMED
+            confirmationsLeft == null -> DepositStatusResource.ORPHAN
+            else -> DepositStatusResource.FAILED
         },
-        error = error,
+        proof = this.proof.export(role, wallet),
+        extra = this.extra
     )
+}
+
+fun ProofDao.export(role: ClientRole? = null, wallet: stacrypt.stawallet.Wallet) =
+    ProofResource(
+        txHash = this.txHash,
+        blockHeight = this.blockHeight,
+        blockHash = this.blockHash,
+        link = wallet.blockchainExplorerTxLink(this.txHash)
+    )
+
+enum class DepositStatusResource {
+    ACCEPTED, WAITING_TO_BE_CONFIRMED, ORPHAN, FAILED, UNACCEPTABLE
+}
 
 data class DepositResource(
     val id: Int,
     val invoice: InvoiceResource,
     val grossAmount: Long,
     val netAmount: Long,
-    val txhash: String,
-    val confirmationsLeft: Int,
-    val status: String?, // `orphan`, `confirmed`, `unconfirmed`, `failed`, `unacceptable`
-    val error: String?
+    val proof: ProofResource,
+    val confirmationsLeft: Int?,
+    val status: DepositStatusResource,
+    val extra: String?
+)
+
+data class ProofResource(
+    val txHash: String?,
+    val blockHash: String?,
+    val blockHeight: Int?,
+    val link: String?
 )

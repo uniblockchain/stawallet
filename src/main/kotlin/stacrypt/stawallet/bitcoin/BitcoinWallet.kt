@@ -26,6 +26,12 @@ data class NotEnoughFundException(val wallet: String, val amountToPay: Long = 0L
 class BitcoinWallet(name: String, config: Config, network: String) :
     Wallet(name, ConfigSecretProvider(config, if (network == NETWORK_MAINNET) 0 else 1), network) {
 
+    override var latestBlockHeight = 0
+    override var requiredConfirmations = config.getInt("requiredConfirmations")
+//        if (config.hasPath("requiredConfirmations")) config.getInt("requiredConfirmations") else null
+
+    override fun blockchainExplorerTxLink(txid: String) = "https://www.blockchain.com/btc/tx/$txid"
+
     override suspend fun invoiceDeposits(invoiceId: Int): List<DepositDao> =
         DepositDao.wrapRows(
             DepositTable.select { DepositTable.invoice eq InvoiceDao[invoiceId].id }.orderBy(DepositTable.id, false)
