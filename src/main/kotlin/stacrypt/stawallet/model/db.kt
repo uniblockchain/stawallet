@@ -396,7 +396,7 @@ object UtxoTable : IntIdTable("utxo") {
      *
      * Note: It will be filled automatically by blockchain watcher
      */
-    val discoveryProof = reference("discovery_proof", ProofTable).nullable()
+    val discoveryProof = reference("discovery_proof", ProofTable)
 
     /**
      * The proof of where we spent this on the real world

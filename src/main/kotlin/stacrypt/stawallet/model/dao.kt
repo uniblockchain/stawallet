@@ -88,6 +88,6 @@ class UtxoDao(id: EntityID<Int>) : IntEntity(id) {
     var txid by UtxoTable.txid
     var vout by UtxoTable.vout
     var isSpent by UtxoTable.isSpent
-    var discoveryProof by UtxoTable.discoveryProof
-    var spendProof by UtxoTable.spendProof
+    var discoveryProof by ProofDao referencedOn UtxoTable.discoveryProof
+    var spendProof by ProofDao optionalReferencedOn UtxoTable.spendProof
 }

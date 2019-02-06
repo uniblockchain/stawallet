@@ -107,14 +107,7 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
 
     }
 
-    /**
-     * Here we make a new utxo record, because we are SURE that it is a fully confirmed utxo.
-     *
-     * Note: We'll make a UTXO record per incoming transaction inputs, and the index of it. Regardless of the
-     * address of the sender. For example if we have 2 input from a single sender, we will generate 2 separated UTXOs.
-     *
-     */
-    private fun insertNewUtxo(address: AddressDao, transaction: Transaction, transactionOutput: TransactionOutput) =
+    private fun findProof(address: AddressDao, transaction: Transaction, transactionOutput: TransactionOutput): ProofDao? =
         transaction {
             if (UtxoTable.select { (UtxoTable.txid eq transaction.hash!!) and (UtxoTable.vout eq transactionOutput.n!!.toInt()) }.count() == 0) {
                 // This is new UTXO!
@@ -124,6 +117,50 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
                     this.txid = transaction.hash!!
                     this.vout = transactionOutput.n!!.toInt()
                     this.amount = transactionOutput.value!!.toLong()
+                }
+            } else {
+                // We are reading a blockchain again. This is dangerous!!!
+
+            }
+
+        }
+
+    private fun insertNewProof(address: AddressDao, transaction: Transaction, transactionOutput: TransactionOutput): ProofDao? =
+        transaction {
+            if (UtxoTable.select { (UtxoTable.txid eq transaction.hash!!) and (UtxoTable.vout eq transactionOutput.n!!.toInt()) }.count() == 0) {
+                // This is new UTXO!
+                UtxoDao.new {
+                    this.address = address
+                    this.wallet = address.wallet
+                    this.txid = transaction.hash!!
+                    this.vout = transactionOutput.n!!.toInt()
+                    this.amount = transactionOutput.value!!.toLong()
+                }
+            } else {
+                // We are reading a blockchain again. This is dangerous!!!
+
+            }
+
+        }
+
+    /**
+     * Here we make a new utxo record, because we are SURE that it is a fully confirmed utxo.
+     *
+     * Note: We'll make a UTXO record per incoming transaction inputs, and the index of it. Regardless of the
+     * address of the sender. For example if we have 2 input from a single sender, we will generate 2 separated UTXOs.
+     *
+     */
+    private fun insertNewUtxo(address: AddressDao, transaction: Transaction, transactionOutput: TransactionOutput, proof: ProofDao) =
+        transaction {
+            if (UtxoTable.select { (UtxoTable.txid eq transaction.hash!!) and (UtxoTable.vout eq transactionOutput.n!!.toInt()) }.count() == 0) {
+                // This is new UTXO!
+                UtxoDao.new {
+                    this.address = address
+                    this.wallet = address.wallet
+                    this.txid = transaction.hash!!
+                    this.vout = transactionOutput.n!!.toInt()
+                    this.amount = transactionOutput.value!!.toLong()
+                    this.discoveryProof = proof
                 }
             } else {
                 // We are reading a blockchain again. This is dangerous!!!
@@ -155,7 +192,8 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
         relatedInvoice: InvoiceDao?,
         transactionHash: String,
         amount: Long,
-        feeAmount: Long = 0L
+        feeAmount: Long = 0L,
+        proof: ProofDao
     ) =
         transaction {
             // Find the related invoice
@@ -165,15 +203,15 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
                     // Just throw an exception to inform the admin
                     // TODO Report to the boss
                 }
-                DepositTable
+                DepositTable.leftJoin(ProofTable)
                     .select { DepositTable.invoice eq relatedInvoice.id }
-                    .andWhere { DepositTable.txid eq transactionHash }
+                    .andWhere { ProofTable.txHash eq transactionHash }
                     .count() == 0 -> // This is new UTXO!
                     DepositDao.new {
                         this.grossAmount = amount
                         this.netAmount = max(0, amount - feeAmount)
                         this.invoice = relatedInvoice
-                        this.txid = transactionHash
+                        this.proof = proof
                     }
                 else -> {
                     // We are reading a blockchain again. This is dangerous!!!
@@ -183,6 +221,21 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
         }
 
     private fun processConfirmedTransaction(tx: Transaction) {
+
+        // FIXME: Handle Utxo's isSpent
+
+        var proof: ProofDao? = null
+        try {
+            proof = findProof(it.first!!, tx, it.second)
+            if(proof == null) proof = insertNewProof(it.first!!, tx, it.second)
+
+            // TODO: Update proof
+
+        } catch (e: Exception) {
+
+            // TODO Report to the boss
+        }
+
         tx.vout
             ?.asSequence()
             ?.map { vout -> Pair(findAssociatedAddress(vout), vout) }

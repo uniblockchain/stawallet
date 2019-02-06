@@ -106,7 +106,7 @@ fun initDatabase(dropIfExists: Boolean = false) {
         setupConnection = { connection: Connection -> connection.autoCommit = false; }
     )
 
-    val tables = arrayOf(WalletTable, AddressTable, InvoiceTable, DepositTable, EventTable, TaskTable, UtxoTable)
+    val tables = arrayOf(WalletTable, AddressTable, InvoiceTable, DepositTable, ProofTable, TaskTable, UtxoTable)
 
     transaction {
         if (dropIfExists) {
