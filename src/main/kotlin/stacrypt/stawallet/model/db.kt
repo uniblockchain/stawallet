@@ -5,6 +5,7 @@ import org.jetbrains.exposed.dao.IdTable
 import org.jetbrains.exposed.dao.IntIdTable
 import org.jetbrains.exposed.sql.Column
 import org.joda.time.DateTime
+import stacrypt.stawallet.model.InvoiceTable.nullable
 
 
 /**
@@ -270,9 +271,24 @@ object TaskTable : IntIdTable("task") {
     val wallet = reference("wallet", WalletTable)
 
     /**
+     * It's a mandatory UNIQUE identifier which prevents double-spend
+     */
+    val businessUid = varchar("business_uid", 100).uniqueIndex("business_uid_uniqueness")
+
+    /**
      * Pay to this address
      */
     val target = varchar("target", 128)
+
+    /**
+     * This invoice issued for which user id? (user is just a reference and not related to us)
+     *
+     * Best practice per `type`:
+     * * WITHDRAW -> Target user
+     * * DECHARGE -> In charge admin user
+     * * OVERFLOW -> `null`
+     */
+    val user = InvoiceTable.varchar("user", 128).nullable()
 
     /**
      * Amount to be sent
@@ -306,7 +322,7 @@ object TaskTable : IntIdTable("task") {
     val finalNetworkFee = long("final_network_fee").nullable()
 
     /**
-     * Why we are transfering this money
+     * Why we are transferring this money
      */
     val type = enumerationByName("type", 50, TaskType::class)
 

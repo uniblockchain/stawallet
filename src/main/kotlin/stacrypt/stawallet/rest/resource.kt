@@ -159,7 +159,10 @@ data class ProofResource(
 fun TaskDao.export(role: ClientRole? = null, wallet: stacrypt.stawallet.Wallet): WithdrawResource =
     WithdrawResource(
         id = this.id.value,
+        businessUid = this.businessUid,
         wallet = this.wallet.id.value,
+        user = this.user,
+        target = this.target,
         netAmount = this.netAmount,
         grossAmount = this.grossAmount,
         estimatedNetworkFee = this.estimatedNetworkFee,
@@ -176,7 +179,10 @@ fun TaskDao.export(role: ClientRole? = null, wallet: stacrypt.stawallet.Wallet):
 
 data class WithdrawResource(
     val id: Int,
+    val businessUid: String,
     val wallet: String,
+    val user: String?,
+    val target: String,
     val netAmount: Long,
     val grossAmount: Long,
     val estimatedNetworkFee: Long,

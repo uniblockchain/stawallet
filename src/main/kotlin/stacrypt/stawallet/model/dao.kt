@@ -40,6 +40,8 @@ class TaskDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<TaskDao>(TaskTable)
 
     var wallet by WalletDao referencedOn TaskTable.wallet
+    var businessUid by TaskTable.businessUid
+    var user by TaskTable.user
     var target by TaskTable.target
     var netAmount by TaskTable.netAmount
     var grossAmount by TaskTable.grossAmount

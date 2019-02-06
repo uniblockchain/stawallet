@@ -156,5 +156,69 @@ fun Route.depositsRout() = route("/deposits") {
 }
 
 fun Route.withdrawsRout() = route("/withdraws") {
+    get {
+        val user = call.request.queryParameters["user"]
+        val page = call.request.queryParameters["page"]?.toInt() ?: 0
 
+        try {
+            transaction {
+                val wallet = wallets.findLast { it.name == call.parameters["wallet"].toString() }!!
+
+                call.respond(
+                    TaskDao.wrapRows(
+                        TaskTable
+                            .select { TaskTable.wallet eq wallet.name }
+                            .run { if (user != null) this.andWhere { TaskTable.user eq user } else this }
+                            .orderBy(TaskTable.id)
+                            .limit(WithdrawResource.PAGE_SIZE, WithdrawResource.PAGE_SIZE * page)
+                    ).forEach { it.export(null, wallet) }
+                )
+
+            }
+        } catch (e: Exception) {
+            call.respond(HttpStatusCode.InternalServerError, e.toString())
+        }
+    }
+
+    contentType(FormUrlEncoded) {
+        post {
+            val form: Parameters = call.receiveParameters()
+            val user = form["user"]!!
+            val businessUid = form["businessUid"]!!
+            val isManual = form["isManual"]!!.toBoolean()
+            val target = form["target"]!!
+            val netAmount = form["netAmount"]!!.toLong()
+            val grossAmount = form["grossAmount"]!!.toLong()
+            val estimatedNetworkFee = form["estimatedNetworkFee"]!!.toLong()
+            val type = TaskType.valueOf(form["type"]!!.toLowerCase())
+
+            try {
+                transaction {
+                    if (TaskTable.select { TaskTable.businessUid eq businessUid }.count() > 0)
+                        call.respond(
+                            HttpStatusCode.Conflict,
+                            "This business id has been used before"
+                        )
+                    else
+                        call.respond(
+                            TaskDao.new {
+                                this.wallet = WalletDao[call.parameters["walletId"]!!]
+                                this.businessUid = businessUid
+                                this.user = user
+                                this.target = target
+                                this.netAmount = netAmount
+                                this.grossAmount = grossAmount
+                                this.estimatedNetworkFee = estimatedNetworkFee
+                                this.type = type
+                                this.status = if (isManual) TaskStatus.WAITING_MANUAL else TaskStatus.QUEUED
+                                this.trace = "Issued"
+                            }
+                        )
+                }
+
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, e.toString())
+            }
+        }
+    }
 }
