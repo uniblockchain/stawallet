@@ -100,9 +100,7 @@ fun Route.invoicesRout() = route("/invoices") {
 
     }
 
-    get("{invoiceId}") {
-        val user = call.request.queryParameters["user"]!!.toString()
-
+    get("/{invoiceId}") {
         try {
             transaction {
                 val wallet = wallets.findLast { it.name == call.parameters["walletId"].toString() }!!
@@ -213,7 +211,7 @@ fun Route.withdrawsRout() = route("/withdraws") {
                                 this.estimatedNetworkFee = estimatedNetworkFee
                                 this.type = type
                                 this.status = if (isManual) TaskStatus.WAITING_MANUAL else TaskStatus.QUEUED
-                                this.trace = "Issued"
+                                this.trace = "${DateTime.now()} : Issued (${if (isManual) "manual" else "automatic"})"
                             }
                         )
                 }
@@ -243,19 +241,21 @@ fun Route.withdrawsRout() = route("/withdraws") {
                                 TaskStatus.ERROR,
                                 TaskStatus.WAITING_LOW_BALANCE
                             ).contains(task.status)
-                        )
+                        ) {
                             task.status = TaskStatus.WAITING_MANUAL
-                        else if (isManual == false && task.status == TaskStatus.WAITING_MANUAL)
+                            task.trace = task.trace + "\n${DateTime.now()} : Change to manual"
+                        } else if (isManual == false && task.status == TaskStatus.WAITING_MANUAL) {
                             task.status = TaskStatus.QUEUED
-                        else if (isManual != null)
+                            task.trace = task.trace + "\n${DateTime.now()} : Change to automatic"
+                        } else if (isManual != null) {
                             return@transaction call.respond(
                                 HttpStatusCode.BadRequest,
                                 "The withdraw task is in ${task.status} state and can not change to ${if (isManual) "manual" else "automat"}."
                             )
-
+                        }
 
                         if (finalNetworkFee != null && txid != null) {
-                            if (task.status == TaskStatus.WAITING_MANUAL)
+                            if (task.status != TaskStatus.WAITING_MANUAL)
                                 return@transaction call.respond(
                                     HttpStatusCode.BadRequest,
                                     "The withdraw task is in ${task.status} state and can not be submitted manually."
@@ -265,6 +265,7 @@ fun Route.withdrawsRout() = route("/withdraws") {
                             task.finalNetworkFee = finalNetworkFee
                             task.paidAt = DateTime.now()
                             task.status = TaskStatus.PUSHED
+                            task.trace = task.trace + "\n${DateTime.now()} : Submit manual withdrawal info"
                         } else if (finalNetworkFee != null || txid != null) {
                             return@transaction call.respond(
                                 HttpStatusCode.BadRequest,
