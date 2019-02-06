@@ -41,10 +41,17 @@ class TaskDao(id: EntityID<Int>) : IntEntity(id) {
 
     var wallet by WalletDao referencedOn TaskTable.wallet
     var target by TaskTable.target
-    var amount by TaskTable.amount
+    var netAmount by TaskTable.netAmount
+    var grossAmount by TaskTable.grossAmount
+    var estimatedNetworkFee by TaskTable.estimatedNetworkFee
+    var finalNetworkFee by TaskTable.finalNetworkFee
     var type by TaskTable.type
     var status by TaskTable.status
     var txid by TaskTable.txid
+    var proof by ProofDao optionalReferencedOn TaskTable.proof
+    var issuedAt by TaskTable.issuedAt
+    var paidAt by TaskTable.paidAt
+    var trace by TaskTable.trace
 }
 
 class ProofDao(id: EntityID<Int>) : IntEntity(id) {
@@ -79,4 +86,6 @@ class UtxoDao(id: EntityID<Int>) : IntEntity(id) {
     var txid by UtxoTable.txid
     var vout by UtxoTable.vout
     var isSpent by UtxoTable.isSpent
+    var discoveryProof by UtxoTable.discoveryProof
+    var spendProof by UtxoTable.spendProof
 }

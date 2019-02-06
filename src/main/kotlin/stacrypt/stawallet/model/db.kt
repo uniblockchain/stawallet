@@ -180,19 +180,21 @@ object DepositTable : IntIdTable() {
     val invoice = reference("invoice", InvoiceTable)
 
     /**
-     * The proof of this deposit on the related blockchain  on the real world
+     * The proof of this deposit on the related blockchain on the real world
+     *
+     * Note: It will be filled automatically by blockchain watcher
      */
     val proof = reference("proof", ProofTable)
 
     /**
      * The amount we really received
      */
-    val grossAmount = long("grossAmount")
+    val grossAmount = long("gross_amount")
 
     /**
      * Amount the user will be charged in our system (whether any fee or commission decreased)
      */
-    val netAmount = long("netAmount")
+    val netAmount = long("net_amount")
 
     /**
      * Extra information (if required)
@@ -218,7 +220,44 @@ enum class TaskType {
 
 }
 
-enum class TaskStatus { FINISHED, CONFIRMING, PUSHED, WAITING_MANUAL, WAITING_LOW_BALANCE, ERROR, QUEUED }
+enum class TaskStatus {
+
+    /**
+     * The transaction pushed and confirmed in the network successfully
+     */
+    FINISHED,
+
+    /**
+     * The transaction has been mined and we are waiting for required confirmation
+     */
+    CONFIRMING,
+
+    /**
+     * The transaction has been pushed to the network, but has not been mined yet
+     */
+    PUSHED,
+
+    /**
+     * This transaction should be sent manually by admins (The transaction has not been created yet)
+     */
+    WAITING_MANUAL,
+
+    /**
+     * This transaction should be sent automatically but the balance is not enough
+     * (The transaction has not been created yet)
+     */
+    WAITING_LOW_BALANCE,
+
+    /**
+     * There is an error with this transaction
+     */
+    ERROR,
+
+    /**
+     * This transaction should be sent automatically ASAP (The transaction has not been created yet)
+     */
+    QUEUED
+}
 
 /**
  * Any task which should be done by the blockchain
@@ -228,7 +267,7 @@ object TaskTable : IntIdTable("task") {
     /**
      * Pay from this wallet
      */
-    val wallet = reference("wallet", WalletTable.id)
+    val wallet = reference("wallet", WalletTable)
 
     /**
      * Pay to this address
@@ -238,17 +277,43 @@ object TaskTable : IntIdTable("task") {
     /**
      * Amount to be sent
      */
-    val amount = long("amount")
+    val netAmount = long("net_amount")
+
+    /**
+     * Amount the user will be charged in our system (whether any fee or commission decreased)
+     *
+     * Note: The network fee is not related to this field
+     *
+     * Note 2: It is JUST to log what happened. It means that this number has no meaning to us.
+     */
+    val grossAmount = long("gross_amount")
+
+    /**
+     * We estimate this number when we want to issue a withdraw records
+     *
+     * Note: It is JUST to log what happened. It means that this number has no meaning to us.
+     *
+     * Note 2: We STRONGLY recommend to calculate this number before issue a withdraw record (there is a function estimate fee)
+     */
+    val estimatedNetworkFee = long("estimated_fee")
+
+    /**
+     * Final network fee
+     *
+     * It will be calculated when we pushed the transaction to the network
+     *
+     */
+    val finalNetworkFee = long("final_network_fee").nullable()
 
     /**
      * Why we are transfering this money
      */
-    val type = enumeration("type", TaskType::class)
+    val type = enumerationByName("type", 50, TaskType::class)
 
     /**
-     * What is the currenct status of this task?
+     * What is the current status of this task?
      */
-    val status = enumeration("status", TaskStatus::class)
+    val status = enumerationByName("status", 50, TaskStatus::class).default(TaskStatus.QUEUED)
 
     /**
      * The related transaction id in the related blockchain
@@ -259,6 +324,24 @@ object TaskTable : IntIdTable("task") {
      * Some type of stacktrace for the actions, errors, etc.
      */
     val trace = varchar("trace", 10_000)
+
+    /**
+     * The proof of this transaction in the real world blockchain network
+     *
+     * Note: It will be filled automatically by blockchain watcher
+     */
+    val proof = reference("proof", ProofTable).nullable()
+
+    /**
+     * The creation time
+     */
+    val issuedAt = datetime("issued_at").default(DateTime.now())
+
+    /**
+     * Time of pushing the transaction into network:
+     */
+    val paidAt = datetime("paid_at").nullable()
+
 }
 
 /**
@@ -269,12 +352,12 @@ object UtxoTable : IntIdTable("utxo") {
     /**
      * Which wallet it belongs to
      */
-    val wallet = reference("wallet", WalletTable.id)
+    val wallet = reference("wallet", WalletTable)
 
     /**
-     * Id of the related key
+     * Id of the related address
      */
-    val address = reference("address", AddressTable.id)
+    val address = reference("address", AddressTable)
 
     /**
      * Amount
@@ -290,6 +373,21 @@ object UtxoTable : IntIdTable("utxo") {
      * Index of this utxo in the origin transaction's input
      */
     val vout = integer("vout")
+
+
+    /**
+     * The proof of where we found this on the real world
+     *
+     * Note: It will be filled automatically by blockchain watcher
+     */
+    val discoveryProof = reference("discovery_proof", ProofTable).nullable()
+
+    /**
+     * The proof of where we spent this on the real world
+     *
+     * Note: It will be filled automatically by blockchain watcher
+     */
+    val spendProof = reference("spend_proof", ProofTable).nullable()
 
     /**
      * Index of this utxo in the origin transaction's input
