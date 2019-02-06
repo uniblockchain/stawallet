@@ -168,6 +168,12 @@ fun TaskDao.export(role: ClientRole? = null, wallet: stacrypt.stawallet.Wallet):
         estimatedNetworkFee = this.estimatedNetworkFee,
         finalNetworkFee = this.finalNetworkFee,
         type = this.type.toString().toLowerCase(),
+        isManual = when (this.status) {
+            TaskStatus.QUEUED -> true
+            TaskStatus.WAITING_LOW_BALANCE -> false
+            TaskStatus.WAITING_MANUAL -> true
+            else -> null
+        },
         status = this.status.toString().toLowerCase(),
         txid = this.txid,
         issuedAt = this.issuedAt,
@@ -188,6 +194,7 @@ data class WithdrawResource(
     val estimatedNetworkFee: Long,
     val finalNetworkFee: Long?,
     val type: String,
+    val isManual: Boolean?,
     val status: String,
     val txid: String?,
     val proof: ProofResource?,
