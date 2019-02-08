@@ -5,7 +5,6 @@ import org.jetbrains.exposed.dao.IdTable
 import org.jetbrains.exposed.dao.IntIdTable
 import org.jetbrains.exposed.sql.Column
 import org.joda.time.DateTime
-import stacrypt.stawallet.model.InvoiceTable.nullable
 
 
 /**
@@ -389,7 +388,6 @@ object UtxoTable : IntIdTable("utxo") {
      * Index of this utxo in the origin transaction's input
      */
     val vout = integer("vout")
-
 
     /**
      * The proof of where we found this on the real world
