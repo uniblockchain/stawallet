@@ -2,11 +2,17 @@ package stacrypt.stawallet.model
 
 import org.jetbrains.exposed.dao.*
 
+class BlockchainDao(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<BlockchainDao>(BlockchainTable)
+
+    var currency by BlockchainTable.currency
+    var network by BlockchainTable.network
+}
+
 class WalletDao(id: EntityID<String>) : Entity<String>(id) {
     companion object : EntityClass<String, WalletDao>(WalletTable)
 
-    var currency by WalletTable.currency
-    var network by WalletTable.network
+    var blockchain by BlockchainDao referencedOn WalletTable.blockchain
     var seedFingerprint by WalletTable.seedFingerprint
     var path by WalletTable.path
     var balance by WalletTable.balance
@@ -59,8 +65,7 @@ class TaskDao(id: EntityID<Int>) : IntEntity(id) {
 class ProofDao(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<ProofDao>(ProofTable)
 
-    var invoice by InvoiceDao referencedOn ProofTable.invoice
-    var amount by ProofTable.amount
+    var blockchain by BlockchainDao referencedOn ProofTable.blockchain
     var txHash by ProofTable.txHash
     var blockHash by ProofTable.blockHash
     var blockHeight by ProofTable.blockHeight
