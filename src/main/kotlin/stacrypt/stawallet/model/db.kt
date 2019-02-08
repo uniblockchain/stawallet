@@ -8,6 +8,23 @@ import org.joda.time.DateTime
 
 
 /**
+ * A Blockchain or Ledger
+ */
+object BlockchainTable : IntIdTable("blockchain") {
+
+    /**
+     * Short code of the related cryptocurrency (e.g. `btc`). Always LOWERCASE
+     */
+    val currency = WalletTable.varchar("currency", 12) //
+
+    /**
+     * e.g. `testnet3`. Always LOWERCASE
+     */
+    val network = WalletTable.varchar("network", 32)
+
+}
+
+/**
  * Each wallet could only handle one type of crypto-assets. But they may derived from a unique master seed
  */
 object WalletTable : IdTable<String>("wallet") {
@@ -18,14 +35,9 @@ object WalletTable : IdTable<String>("wallet") {
     override val id: Column<EntityID<String>> = varchar("id", 32).primaryKey().entityId()
 
     /**
-     * Short code of the related cryptocurrency (e.g. `btc`). Always LOWERCASE
+     * Related blockchain
      */
-    val currency = varchar("currency", 12) //
-
-    /**
-     * e.g. Testnet
-     */
-    val network = varchar("network", 32)
+    val blockchain = reference("blockchain", BlockchainTable)
 
     /**
      * Fingerprint of the master seed
@@ -55,7 +67,7 @@ object WalletTable : IdTable<String>("wallet") {
 object AddressTable : IntIdTable() {
 
     /**
-     * Public Key in binary format
+     * Related wallet
      */
     val wallet = reference("wallet", WalletTable)
 
@@ -127,20 +139,15 @@ object InvoiceTable : IntIdTable("invoice") {
  * It is a proof for a reality of a transaction or deposit or etc. in the real world blockchain.
  * Contains the block details, transaction detail and more.
  *
- * Note: These records are accepted unless is referred by a `deposit`.
+ * Note: These records are not accepted unless is referred by a `deposit`.
  * So we can find the information of pending or unaccepted transactions here
  */
 object ProofTable : IntIdTable("proof") {
 
     /**
-     * The invoice of the this deposit is based on
+     * Related blockchain
      */
-    val invoice = reference("invoice", InvoiceTable)
-
-    /**
-     * Exact amount in the transaction
-     */
-    val amount = varchar("amount", 32)
+    val blockchain = WalletTable.reference("blockchain", BlockchainTable)
 
     /**
      * Block hash of where the transaction located at

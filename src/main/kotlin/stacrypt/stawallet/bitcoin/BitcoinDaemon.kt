@@ -107,9 +107,9 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
 
     }
 
-    private fun findProof(address: AddressDao, transaction: Transaction, transactionOutput: TransactionOutput): ProofDao? =
+    private fun findProof(transaction: Transaction): ProofDao? =
         transaction {
-            if (UtxoTable.select { (UtxoTable.txid eq transaction.hash!!) and (UtxoTable.vout eq transactionOutput.n!!.toInt()) }.count() == 0) {
+            if (ProofTable.select { (ProofTable.walle eq transaction.hash!!) and (UtxoTable.vout eq transactionOutput.n!!.toInt()) }.count() == 0) {
                 // This is new UTXO!
                 UtxoDao.new {
                     this.address = address
@@ -299,4 +299,6 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
 
 
 }
+
+class Proof
 
