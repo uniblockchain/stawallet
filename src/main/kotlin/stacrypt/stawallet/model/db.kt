@@ -15,7 +15,7 @@ object BlockchainTable : IntIdTable("blockchain") {
     /**
      * Short code of the related cryptocurrency (e.g. `btc`). Always LOWERCASE
      */
-    val currency = WalletTable.varchar("currency", 12) //
+    val currency = WalletTable.varchar("currency", 12)
 
     /**
      * e.g. `testnet3`. Always LOWERCASE
@@ -58,6 +58,11 @@ object WalletTable : IdTable<String>("wallet") {
      * Unconfirmed balance, which we are waiting for it to be confirmed in the new feature
      */
     val unconfirmedBalance = long("unconfirmed_balance").default(0)
+
+    /**
+     * Latest block height which has been synchronized with the blockchain watcher
+     */
+    val latestSyncedHeight = integer("latest_sync_height").default(0)
 
 }
 

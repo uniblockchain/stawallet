@@ -7,11 +7,8 @@ import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
-import stacrypt.stawallet.DaemonState
-import stacrypt.stawallet.WalletDaemon
-import stacrypt.stawallet.config
+import stacrypt.stawallet.*
 import stacrypt.stawallet.model.*
-import stacrypt.stawallet.sumByLong
 import java.lang.Exception
 import kotlin.math.max
 
@@ -68,6 +65,31 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
         while (true) {
             delay(WATCHER_BLOCK_DELAY)
 
+            // Find out witch block height should we sync with (if there is any unsynced block)
+            val highestMinedBlock = bitcoind.rpcClient.getBlockCount()
+            val walletDao = transaction { WalletDao.findById(walletName) }!!
+            val latestSyncedHeight = walletDao.latestSyncedHeight
+            // TODO: Store and compare `bestblockhash` and get back in case of incompatibility
+            if (highestMinedBlock > latestSyncedHeight) {
+                // We have one or more new bocks to sync with
+                // TODO: Compare database with with `previousblockhash` of the following value
+                val nextBlock =
+                    bitcoind.rpcClient.getBlockWithTransactions(
+                        bitcoind.rpcClient.getBlockHash(latestSyncedHeight + 1)
+                    )
+                nextBlock.tx?.forEach { tx ->
+                    processTransaction(
+                        tx,
+                        confirmations = highestMinedBlock - latestSyncedHeight,
+                        confirmationsRequires = requiresTransactions
+                    )
+                }
+                // TODO: Update confirmation number of previous blocks
+
+
+            }
+
+
             (bitcoind.rpcClient.getMempoolDescendants() as List<Transaction>).forEach { tx ->
                 processTransaction(tx, 0, requiresTransactions)
             }
@@ -107,41 +129,21 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
 
     }
 
-    private fun findProof(transaction: Transaction): ProofDao? =
-        transaction {
-            if (ProofTable.select { (ProofTable.walle eq transaction.hash!!) and (UtxoTable.vout eq transactionOutput.n!!.toInt()) }.count() == 0) {
-                // This is new UTXO!
-                UtxoDao.new {
-                    this.address = address
-                    this.wallet = address.wallet
-                    this.txid = transaction.hash!!
-                    this.vout = transactionOutput.n!!.toInt()
-                    this.amount = transactionOutput.value!!.toLong()
-                }
-            } else {
-                // We are reading a blockchain again. This is dangerous!!!
+    /**
+     * This method create a new proof for the related transaction, or return the existing one if it has been created
+     * in advance.
+     */
+    private fun inquireProof(transaction: Transaction): ProofDao = transaction {
+        val blockchain = WalletDao.findById(walletName)!!.blockchain
+        ProofDao.wrapRow(
+            ProofTable
+                .select { ProofTable.blockchain eq blockchain.id }
+                .andWhere { ProofTable.txHash eq transaction.hash!! }
+                .firstOrNull()
+        )
 
-            }
 
-        }
-
-    private fun insertNewProof(address: AddressDao, transaction: Transaction, transactionOutput: TransactionOutput): ProofDao? =
-        transaction {
-            if (UtxoTable.select { (UtxoTable.txid eq transaction.hash!!) and (UtxoTable.vout eq transactionOutput.n!!.toInt()) }.count() == 0) {
-                // This is new UTXO!
-                UtxoDao.new {
-                    this.address = address
-                    this.wallet = address.wallet
-                    this.txid = transaction.hash!!
-                    this.vout = transactionOutput.n!!.toInt()
-                    this.amount = transactionOutput.value!!.toLong()
-                }
-            } else {
-                // We are reading a blockchain again. This is dangerous!!!
-
-            }
-
-        }
+    }
 
     /**
      * Here we make a new utxo record, because we are SURE that it is a fully confirmed utxo.
@@ -150,7 +152,12 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
      * address of the sender. For example if we have 2 input from a single sender, we will generate 2 separated UTXOs.
      *
      */
-    private fun insertNewUtxo(address: AddressDao, transaction: Transaction, transactionOutput: TransactionOutput, proof: ProofDao) =
+    private fun insertNewUtxo(
+        address: AddressDao,
+        transaction: Transaction,
+        transactionOutput: TransactionOutput,
+        proof: ProofDao
+    ) =
         transaction {
             if (UtxoTable.select { (UtxoTable.txid eq transaction.hash!!) and (UtxoTable.vout eq transactionOutput.n!!.toInt()) }.count() == 0) {
                 // This is new UTXO!
@@ -227,7 +234,7 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
         var proof: ProofDao? = null
         try {
             proof = findProof(it.first!!, tx, it.second)
-            if(proof == null) proof = insertNewProof(it.first!!, tx, it.second)
+            if (proof == null) proof = insertNewProof(it.first!!, tx, it.second)
 
             // TODO: Update proof
 

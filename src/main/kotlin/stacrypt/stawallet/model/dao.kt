@@ -17,6 +17,7 @@ class WalletDao(id: EntityID<String>) : Entity<String>(id) {
     var path by WalletTable.path
     var balance by WalletTable.balance
     var unconfirmedBalance by WalletTable.unconfirmedBalance
+    var latestSyncedHeight by WalletTable.latestSyncedHeight
 
 }
 
