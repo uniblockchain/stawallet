@@ -119,33 +119,21 @@ fun Route.invoicesRout() = route("/invoices") {
 fun Route.depositsRout() = route("/deposits") {
     get {
         val user = call.request.queryParameters["user"]
-        val isAccepted = call.request.queryParameters["isAccepted"]?.toBoolean() ?: true
         val page = call.request.queryParameters["page"]?.toInt() ?: 0
 
         try {
             transaction {
                 val wallet = wallets.findLast { it.name == call.parameters["wallet"].toString() }!!
 
-                if (isAccepted)
-                    call.respond(
-                        DepositDao.wrapRows(
-                            DepositTable.leftJoin(InvoiceTable)
-                                .select { InvoiceTable.wallet eq wallet.name }
-                                .andWhere { InvoiceTable.user eq user }
-                                .orderBy(DepositTable.id)
-                                .limit(DepositResource.PAGE_SIZE, DepositResource.PAGE_SIZE * page)
-                        ).forEach { it.export(null, wallet) }
-                    )
-                else
-                    call.respond(
-                        ProofDao.wrapRows(
-                            ProofTable.leftJoin(InvoiceTable)
-                                .select { InvoiceTable.wallet eq wallet.name }
-                                .andWhere { InvoiceTable.user eq user }
-                                .orderBy(ProofTable.id)
-                                .limit(ProofResource.PAGE_SIZE, ProofResource.PAGE_SIZE * page)
-                        ).forEach { it.exportAsDeposit(null, wallet) }
-                    )
+                call.respond(
+                    DepositDao.wrapRows(
+                        DepositTable.leftJoin(InvoiceTable)
+                            .select { InvoiceTable.wallet eq wallet.name }
+                            .andWhere { InvoiceTable.user eq user }
+                            .orderBy(DepositTable.id)
+                            .limit(DepositResource.PAGE_SIZE, DepositResource.PAGE_SIZE * page)
+                    ).forEach { it.export(null, wallet) }
+                )
 
             }
         } catch (e: Exception) {
