@@ -15,12 +15,12 @@ object BlockchainTable : IntIdTable("blockchain") {
     /**
      * Short code of the related cryptocurrency (e.g. `btc`). Always LOWERCASE
      */
-    val currency = WalletTable.varchar("currency", 12)
+    val currency = varchar("currency", 12)
 
     /**
      * e.g. `testnet3`. Always LOWERCASE
      */
-    val network = WalletTable.varchar("network", 32)
+    val network = varchar("network", 32)
 
 }
 
@@ -152,7 +152,7 @@ object ProofTable : IntIdTable("proof") {
     /**
      * Related blockchain
      */
-    val blockchain = WalletTable.reference("blockchain", BlockchainTable)
+    val blockchain = reference("blockchain", BlockchainTable)
 
     /**
      * Block hash of where the transaction located at
@@ -304,7 +304,7 @@ object TaskTable : IntIdTable("task") {
      * * DECHARGE -> In charge admin user
      * * OVERFLOW -> `null`
      */
-    val user = InvoiceTable.varchar("user", 128).nullable()
+    val user = varchar("user", 128).nullable()
 
     /**
      * Amount to be sent

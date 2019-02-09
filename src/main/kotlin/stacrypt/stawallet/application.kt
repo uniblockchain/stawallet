@@ -20,6 +20,8 @@ import kotlinx.coroutines.*
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
+import stacrypt.stawallet.bitcoin.BitcoinWallet
+import stacrypt.stawallet.bitcoin.bitcoind
 import stacrypt.stawallet.model.*
 import stacrypt.stawallet.rest.walletsRouting
 import java.net.URI

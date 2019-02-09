@@ -1,9 +1,12 @@
 package stacrypt.stawallet.bitcoin
 
 import com.typesafe.config.Config
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.supervisorScope
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
 import org.kethereum.encodings.encodeToBase58WithChecksum
 import org.kethereum.extensions.toMinimalByteArray
@@ -79,6 +82,14 @@ class BitcoinWallet(name: String, config: Config, network: String) :
     }
 
     override val daemon = bitcoind
+
+    fun startBlockchainWatcher() =
+        bitcoind.addBlockchainWatcher(
+            transaction { WalletDao[name].blockchain.id.value },
+            name,
+            this.requiredConfirmations
+        )
+
 //    override val storage = UtxoStorage(name)
 
 //    var balance: Long

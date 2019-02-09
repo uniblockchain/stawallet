@@ -26,7 +26,7 @@ object bitcoind : WalletDaemon() {
         rpcClient.estimateSmartFee(6).feerate?.btcToSat()
     }
 
-    fun startBlockchainWatcher(blockchainId: Int, walletName: String, requiresConfirmations: Int) {
+    fun addBlockchainWatcher(blockchainId: Int, walletName: String, requiresConfirmations: Int) {
         runBlocking {
             supervisorScope {
                 val watcher = BitcoinBlockchainWatcher(blockchainId, walletName, requiresConfirmations)
@@ -97,11 +97,14 @@ class BitcoinBlockchainWatcher(
     }
 
     fun startWatcher() {
-        runBlocking(this.dispatcher) {
-            val blockWatcherJob = startBlockWatcherJob(this)
+        GlobalScope.launch(this.dispatcher) {
             val mempoolWatcherJob = startMempoolWatcherJob(this)
-
         }
+
+        GlobalScope.launch(this.dispatcher) {
+            val blockWatcherJob = startBlockWatcherJob(this)
+        }
+
     }
 
     /**

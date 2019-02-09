@@ -18,6 +18,7 @@ import org.junit.Test
 import stacrypt.stawallet.bitcoin.BitcoinRpcClientFactory
 import stacrypt.stawallet.bitcoin.NETWORK_TESTNET_3
 import stacrypt.stawallet.bitcoin.bitcoind
+import stacrypt.stawallet.model.BlockchainDao
 import stacrypt.stawallet.model.WalletDao
 
 
@@ -58,8 +59,10 @@ class UtxoInvoiceRestTest : BaseApiTest() {
 
         transaction {
             wallet1 = WalletDao.new("test-btc-wallet") {
-                this.currency = "btc"
-                this.network = NETWORK_TESTNET_3
+                this.blockchain = BlockchainDao.new {
+                    this.currency = "btc"
+                    this.network = NETWORK_TESTNET_3
+                }
                 this.seedFingerprint = "00:00:00:00:00:00:00:00"
                 this.path = "m/44'/0'/0"
             }
