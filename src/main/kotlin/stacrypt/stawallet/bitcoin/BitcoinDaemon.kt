@@ -1,10 +1,7 @@
 package stacrypt.stawallet.bitcoin
 
 import kotlinx.coroutines.*
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.andWhere
-import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
 import stacrypt.stawallet.*
@@ -29,10 +26,10 @@ object bitcoind : WalletDaemon() {
         rpcClient.estimateSmartFee(6).feerate?.btcToSat()
     }
 
-    fun startBlockchainWatcher(walletName: String, requiresConfirmations: Int) {
+    fun startBlockchainWatcher(blockchainId: Int, walletName: String, requiresConfirmations: Int) {
         runBlocking {
             supervisorScope {
-                val watcher = BitcoinBlockchainWatcher(walletName, requiresConfirmations)
+                val watcher = BitcoinBlockchainWatcher(blockchainId, walletName, requiresConfirmations)
                 blockchainWatchers.add(Pair(this, watcher))
                 watcher.startWatcher()
             }
@@ -42,20 +39,24 @@ object bitcoind : WalletDaemon() {
 
 }
 
-class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions: Int) {
+class BitcoinBlockchainWatcher(
+    private val blockchainId: Int,
+    private val walletName: String,
+    private val confirmationsRequires: Int
+) {
 
     companion object {
         const val WATCHER_TRANSACTION_DELAY = 1_000L
         const val WATCHER_BLOCK_DELAY = 10_000L
     }
 
-    val dispatcher: CoroutineDispatcher = newSingleThreadContext("$walletName-watcher")
+    private val dispatcher: CoroutineDispatcher = newSingleThreadContext("$walletName-watcher")
 
     private fun startMempoolWatcherJob(scope: CoroutineScope) = scope.launch {
         while (true) {
             delay(WATCHER_TRANSACTION_DELAY)
             (bitcoind.rpcClient.getMempoolDescendants() as List<Transaction>).forEach { tx ->
-                processTransaction(tx, null, requiresTransactions)
+                processOrphanTransaction(tx)
             }
         }
     }
@@ -66,11 +67,11 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
             delay(WATCHER_BLOCK_DELAY)
 
             // Find out witch block height should we sync with (if there is any unsynced block)
-            val highestMinedBlock = bitcoind.rpcClient.getBlockCount()
+            val currentBestBlockHeight = bitcoind.rpcClient.getBlockCount()
             val walletDao = transaction { WalletDao.findById(walletName) }!!
             val latestSyncedHeight = walletDao.latestSyncedHeight
             // TODO: Store and compare `bestblockhash` and get back in case of incompatibility
-            if (highestMinedBlock > latestSyncedHeight) {
+            if (currentBestBlockHeight > latestSyncedHeight) {
                 // We have one or more new bocks to sync with
                 // TODO: Compare database with with `previousblockhash` of the following value
                 val nextBlock =
@@ -79,19 +80,18 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
                     )
                 nextBlock.tx?.forEach { tx ->
                     processTransaction(
-                        tx,
-                        confirmations = highestMinedBlock - latestSyncedHeight,
-                        confirmationsRequires = requiresTransactions
+                        nextBlock,
+                        tx
                     )
                 }
-                // TODO: Update confirmation number of previous blocks
 
-
-            }
-
-
-            (bitcoind.rpcClient.getMempoolDescendants() as List<Transaction>).forEach { tx ->
-                processTransaction(tx, 0, requiresTransactions)
+                // Now it's time to update previous (unconfirmed) block's confirmations
+                for (i in 0..confirmationsRequires) {
+                    val b = bitcoind.rpcClient.getBlock(
+                        bitcoind.rpcClient.getBlockHash(latestSyncedHeight - i)
+                    )
+                    b.tx?.forEach { increaseConfirmations(blockInfo = b, txHash = it) }
+                }
             }
         }
     }
@@ -116,34 +116,33 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
     }
 
     /**
-     * Here we add a new confirmaton event whenever a new block found.
-     *
-     * Since the transaction fully confirmed, regardless of the previous event of the transaction, we'll insert a new
-     * confirmation event for the transaction and related invoice.
-     */
-    private fun insertNewConfirmationEvent(
-        address: AddressDao,
-        transaction: Transaction,
-        transactionOutput: TransactionOutput
-    ) {
-
-    }
-
-    /**
      * This method create a new proof for the related transaction, or return the existing one if it has been created
      * in advance.
      */
-    private fun inquireProof(transaction: Transaction): ProofDao = transaction {
-        val blockchain = WalletDao.findById(walletName)!!.blockchain
-        ProofDao.wrapRow(
-            ProofTable
-                .select { ProofTable.blockchain eq blockchain.id }
-                .andWhere { ProofTable.txHash eq transaction.hash!! }
+    private fun inquireProof(block: BlockInfoWithTransactions, tx: Transaction): ProofDao =
+        transaction {
+            val q = ProofTable.select { ProofTable.blockchain eq blockchainId }
+                .andWhere { ProofTable.txHash eq tx.hash!! }
+                .andWhere { ProofTable.blockHash eq block.hash!! }
+                .andWhere { ProofTable.blockHeight eq block.height!!.toInt() }
                 .firstOrNull()
-        )
 
+            val proof: ProofDao
+            proof = if (q == null)
+            // Create a new proof for this
+                ProofDao.new {
+                    this.blockchain = blockchain
+                    this.blockHash = block.hash
+                    this.blockHeight = block.height!!.toInt()
+                    this.txHash = tx.hash!!
+                    this.confirmationsLeft = confirmationsRequires
+                }
+            else
+            // TODO: Check for validity
+                ProofDao.wrapRow(q)
 
-    }
+            proof
+        }
 
     /**
      * Here we make a new utxo record, because we are SURE that it is a fully confirmed utxo.
@@ -227,21 +226,22 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
             }
         }
 
-    private fun processConfirmedTransaction(tx: Transaction) {
+    private fun processOrphanTransaction(tx: Transaction) {
+        // TODO
+    }
 
+    private fun processTransaction(block: BlockInfoWithTransactions, tx: Transaction) {
         // FIXME: Handle Utxo's isSpent
 
         var proof: ProofDao? = null
         try {
-            proof = findProof(it.first!!, tx, it.second)
-            if (proof == null) proof = insertNewProof(it.first!!, tx, it.second)
-
+            proof = inquireProof(block, tx)
             // TODO: Update proof
-
         } catch (e: Exception) {
-
             // TODO Report to the boss
+            // Maybe invalid block info
         }
+        proof as ProofDao
 
         tx.vout
             ?.asSequence()
@@ -254,7 +254,7 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
                  */
 
                 try {
-                    insertNewUtxo(it.first!!, tx, it.second)
+                    insertNewUtxo(it.first!!, tx, it.second, proof)
                 } catch (e: Exception) {
 
                     // TODO Report to the boss
@@ -277,7 +277,8 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
                     insertNewDeposit(
                         relatedInvoice = v.firstOrNull()?.first,
                         transactionHash = tx.hash!!,
-                        amount = v.sumByLong { it.second.value!!.toLong() }
+                        amount = v.sumByLong { it.second.value!!.toLong() },
+                        proof = proof
                     )
                 } catch (e: Exception) {
 
@@ -285,27 +286,25 @@ class BitcoinBlockchainWatcher(val walletName: String, val requiresTransactions:
                 }
 
             }
-    }
-
-    private fun processUnconfirmedTransaction(tx: Transaction, confirmations: Int, confirmationsRequires: Int) {
 
     }
 
-    private fun processOrphanTransaction(tx: Transaction, confirmationsRequires: Int) {
-
-    }
-
-    private fun processTransaction(tx: Transaction, confirmations: Int?, confirmationsRequires: Int) {
-        return when {
-            confirmations == null -> this.processOrphanTransaction(tx, confirmationsRequires)
-            confirmations >= confirmationsRequires -> this.processConfirmedTransaction(tx)
-            else -> this.processUnconfirmedTransaction(tx, confirmations, confirmationsRequires)
+    private fun increaseConfirmations(blockInfo: BlockInfo, txHash: String) = transaction {
+        ProofTable.update(
+            {
+                (ProofTable.blockchain eq blockchainId)
+                    .and(ProofTable.txHash eq txHash)
+                    .and(ProofTable.blockHash eq blockInfo.hash)
+                    .and(ProofTable.blockHeight eq blockInfo.height!!.toInt())
+                    .and(ProofTable.confirmationsLeft greater 0)
+            }
+        ) {
+            with(SqlExpressionBuilder) {
+                it.update(ProofTable.confirmationsLeft, ProofTable.confirmationsLeft - 1)
+            }
         }
-
     }
-
 
 }
 
-class Proof
 

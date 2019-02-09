@@ -170,6 +170,11 @@ object ProofTable : IntIdTable("proof") {
     val blockHeight = integer("block_height").nullable()
 
     /**
+     * Confirmations left
+     */
+    val confirmationsLeft = integer("confirmations_left")
+
+    /**
      * Extra information, link, etc
      */
     val extra = varchar("extra", 1_000).nullable()
