@@ -25,6 +25,9 @@ private val logger = Logger.getLogger("wallet")
 data class NotEnoughFundException(val wallet: String, val amountToPay: Long = 0L) :
     Exception("wallet $wallet does NOT have enough money to pay $amountToPay")
 
+data class InvalidBitcoinAddressException(val wallet: String, val address: String?) :
+    Exception("wallet $wallet invalid address: $address")
+
 class BitcoinWallet(name: String, config: Config, network: String) :
     Wallet(name, ConfigSecretProvider(config, if (network == NETWORK_MAINNET) 0 else 1), network) {
 
@@ -175,10 +178,11 @@ class BitcoinWallet(name: String, config: Config, network: String) :
 
             val signatures = utxos.map {
                 secretProvider.signTxWithHotPrivateKey(transaction.hexToByteArray(), it.address.path)
-
             }
             // TODO: Sign the transaction
             // TODO: Push to blockchain
+            daemon.rpcClient.signRawTransaction(transaction)
+            daemon.rpcClient.sendRawTransaction(transaction)
 
             utxos.forEach { it.isSpent = true }
 
