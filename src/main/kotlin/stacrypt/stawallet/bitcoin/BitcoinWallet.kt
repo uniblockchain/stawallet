@@ -1,11 +1,7 @@
 package stacrypt.stawallet.bitcoin
 
 import com.typesafe.config.Config
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.supervisorScope
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
 import org.kethereum.encodings.encodeToBase58WithChecksum
@@ -14,6 +10,7 @@ import org.kethereum.hashes.sha256
 import org.kethereum.ripemd160.calculateRIPEMD160
 import stacrypt.stawallet.*
 import stacrypt.stawallet.model.*
+import java.math.BigDecimal
 import java.util.logging.Logger
 import kotlin.math.roundToLong
 
@@ -155,8 +152,62 @@ class BitcoinWallet(name: String, config: Config, network: String) :
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
+    private fun selectUtxo(amountToSend: Long, baseFee: Long, feePerExtraUtxo: Long): List<UtxoDao> {
+        var estimatedFee = baseFee
+        var totalInputAmount = 0L
+
+        val utxos = UtxoDao.wrapRows(
+            UtxoTable.leftJoin(ProofTable, { UtxoTable.discoveryProof }, { ProofTable.id })
+                .select { UtxoTable.wallet eq name }
+                .andWhere { UtxoTable.isSpent eq false }
+                .andWhere { UtxoTable.spendProof.isNull() }
+                .andWhere { ProofTable.confirmationsLeft eq 0 }
+                .orderBy(UtxoTable.amount, false)
+        ).filter {
+            when {
+                totalInputAmount >= amountToSend + estimatedFee -> false
+                else -> {
+                    totalInputAmount += it.amount
+                    estimatedFee += feePerExtraUtxo
+                    true
+                }
+            }
+        }
+
+        if (totalInputAmount >= amountToSend + estimatedFee) return utxos
+        else throw NotEnoughFundException(name, amountToSend)
+    }
 
     override suspend fun sendTo(address: String, amountToSend: Long) {
+        transaction {
+            val outputs = mapOf(address to BigDecimal(amountToSend))
+
+            val satPerByte = daemon.fairTxFeeRate()!!
+
+            val utxos =selectUtxo(
+                amountToSend,
+                (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2) * satPerByte,
+                TX_INPUT_SIZE * satPerByte
+            )
+
+            val amountToChange = utxos.sumByLong { it.amount } -
+                    amountToSend -
+                    (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2) * satPerByte -
+                    utxos.size * TX_INPUT_SIZE * satPerByte
+            if (amountToChange > 0) {
+                val newChangeAddress = secretProvider.getHotAddress(nextChangeAddressIndex().toInt(), 1)
+                outputs.plus(Pair(newChangeAddress, amountToChange))
+            }
+
+            var transaction = daemon.rpcClient.createRawTransaction(
+                inputs = utxos.map { OutPoint(it.txid, it.vout) }, outputs = outputs
+            )
+            // TODO: Sign the transaction
+            // TODO: Push to blockchain
+
+            utxos.forEach { it.isSpent = true }
+
+        }
     }
 //    override suspend fun sendTo(address: String, amountToSend: Long) {
 //        val outputs = mapOf(address to BigDecimal(amountToSend))

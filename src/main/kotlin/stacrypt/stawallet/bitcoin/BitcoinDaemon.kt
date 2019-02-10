@@ -22,8 +22,8 @@ object bitcoind : WalletDaemon() {
     /**
      * Satoshis per bytes
      */
-    suspend fun fairTxFeeRate(): Long? = withContext(Dispatchers.Default) {
-        rpcClient.estimateSmartFee(6).feerate?.btcToSat()
+    fun fairTxFeeRate(): Long? {
+        return rpcClient.estimateSmartFee(6).feerate?.btcToSat()
     }
 
     fun addBlockchainWatcher(blockchainId: Int, walletName: String, requiresConfirmations: Int) {
