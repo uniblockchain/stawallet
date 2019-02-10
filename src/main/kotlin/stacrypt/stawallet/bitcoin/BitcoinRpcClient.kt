@@ -353,7 +353,7 @@ interface BitcoinRpcClient {
     )
 
     @JsonRpcMethod("sendrawtransaction")
-    fun sendRawTransaction(transaction: String)
+    fun sendRawTransaction(transaction: String): String
 
     @JsonRpcMethod("sendtoaddress")
     fun sendToAddress(

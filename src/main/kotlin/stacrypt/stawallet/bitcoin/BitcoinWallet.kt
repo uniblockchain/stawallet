@@ -152,7 +152,7 @@ class BitcoinWallet(name: String, config: Config, network: String) :
 
     override suspend fun sendTo(address: String, amountToSend: Long) {
         transaction {
-            val outputs = mapOf(address to BigDecimal(amountToSend))
+            val outputs = mutableMapOf(address to BigDecimal(amountToSend))
 
             val satPerByte = daemon.fairTxFeeRate()!!
 
@@ -167,7 +167,7 @@ class BitcoinWallet(name: String, config: Config, network: String) :
                     (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2) * satPerByte -
                     utxos.size * TX_INPUT_SIZE * satPerByte
             if (amountToChange > 0) {
-                outputs.plus(Pair(newAddress(true), amountToChange))
+                outputs[newAddress(true).provision] = amountToChange.toBigDecimal()
             }
 
             var transaction = daemon.rpcClient.createRawTransaction(
