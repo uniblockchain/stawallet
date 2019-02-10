@@ -4,7 +4,10 @@ import com.typesafe.config.Config
 import org.kethereum.bip32.model.Seed
 import org.kethereum.bip32.toKey
 import org.kethereum.crypto.CURVE
+import org.kethereum.crypto.api.ec.EllipticCurveSigner
 import org.kethereum.crypto.model.PUBLIC_KEY_SIZE
+import org.kethereum.crypto.signMessage
+import org.kethereum.crypto.toHex
 import org.kethereum.encodings.encodeToBase58WithChecksum
 import org.kethereum.extensions.toBigInteger
 import org.kethereum.extensions.toBytesPadded
@@ -42,13 +45,12 @@ abstract class SecretProvider(private val walletNumber: Int = 0) {
         return Seed(hotSeed).toKey(fullPath).keyPair.publicKey.key.toByteArray()
     }
 
-    fun signTxWithHotPrivateKey(message: ByteArray, index: Int, change: Int?) {
-
+    fun signTxWithHotPrivateKey(message: ByteArray, fullPath: String): String {
+        return Seed(hotSeed).toKey(fullPath).keyPair.signMessage(
+            message.sha256().sha256()
+        ).toHex()
     }
 
-    private fun getHotPrivateKey(index: Int, change: Int?) {
-        Seed(hotSeed).toKey(makePath(index, change)).serialize(false)
-    }
 }
 
 
