@@ -42,7 +42,7 @@ class BitcoinWallet(name: String, config: Config, network: String) :
             (InvoiceTable.wallet eq name) and (InvoiceTable.user eq user) and (AddressTable.isActive eq true) and (InvoiceTable.expiration.isNull() or (InvoiceTable.expiration greater DateTime.now()))
         }.lastOrNull()?.run { InvoiceDao.wrapRow(this) }
 
-    override suspend fun issueNewInvoice(user: String): InvoiceDao {
+    private fun newAddress(isChange: Boolean = false): AddressDao {
         val q = AddressTable.select { AddressTable.wallet eq name }.orderBy(AddressTable.id, false).firstOrNull()
         var newIndex = 0
         if (q != null) {
@@ -50,19 +50,23 @@ class BitcoinWallet(name: String, config: Config, network: String) :
             newIndex = lastIssuedAddress.path.split("/").last().toInt() + 1
         }
 
-        val newPath = secretProvider.makePath(newIndex, 0)
+        val newPath = secretProvider.makePath(newIndex, if (isChange) 1 else 0)
 
         val newPublicKey = secretProvider.getHotPublicKey(newPath)
-        val newAddress = AddressDao.new {
+        return AddressDao.new {
             this.wallet = WalletDao.findById(name)!!
             this.publicKey = newPublicKey
             this.provision = formatP2pkh(newPublicKey)
             this.path = newPath
         }
 
+
+    }
+
+    override suspend fun issueNewInvoice(user: String): InvoiceDao {
         return InvoiceDao.new {
             this.wallet = WalletDao.findById(name)!!
-            this.address = newAddress
+            this.address = newAddress(false)
             this.user = user
         }
     }
@@ -184,7 +188,7 @@ class BitcoinWallet(name: String, config: Config, network: String) :
 
             val satPerByte = daemon.fairTxFeeRate()!!
 
-            val utxos =selectUtxo(
+            val utxos = selectUtxo(
                 amountToSend,
                 (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2) * satPerByte,
                 TX_INPUT_SIZE * satPerByte
@@ -195,12 +199,12 @@ class BitcoinWallet(name: String, config: Config, network: String) :
                     (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2) * satPerByte -
                     utxos.size * TX_INPUT_SIZE * satPerByte
             if (amountToChange > 0) {
-                val newChangeAddress = secretProvider.getHotAddress(nextChangeAddressIndex().toInt(), 1)
-                outputs.plus(Pair(newChangeAddress, amountToChange))
+                outputs.plus(Pair(newAddress(true), amountToChange))
             }
 
             var transaction = daemon.rpcClient.createRawTransaction(
-                inputs = utxos.map { OutPoint(it.txid, it.vout) }, outputs = outputs
+                inputs = utxos.map { OutPoint(it.txid, it.vout) },
+                outputs = outputs
             )
             // TODO: Sign the transaction
             // TODO: Push to blockchain

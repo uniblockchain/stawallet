@@ -31,11 +31,15 @@ abstract class SecretProvider(private val walletNumber: Int = 0) {
 
 
     fun getHotAddress(index: Int, change: Int?): String {
-        return Seed(hotSeed).toKey(makePath(index, change)).serialize(true)
+        return getHotAddress(makePath(index, change))
     }
 
-    fun getHotPublicKey(path: String): ByteArray {
-        return Seed(hotSeed).toKey(path).keyPair.publicKey.key.toByteArray()
+    private fun getHotAddress(fullPath: String): String {
+        return Seed(hotSeed).toKey(fullPath).serialize(true)
+    }
+
+    fun getHotPublicKey(fullPath: String): ByteArray {
+        return Seed(hotSeed).toKey(fullPath).keyPair.publicKey.key.toByteArray()
     }
 
     fun signTxWithHotPrivateKey(message: ByteArray, index: Int, change: Int?) {
