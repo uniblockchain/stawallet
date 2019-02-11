@@ -158,7 +158,7 @@ class BitcoinWalletTest : BaseApiTest() {
 
         assertFailsWith(NotEnoughFundException::class) {
             runBlocking {
-                bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 999999999)
+                bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 99999999)
             }
         }
 
@@ -166,7 +166,5 @@ class BitcoinWalletTest : BaseApiTest() {
             bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 8173831)
         }
     }
-
-    inner class MoclBitcoinRpcClient
 
 }

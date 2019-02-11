@@ -58,7 +58,7 @@ dependencies {
 //    compile("org.ethereum:ethereumj-core:1.9.1-RELEASE")
     compile("org.web3j:core:4.0.0")
 
-    compile("org.bitcoinj:bitcoinj-core:0.14.7")
+//    compile("org.bitcoinj:bitcoinj-core:0.14.7")
     compile("io.github.novacrypto:BIP32:2018.10.06")
     compile("io.github.novacrypto:BIP32derivation:2018.10.06")
 

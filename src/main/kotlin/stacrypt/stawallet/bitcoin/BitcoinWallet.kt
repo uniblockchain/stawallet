@@ -4,8 +4,8 @@ import com.typesafe.config.Config
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
-import org.kethereum.crypto.api.ec.signer
 import org.kethereum.encodings.encodeToBase58WithChecksum
+import org.kethereum.extensions.toBytesPadded
 import org.kethereum.extensions.toMinimalByteArray
 import org.kethereum.hashes.sha256
 import org.kethereum.ripemd160.calculateRIPEMD160
@@ -15,6 +15,8 @@ import stacrypt.stawallet.model.*
 import java.math.BigDecimal
 import java.util.logging.Logger
 import kotlin.math.roundToLong
+import org.walleth.khex.toHexString
+import java.math.BigInteger
 
 
 const val NETWORK_MAINNET = "mainnet"
@@ -77,7 +79,7 @@ class BitcoinWallet(name: String, config: Config, network: String) :
     }
 
     private fun formatP2pkh(publicKey: ByteArray) =
-        publicKey.toBitcoinAddressBinary(
+        publicKey.toBitcoinAddress(
             if (this@BitcoinWallet.network == NETWORK_MAINNET) VERSION_BYTE_P2PKH_MAINNET else VERSION_BYTE_P2PKH_TESTNET3
         )
 
@@ -173,16 +175,46 @@ class BitcoinWallet(name: String, config: Config, network: String) :
             var transaction = daemon.rpcClient.createRawTransaction(
                 inputs = utxos.map { OutPoint(it.txid, it.vout) },
                 outputs = outputs
-            )
+            ).hexToByteArray()
             // TODO: Validate the raw transaction (because we do NOT trust the bitcoind)
 
             val signatures = utxos.map {
-                secretProvider.signTxWithHotPrivateKey(transaction.hexToByteArray(), it.address.path)
+                secretProvider.signTxWithHotPrivateKey(transaction, it.address.path)
             }
+
+//            var totalSigSize = 0
+//            signatures.forEachIndexed { index, s ->
+//                val pos = 4 + 1 + totalSigSize + ()*index + 32 + 4
+//                transaction = transaction[] + ""
+//                totalSigSize += 1 + s.hexToByteArray().size
+//            }
+
+//            for (i in 0 until transaction.getInputs().size()) {
+//
+//                val transactionInput = transaction.getInput(i)
+//                val addressFromUtxo = mUTXOs.get(i).getAddress()
+//                val privKeyBytes = getPrivKeyBitesForAddress(addressFromUtxo)
+//                val ecKey = ECKey.fromPrivate(privKeyBytes)
+//
+//                val scriptPubKey =
+//                    ScriptBuilder.createOutputScript(Address.fromBase58(params, mUTXOs.get(i).getAddress()))
+//
+//                val hash = transaction.hashForSignature(i, scriptPubKey, Transaction.SigHash.ALL, false)
+//                val ecSig = ecKey.sign(hash)
+//                val txSig = TransactionSignature(ecSig, Transaction.SigHash.ALL, false)
+//                transactionInput.setScriptSig(ScriptBuilder.createInputScript(txSig, ecKey))
+//            }
+//
+////serialization and broadcasting
+//            val bytesRawTransaction = transaction.bitcoinSerialize()
+//            val rawTransaction = HEX.encode(bytesRawTransaction)
+//            broadcastTx(rawTransaction)
+
+
             // TODO: Sign the transaction
             // TODO: Push to blockchain
-            daemon.rpcClient.signRawTransaction(transaction)
-            daemon.rpcClient.sendRawTransaction(transaction)
+            daemon.rpcClient.signRawTransaction(transaction.toHexString())
+            daemon.rpcClient.sendRawTransaction(transaction.toHexString())
 
             utxos.forEach { it.isSpent = true }
 
@@ -198,11 +230,25 @@ const val VERSION_BYTE_P2PKH_TESTNET3 = 111
  *  * https://en.bitcoin.it/wiki/List_of_address_prefixes
  *  * https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses
  */
-fun ByteArray.toBitcoinAddressBinary(versionByte: Int) = this
+fun ByteArray.toBitcoinAddress(versionByte: Int) = this
     .getCompressedPublicKey()
     .sha256()
     .calculateRIPEMD160()
     .run { versionByte.toMinimalByteArray() + this }
     .encodeToBase58WithChecksum()
+
+/**
+ * Resources:
+ *  * https://en.bitcoin.it/wiki/Wallet_import_format
+ */
+const val WIF_PREFIX_MAINNET = 0x80
+const val WIF_PREFIX_TESTNET = 0xef
+
+fun ByteArray.toBitcoinWif(networkByte: Int) = this
+    .apply { assert(this.size == 32) } // Check padding exclusion
+    .run { networkByte.toMinimalByteArray() + this + 0x01.toMinimalByteArray() } // Compression byte
+    .encodeToBase58WithChecksum()
+
+fun BigInteger.toBitcoinWif(networkByte: Int) = toBytesPadded(32).toBitcoinWif(networkByte)
 
 fun Double.btcToSat() = (this * 100_000_000.0).roundToLong()
