@@ -45,6 +45,10 @@ abstract class SecretProvider(private val walletNumber: Int = 0) {
         return Seed(hotSeed).toKey(fullPath).keyPair.publicKey.key.toByteArray()
     }
 
+    fun getHotPeivateKey(fullPath: String): ByteArray {
+        return Seed(hotSeed).toKey(fullPath).keyPair.privateKey.key.toBytesPadded(32)
+    }
+
     fun signTxWithHotPrivateKey(message: ByteArray, fullPath: String): String {
         return Seed(hotSeed).toKey(fullPath).keyPair.signMessage(
             message.sha256().sha256()

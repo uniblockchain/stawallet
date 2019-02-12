@@ -67,5 +67,5 @@ abstract class Wallet(val name: String, val secretProvider: SecretProvider, val 
     abstract suspend fun invoiceDeposits(invoiceId: Int): List<DepositDao>
 
     abstract suspend fun issueNewInvoice(user: String): InvoiceDao
-    abstract suspend fun sendTo(address: String, amountToSend: Long)
+    abstract suspend fun sendTo(address: String, amountToSend: Long): Any
 }

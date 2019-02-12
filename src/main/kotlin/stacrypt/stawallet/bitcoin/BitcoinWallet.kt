@@ -152,7 +152,7 @@ class BitcoinWallet(name: String, config: Config, network: String) :
         else throw NotEnoughFundException(name, amountToSend)
     }
 
-    override suspend fun sendTo(address: String, amountToSend: Long) {
+    override suspend fun sendTo(address: String, amountToSend: Long): String {
         transaction {
             val outputs = mutableMapOf(address to BigDecimal(amountToSend))
 
@@ -179,46 +179,27 @@ class BitcoinWallet(name: String, config: Config, network: String) :
             // TODO: Validate the raw transaction (because we do NOT trust the bitcoind)
 
             val signatures = utxos.map {
-                secretProvider.signTxWithHotPrivateKey(transaction, it.address.path)
+                secretProvider.getHotPeivateKey(it.address.path).toBitcoinWif(
+                    if (this@BitcoinWallet.network == NETWORK_MAINNET) WIF_PREFIX_MAINNET else WIF_PREFIX_TESTNET
+                )
             }
 
-//            var totalSigSize = 0
-//            signatures.forEachIndexed { index, s ->
-//                val pos = 4 + 1 + totalSigSize + ()*index + 32 + 4
-//                transaction = transaction[] + ""
-//                totalSigSize += 1 + s.hexToByteArray().size
-//            }
+            val signingResult = daemon.rpcClient.signRawTransactionWithKey(transaction.toHexString(""), signatures)
+            if (signingResult.complete == true && signingResult.errors.isNullOrEmpty() && signingResult.hex != null) {
+                transaction = signingResult.hex.hexToByteArray()
+            } else {
+                // TODO: Handle error
+            }
 
-//            for (i in 0 until transaction.getInputs().size()) {
-//
-//                val transactionInput = transaction.getInput(i)
-//                val addressFromUtxo = mUTXOs.get(i).getAddress()
-//                val privKeyBytes = getPrivKeyBitesForAddress(addressFromUtxo)
-//                val ecKey = ECKey.fromPrivate(privKeyBytes)
-//
-//                val scriptPubKey =
-//                    ScriptBuilder.createOutputScript(Address.fromBase58(params, mUTXOs.get(i).getAddress()))
-//
-//                val hash = transaction.hashForSignature(i, scriptPubKey, Transaction.SigHash.ALL, false)
-//                val ecSig = ecKey.sign(hash)
-//                val txSig = TransactionSignature(ecSig, Transaction.SigHash.ALL, false)
-//                transactionInput.setScriptSig(ScriptBuilder.createInputScript(txSig, ecKey))
-//            }
-//
-////serialization and broadcasting
-//            val bytesRawTransaction = transaction.bitcoinSerialize()
-//            val rawTransaction = HEX.encode(bytesRawTransaction)
-//            broadcastTx(rawTransaction)
-
-
-            // TODO: Sign the transaction
-            // TODO: Push to blockchain
-            daemon.rpcClient.signRawTransaction(transaction.toHexString())
-            daemon.rpcClient.sendRawTransaction(transaction.toHexString())
+            val txHash = daemon.rpcClient.sendRawTransaction(transaction.toHexString(""))
 
             utxos.forEach { it.isSpent = true }
 
+            return@transaction txHash
+
         }
+        // TODO: Handle exception
+        throw Exception()
     }
 }
 

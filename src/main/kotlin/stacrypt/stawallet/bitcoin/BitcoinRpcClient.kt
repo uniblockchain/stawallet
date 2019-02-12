@@ -392,6 +392,9 @@ interface BitcoinRpcClient {
     @JsonRpcMethod("signrawtransaction")
     fun signRawTransaction(transactionId: String)
 
+    @JsonRpcMethod("signrawtransactionwithkey")
+    fun signRawTransactionWithKey(hexString: String, privKeys: List<String>) : SignTransactionResult
+
     @JsonRpcMethod("submitblock")
     fun submitBlock(blockData: String)
 
