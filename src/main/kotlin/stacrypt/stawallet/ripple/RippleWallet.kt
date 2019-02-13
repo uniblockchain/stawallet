@@ -15,9 +15,8 @@ class RippleWallet(name: String, config: Config, network: String) : Wallet(
 ) {
     override val daemon: WalletDaemon = rippled
 
-    override fun blockchainExplorerTxLink(txId: String): String? {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun blockchainExplorerTxLink(txId: String) =
+        "https://xrpcharts.ripple.com/#/transactions/${txId.toUpperCase()}"
 
     override val requiredConfirmations: Int
         get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
@@ -43,7 +42,7 @@ class RippleWallet(name: String, config: Config, network: String) : Wallet(
     }
 
     override suspend fun sendTo(address: String, amountToSend: Long): Any {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        //
     }
 
 }

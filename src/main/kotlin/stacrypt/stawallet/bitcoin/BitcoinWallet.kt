@@ -33,11 +33,10 @@ data class InvalidBitcoinAddressException(val wallet: String, val address: Strin
 class BitcoinWallet(name: String, config: Config, network: String) :
     Wallet(name, ConfigSecretProvider(config, if (network == NETWORK_MAINNET) 0 else 1), network) {
 
-    override var latestBlockHeight = 0
     override var requiredConfirmations = config.getInt("requiredConfirmations")
 //        if (config.hasPath("requiredConfirmations")) config.getInt("requiredConfirmations") else null
 
-    override fun blockchainExplorerTxLink(txid: String) = "https://www.blockchain.com/btc/tx/$txid"
+    override fun blockchainExplorerTxLink(txId: String) = "https://www.blockchain.com/btc/tx/$txId"
 
     override suspend fun invoiceDeposits(invoiceId: Int): List<DepositDao> =
         DepositDao.wrapRows(

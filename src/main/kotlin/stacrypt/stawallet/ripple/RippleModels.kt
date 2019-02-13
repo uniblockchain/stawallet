@@ -260,6 +260,15 @@ data class GetTxInfoResponse(
     val result: Transaction?
 ) : Response()
 
+data class GetTxHistoryResult(
+    val index: Int?,
+    val txs: List<Transaction>?
+) : Response()
+
+data class GetTxHistoryResponse(
+    val result: GetTxHistoryResult?
+)
+
 data class SubmitTxParams(
     @JsonProperty("tx_blob") val txBlob: String,
     val command: String = "submit"
@@ -328,4 +337,32 @@ data class SignTxForParams(
 data class SignTxForResponse(
     val result: SignTxResult?
 ) : Response()
+
+data class FeeResponse(
+    @JsonProperty("result") val result: FeeResult?
+) : Response()
+
+data class FeeResult(
+    @JsonProperty("current_ledger_size") val currentLedgerSize: String? = null,
+    @JsonProperty("current_queue_size") val currentQueueSize: String? = null,
+    @JsonProperty("drops") val drops: List<FeeDrop>? = null,
+    @JsonProperty("expected_ledger_size") val expectedLedgerSize: String? = null,
+    @JsonProperty("ledger_current_index") val ledgerCurrentIndex: Int? = null,
+    @JsonProperty("levels") val levels: List<FeeLevel>? = null,
+    @JsonProperty("max_queue_size") val maxQueueSize: String? = null
+)
+
+data class FeeDrop(
+    @JsonProperty("base_fee") val baseFee: String? = null,
+    @JsonProperty("median_fee") val medianFee: String? = null,
+    @JsonProperty("minimum_fee") val minimumFee: String? = null,
+    @JsonProperty("open_ledger_fee") val openLedgerFee: String? = null
+)
+
+data class FeeLevel(
+    @JsonProperty("median_level") val medianLevel: String? = null,
+    @JsonProperty("minimum_level") val minimumLevel: String? = null,
+    @JsonProperty("open_ledger_level") val openLedgerLevel: String? = null,
+    @JsonProperty("reference_level") val referenceLevel: String? = null
+)
 
