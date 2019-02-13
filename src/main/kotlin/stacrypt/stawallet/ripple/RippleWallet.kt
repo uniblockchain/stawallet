@@ -13,7 +13,7 @@ class RippleWallet(name: String, config: Config, network: String) : Wallet(
     ConfigSecretProvider(config, if (network == NETWORK_MAINNET) 0 else 1),
     network
 ) {
-    override val daemon: WalletDaemon = rippled
+    override val daemon = rippled
 
     override fun blockchainExplorerTxLink(txId: String) =
         "https://xrpcharts.ripple.com/#/transactions/${txId.toUpperCase()}"
@@ -42,7 +42,7 @@ class RippleWallet(name: String, config: Config, network: String) : Wallet(
     }
 
     override suspend fun sendTo(address: String, amountToSend: Long): Any {
-        //
+        daemon.rpcClient.getAccountInfo()
     }
 
 }
