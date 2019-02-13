@@ -49,8 +49,11 @@ abstract class Wallet(val name: String, val secretProvider: SecretProvider, val 
     }
 
 
-    abstract var latestBlockHeight: Int
+    /**
+     * Url to redirect user to a third-party blockchain explorer
+     */
     abstract fun blockchainExplorerTxLink(txId: String): String?
+
     abstract val requiredConfirmations: Int
 
     abstract suspend fun syncBlockchain(): Unit
