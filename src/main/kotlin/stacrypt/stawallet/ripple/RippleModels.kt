@@ -238,12 +238,12 @@ data class Amount(
 )
 
 data class Transaction(
-    val hash: String,
+    val hash: String? = null,
     @JsonProperty("Account") val account: String,
     @JsonProperty("TransactionType") val transactionType: TransactionType,
     @JsonProperty("Destination") val destination: String? = null,
     @JsonProperty("DestinationTag") val destinationTag: Int? = null,
-    @JsonProperty("Amount") val amount: Amount? = null,
+    @JsonProperty("Amount") val amount: Any? = null,
     @JsonProperty("Fee") val fee: String? = null,
     @JsonProperty("Sequence") val sequence: Int? = null,
     @JsonProperty("AccountTxnID") val accountTxnID: String? = null,
@@ -345,10 +345,10 @@ data class FeeResponse(
 data class FeeResult(
     @JsonProperty("current_ledger_size") val currentLedgerSize: String? = null,
     @JsonProperty("current_queue_size") val currentQueueSize: String? = null,
-    @JsonProperty("drops") val drops: List<FeeDrop>? = null,
+    @JsonProperty("drops") val drops: FeeDrop? = null,
     @JsonProperty("expected_ledger_size") val expectedLedgerSize: String? = null,
     @JsonProperty("ledger_current_index") val ledgerCurrentIndex: Int? = null,
-    @JsonProperty("levels") val levels: List<FeeLevel>? = null,
+    @JsonProperty("levels") val levels: FeeLevel? = null,
     @JsonProperty("max_queue_size") val maxQueueSize: String? = null
 )
 

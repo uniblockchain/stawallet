@@ -11,6 +11,9 @@ import java.security.InvalidParameterException
 import java.util.logging.Level
 import java.util.logging.Logger
 
+data class NotEnoughFundException(val wallet: String, val amountToPay: Long = 0L) :
+    Exception("wallet $wallet does NOT have enough money to pay $amountToPay")
+
 abstract class Wallet(val name: String, val secretProvider: SecretProvider, val network: String) {
 
     private val logger = Logger.getLogger("Wallet $name")

@@ -4,16 +4,12 @@ import com.typesafe.config.Config
 import org.kethereum.bip32.model.Seed
 import org.kethereum.bip32.toKey
 import org.kethereum.crypto.CURVE
-import org.kethereum.crypto.api.ec.EllipticCurveSigner
 import org.kethereum.crypto.model.PUBLIC_KEY_SIZE
 import org.kethereum.crypto.signMessage
 import org.kethereum.crypto.toHex
-import org.kethereum.encodings.encodeToBase58WithChecksum
 import org.kethereum.extensions.toBigInteger
 import org.kethereum.extensions.toBytesPadded
-import org.kethereum.extensions.toMinimalByteArray
 import org.kethereum.hashes.sha256
-import org.kethereum.ripemd160.calculateRIPEMD160
 import org.walleth.khex.hexToByteArray
 
 

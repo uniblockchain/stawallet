@@ -24,9 +24,6 @@ const val NETWORK_TESTNET_3 = "testnet3"
 
 private val logger = Logger.getLogger("wallet")
 
-data class NotEnoughFundException(val wallet: String, val amountToPay: Long = 0L) :
-    Exception("wallet $wallet does NOT have enough money to pay $amountToPay")
-
 data class InvalidBitcoinAddressException(val wallet: String, val address: String?) :
     Exception("wallet $wallet invalid address: $address")
 
