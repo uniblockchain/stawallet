@@ -2,6 +2,7 @@ package stacrypt.stawallet.ripple
 
 import com.typesafe.config.Config
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.kethereum.encodings.encodeToBase58WithChecksum
 import org.kethereum.extensions.toBytesPadded
 import org.kethereum.extensions.toMinimalByteArray
@@ -58,7 +59,7 @@ class RippleWallet(name: String, config: Config, network: String) : Wallet(
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override suspend fun sendTo(address: String, amountToSend: Long, tag: Any?): Any {
+    override suspend fun sendTo(address: String, amountToSend: Long, tag: Any?): Any = transaction {
         val accountInfo = daemon.rpcClient.getAccountInfo(
             account = theOnlyHotAddress!!.provision,
             ledgerIndex = LEDGER_INDEX_VALIDATED
@@ -74,7 +75,7 @@ class RippleWallet(name: String, config: Config, network: String) : Wallet(
             throw NotEnoughFundException(name, amountToSend)
         }
 
-        daemon.rpcClient.signTransaction(
+        val signingResult = daemon.rpcClient.signTransaction(
             transaction = Transaction(
                 account = theOnlyHotAddress!!.provision,
                 destination = address,
@@ -83,10 +84,16 @@ class RippleWallet(name: String, config: Config, network: String) : Wallet(
                 amount = amountToSend.toString(),
                 fee = requiredFee.toString()
             ),
-            seed = secretProvider.getHotPublicKey(theOnlyHotAddress!!.path).,
+            seed = secretProvider.getHotPublicKey(theOnlyHotAddress!!.path).toRippleSeed(),
             keyType = "secp256k1"
-        )
+        ).result
 
+        val submitResult = daemon.rpcClient.submitTransaction(signingResult!!.txBlob!!).result
+        if (submitResult?.engineResult == EngineResult.TesSUCCESS && submitResult.engineResultCode == 0) {
+            return@transaction submitResult.txJson!!.hash!!
+        }
+
+        throw Exception("Error") // TODO: Report to boss
     }
 
 }
