@@ -14,6 +14,8 @@ import org.walleth.khex.hexToByteArray
 import org.walleth.khex.toHexString
 import stacrypt.stawallet.bitcoin.toBitcoinAddress
 import stacrypt.stawallet.bitcoin.toBitcoinWif
+import stacrypt.stawallet.getCompressedPublicKey
+import stacrypt.stawallet.ripple.toRippleAddress
 
 fun main(args: Array<String>) {
 //    val m = MnemonicWords("liar orient siege thumb try certain next fit weird simple divorce circle")
@@ -25,7 +27,7 @@ fun main(args: Array<String>) {
     val seedHexStr =
         "5c6e14e58ad94121498ea9535795967a7b0339a7e3206fb2c9e52de0bb8c76dfd2e783435cbded4fc9939720386dee90db32b36bd56b85750c4d6825f8cc2e8a"
     val s = Seed(seedHexStr.hexToByteArray())
-    val publicKey = s.toKey("m/44'/0'/0'/0/0").keyPair.publicKey.key.toByteArray()
+    var publicKey = s.toKey("m/44'/0'/0'/0/0").keyPair.publicKey.key.toByteArray()
 //    val addr = pk.toBitcoinAddress(0)
 //    val wif = s.toKey("m/44'/0'/0'/0/0").keyPair.privateKey.key.toBytesPadded(64).toBitcoinWif(0x80)
 //
@@ -80,6 +82,10 @@ fun main(args: Array<String>) {
 //    println((x + x.sha256().sha256().take(4)).encodeToBase58String())
 //    println((x + x.sha256().sha256().take(4)).encodeToBase58WithChecksum())
 
-    println(publicKey)
+    publicKey = s.toKey("m/44'/144'/0'/0/0").keyPair.publicKey.key.toByteArray()
+    val ser = publicKey.getCompressedPublicKey().toHexString("")
+//    if(ser != "0305ca5f147c7fdd007cbd8853baad6c1c7aae6944dac8657a2b85373b38363abb")
+//        throw Exception("$ser != 0305ca5f147c7fdd007cbd8853baad6c1c7aae6944dac8657a2b85373b38363abb")
+    println(ser.hexToByteArray().toRippleAddress())
 
 }
