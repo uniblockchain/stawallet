@@ -160,6 +160,7 @@ fun String.decodeBase58WithChecksumRipple(): ByteArray {
 
 
 /**
+ * Testcase: https://github.com/ripple/ripple-keypairs/blob/master/test/fixtures/api.json
  * https://developers.ripple.com/base58-encodings.html
  */
 fun ByteArray.toRippleAddress() = this
@@ -170,8 +171,8 @@ fun ByteArray.toRippleAddress() = this
     .encodeToBase58WithChecksumRipple(alphabet[0x00])
 
 fun ByteArray.toRippleSeed() = this
-    .apply { assert(this.size == 33) }
+    .apply { assert(this.size == 20) }
     .sha256()
     .ripemd160()
-    .run { 0x21.toMinimalByteArray() + this } // Add leading `r`
-    .encodeToBase58WithChecksumRipple(alphabet[0x21])
+    .run { 0x00.toMinimalByteArray() + this } // Add leading `s`
+    .encodeToBase58StringRipple('s')

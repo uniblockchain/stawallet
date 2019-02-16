@@ -9,6 +9,7 @@ import org.kethereum.extensions.toBigInteger
 import org.kethereum.extensions.toBytesPadded
 import org.kethereum.extensions.toHexStringNoPrefix
 import org.kethereum.extensions.toMinimalByteArray
+import org.kethereum.hashes.ripemd160
 import org.kethereum.hashes.sha256
 import org.walleth.khex.hexToByteArray
 import org.walleth.khex.toHexString
@@ -16,6 +17,7 @@ import stacrypt.stawallet.bitcoin.toBitcoinAddress
 import stacrypt.stawallet.bitcoin.toBitcoinWif
 import stacrypt.stawallet.getCompressedPublicKey
 import stacrypt.stawallet.ripple.toRippleAddress
+import stacrypt.stawallet.ripple.toRippleSeed
 
 fun main(args: Array<String>) {
 //    val m = MnemonicWords("liar orient siege thumb try certain next fit weird simple divorce circle")
@@ -82,10 +84,20 @@ fun main(args: Array<String>) {
 //    println((x + x.sha256().sha256().take(4)).encodeToBase58String())
 //    println((x + x.sha256().sha256().take(4)).encodeToBase58WithChecksum())
 
-    publicKey = s.toKey("m/44'/144'/0'/0/0").keyPair.publicKey.key.toByteArray()
-    val ser = publicKey.getCompressedPublicKey().toHexString("")
+//    publicKey = s.toKey("m/44'/144'/0'/0/0").keyPair.publicKey.key.toByteArray()
+//    val ser = publicKey.getCompressedPublicKey().toHexString("")
 //    if(ser != "0305ca5f147c7fdd007cbd8853baad6c1c7aae6944dac8657a2b85373b38363abb")
 //        throw Exception("$ser != 0305ca5f147c7fdd007cbd8853baad6c1c7aae6944dac8657a2b85373b38363abb")
-    println(ser.hexToByteArray().toRippleAddress())
+    val privateKey = s.toKey("m/44'/144'/0'/0/0").keyPair.privateKey.key.toBytesPadded(32)
+    var ser = privateKey.toHexString("")
+    println(ser)
+    println(ser.hexToByteArray().ripemd160().toHexString(""))
+    var xxx = intArrayOf(207, 45, 227, 120, 251, 221, 126, 46, 232, 125, 72, 109, 251, 90, 123, 255)
+    var yyy = xxx.foldIndexed(ByteArray(xxx.size)) { i, a, v -> a.apply { set(i, v.toByte()) } }
+    println(yyy.toHexString(""))
+//    ser = "D78B9735C3F26501C7337B8A5727FD53A6EFDBC6AA55984F098488561F985E23"
+    ser = yyy.toHexString("")
+    println(ser.hexToByteArray().toRippleSeed())
+    println("sn259rEFXrQrWyx3Q7XneWcwV6dfL")
 
 }
