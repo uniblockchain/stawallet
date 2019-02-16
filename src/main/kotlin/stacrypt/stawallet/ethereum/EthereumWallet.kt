@@ -3,21 +3,14 @@ package stacrypt.stawallet.ethereum
 import com.typesafe.config.Config
 import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.select
-import org.kethereum.crypto.api.ec.EllipticCurveSigner
 import org.kethereum.crypto.signMessage
-import org.kethereum.extensions.toByteArray
 import org.kethereum.functions.calculateHash
 import org.kethereum.functions.encodeRLP
-import org.kethereum.functions.rlp.toRLP
 import org.kethereum.model.*
 import org.walleth.khex.toHexString
 import java.math.BigInteger
-import org.web3j.crypto.RawTransaction
-import org.web3j.crypto.TransactionEncoder
-import redis.clients.jedis.Jedis
 import stacrypt.stawallet.ConfigSecretProvider
 import stacrypt.stawallet.Wallet
-import stacrypt.stawallet.WalletDaemon
 import stacrypt.stawallet.model.AddressDao
 import stacrypt.stawallet.model.AddressTable
 import stacrypt.stawallet.model.DepositDao
@@ -68,12 +61,7 @@ class EthereumWallet(name: String, config: Config, network: String) :
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override suspend fun sendTo(address: String, amountToSend: Long, tag: Any?): Any {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-
-    fun sendTo(address: String, amountToSend: BigInteger): String {
+    override suspend fun sendTo(address: String, amountToSend: BigInteger, tag: Any?): Any {
 
 //        val privKey = HashUtil.sha3("cat".toByteArray())
 //        val ecKey = ECKey.fromPrivate(privKey)

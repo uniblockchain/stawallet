@@ -59,7 +59,7 @@ class RippleWallet(name: String, config: Config, network: String) : Wallet(
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override suspend fun sendTo(address: String, amountToSend: Long, tag: Any?): Any = transaction {
+    override suspend fun sendTo(address: String, amountToSend: BigInteger, tag: Any?): Any = transaction {
         val accountInfo = daemon.rpcClient.getAccountInfo(
             account = theOnlyHotAddress!!.provision,
             ledgerIndex = LEDGER_INDEX_VALIDATED
@@ -71,8 +71,8 @@ class RippleWallet(name: String, config: Config, network: String) : Wallet(
             throw Exception("")
         }
 
-        if (accountInfo.result.accountData.balance.toLong() < amountToSend + requiredFee + XRP_MINIMUM_BALANCE) {
-            throw NotEnoughFundException(name, amountToSend)
+        if (accountInfo.result.accountData.balance.toLong() < amountToSend.toLong() + requiredFee + XRP_MINIMUM_BALANCE) {
+            throw NotEnoughFundException(name, amountToSend.toLong())
         }
 
         val signingResult = daemon.rpcClient.signTransaction(

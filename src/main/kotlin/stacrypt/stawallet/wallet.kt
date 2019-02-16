@@ -4,9 +4,11 @@ import io.ktor.config.tryGetString
 import stacrypt.stawallet.bitcoin.BitcoinWallet
 import stacrypt.stawallet.bitcoin.NETWORK_MAINNET
 import stacrypt.stawallet.bitcoin.NETWORK_TESTNET_3
+import stacrypt.stawallet.ethereum.EthereumWallet
 import stacrypt.stawallet.model.DepositDao
 import stacrypt.stawallet.model.DepositTable
 import stacrypt.stawallet.model.InvoiceDao
+import java.math.BigInteger
 import java.security.InvalidParameterException
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -40,7 +42,13 @@ abstract class Wallet(val name: String, val secretProvider: SecretProvider, val 
                         )
                     )
 //                    "litecoin" -> all.add(LitecoinWallet(address, xPrv))
-                    "ethereum" -> all.add(EthereumWallet(address, xPrv))
+                    "ethereum" -> all.add(
+                        EthereumWallet(
+                            wc.first,
+                            config.getConfig("wallets.${wc.first}"),
+                            network ?: throw InvalidParameterException("No network specified")
+                        )
+                    )
 //                    "ripple" -> all.add(RippleWallet(address, xPrv))
 //                    else -> throw RuntimeException("Unsupported wallet ${wc.first}!!!")
                 }
@@ -73,5 +81,5 @@ abstract class Wallet(val name: String, val secretProvider: SecretProvider, val 
     abstract suspend fun invoiceDeposits(invoiceId: Int): List<DepositDao>
 
     abstract suspend fun issueNewInvoice(user: String): InvoiceDao
-    abstract suspend fun sendTo(address: String, amountToSend: Long, tag: Any?): Any
+    abstract suspend fun sendTo(address: String, amountToSend: BigInteger, tag: Any?): Any
 }

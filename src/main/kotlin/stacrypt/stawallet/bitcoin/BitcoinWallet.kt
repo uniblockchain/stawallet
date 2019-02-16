@@ -148,20 +148,20 @@ class BitcoinWallet(name: String, config: Config, network: String) :
         else throw NotEnoughFundException(name, amountToSend)
     }
 
-    override suspend fun sendTo(address: String, amountToSend: Long, tag: Any?): String {
+    override suspend fun sendTo(address: String, amountToSend: BigInteger, tag: Any?): String {
         transaction {
             val outputs = mutableMapOf(address to BigDecimal(amountToSend))
 
             val satPerByte = daemon.fairTxFeeRate()!!
 
             val utxos = selectUtxo(
-                amountToSend,
+                amountToSend.toLong(),
                 (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2) * satPerByte,
                 TX_INPUT_SIZE * satPerByte
             )
 
             val amountToChange = utxos.sumByLong { it.amount } -
-                    amountToSend -
+                    amountToSend.toLong() -
                     (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2) * satPerByte -
                     utxos.size * TX_INPUT_SIZE * satPerByte
             if (amountToChange > 0) {
