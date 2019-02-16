@@ -175,7 +175,7 @@ class BitcoinWallet(name: String, config: Config, network: String) :
             // TODO: Validate the raw transaction (because we do NOT trust the bitcoind)
 
             val signatures = utxos.map {
-                secretProvider.getHotPeivateKey(it.address.path).toBitcoinWif(
+                secretProvider.getHotPrivateKey(it.address.path).toBitcoinWif(
                     if (this@BitcoinWallet.network == NETWORK_MAINNET) WIF_PREFIX_MAINNET else WIF_PREFIX_TESTNET
                 )
             }

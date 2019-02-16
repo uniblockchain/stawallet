@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import org.kethereum.bip32.model.Seed
 import org.kethereum.bip32.toKey
 import org.kethereum.crypto.CURVE
+import org.kethereum.crypto.model.ECKeyPair
 import org.kethereum.crypto.model.PUBLIC_KEY_SIZE
 import org.kethereum.crypto.signMessage
 import org.kethereum.crypto.toHex
@@ -11,6 +12,8 @@ import org.kethereum.extensions.toBigInteger
 import org.kethereum.extensions.toBytesPadded
 import org.kethereum.hashes.sha256
 import org.walleth.khex.hexToByteArray
+import java.math.BigInteger
+import java.security.KeyPair
 
 
 // FIXME: Highly dangerous because of `hotSeed` variable accessibility (e.g. using reflection)
@@ -41,9 +44,12 @@ abstract class SecretProvider(private val walletNumber: Int = 0) {
         return Seed(hotSeed).toKey(fullPath).keyPair.publicKey.key.toByteArray()
     }
 
-    fun getHotPeivateKey(fullPath: String): ByteArray {
+    fun getHotPrivateKey(fullPath: String): ByteArray {
         return Seed(hotSeed).toKey(fullPath).keyPair.privateKey.key.toBytesPadded(32)
     }
+
+    fun getHotKeyPair(fullPath: String): ECKeyPair = return Seed(hotSeed).toKey(fullPath).keyPair
+
 
     fun signTxWithHotPrivateKey(message: ByteArray, fullPath: String): String {
         return Seed(hotSeed).toKey(fullPath).keyPair.signMessage(
