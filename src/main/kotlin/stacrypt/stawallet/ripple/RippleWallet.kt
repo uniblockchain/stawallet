@@ -1,6 +1,7 @@
 package stacrypt.stawallet.ripple
 
 import com.typesafe.config.Config
+import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import stacrypt.stawallet.ConfigSecretProvider
@@ -26,7 +27,28 @@ class RippleWallet(name: String, config: Config, network: String) : Wallet(
 ) {
     override val daemon = rippled
 
+    /**
+     * This is the address which we receive all deposits. Then we redirect each transaction to our warm wallet
+     * (after transfering the overflow value to our cold address).
+     */
     private val theOnlyHotAddress: AddressDao?
+        get() {
+            val path = secretProvider.makePath(0, 0) // FIXME: Obtain next index
+            val q = AddressTable.select { AddressTable.wallet eq name }
+                .andWhere { AddressTable.isActive eq true }
+                .lastOrNull()
+
+            if (q != null) return AddressDao.wrapRow(q)
+            return AddressDao.new {
+                this.provision =
+            }
+        }
+
+    /**
+     * This is the address which we keep received deposits.
+     * We use this address to withdraw to external addresses.
+     */
+    private val theOnlyWarmAddress: AddressDao?
         get() = AddressDao.wrapRow(AddressTable.select { AddressTable.wallet eq name }.last())
 
     override fun blockchainExplorerTxLink(txId: String) =
