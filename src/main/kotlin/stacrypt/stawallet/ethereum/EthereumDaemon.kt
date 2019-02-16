@@ -4,7 +4,6 @@ import org.web3j.protocol.Web3j
 import org.web3j.protocol.http.HttpService
 import stacrypt.stawallet.DaemonState
 import stacrypt.stawallet.WalletDaemon
-import stacrypt.stawallet.bitcoin.BitcoinRpcClientFactory
 import stacrypt.stawallet.config
 
 object geth : WalletDaemon() {

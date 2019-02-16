@@ -6,7 +6,9 @@ import org.kethereum.bip32.toKey
 import org.kethereum.crypto.CURVE
 import org.kethereum.crypto.model.ECKeyPair
 import org.kethereum.crypto.model.PUBLIC_KEY_SIZE
+import org.kethereum.crypto.model.PublicKey
 import org.kethereum.crypto.signMessage
+import org.kethereum.crypto.toAddress
 import org.kethereum.crypto.toHex
 import org.kethereum.extensions.toBigInteger
 import org.kethereum.extensions.toBytesPadded
@@ -42,6 +44,10 @@ abstract class SecretProvider(private val walletNumber: Int = 0) {
 
     fun getHotPublicKey(fullPath: String): ByteArray {
         return Seed(hotSeed).toKey(fullPath).keyPair.publicKey.key.toByteArray()
+    }
+
+    fun getHotPublicKeyObject(fullPath: String): PublicKey {
+        return Seed(hotSeed).toKey(fullPath).keyPair.publicKey
     }
 
     fun getHotPrivateKey(fullPath: String): ByteArray {

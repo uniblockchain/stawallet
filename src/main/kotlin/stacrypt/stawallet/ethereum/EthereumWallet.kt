@@ -5,6 +5,7 @@ import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.kethereum.crypto.signMessage
+import org.kethereum.crypto.toAddress
 import org.kethereum.functions.calculateHash
 import org.kethereum.functions.encodeRLP
 import org.kethereum.model.*
@@ -12,14 +13,11 @@ import org.walleth.khex.toHexString
 import java.math.BigInteger
 import stacrypt.stawallet.ConfigSecretProvider
 import stacrypt.stawallet.Wallet
-import stacrypt.stawallet.model.AddressDao
-import stacrypt.stawallet.model.AddressTable
-import stacrypt.stawallet.model.DepositDao
-import stacrypt.stawallet.model.InvoiceDao
 import org.web3j.protocol.core.DefaultBlockParameterName
 import org.web3j.protocol.core.DefaultBlockParameterNumber
 import stacrypt.stawallet.NotEnoughFundException
 import stacrypt.stawallet.TransactionPushException
+import stacrypt.stawallet.model.*
 import java.lang.Exception
 import java.math.BigDecimal
 
@@ -44,9 +42,10 @@ class EthereumWallet(name: String, config: Config, network: String) :
 
     override var requiredConfirmations = config.getInt("requiredConfirmations")
 
+    // TODO: Use a hard derived address for warm wallet
     private val theOnlyWarmAddress: AddressDao = AddressDao.wrapRow(
         AddressTable.select { AddressTable.wallet eq name }
-            .andWhere { AddressTable.path eq secretProvider.makePath(0, null) }
+            .andWhere { AddressTable.path eq secretProvider.makePath(0, 1) }
             .last()
     )
 
@@ -59,6 +58,25 @@ class EthereumWallet(name: String, config: Config, network: String) :
             DefaultBlockParameterNumber(latestConfirmedBlockNumber)
         ).send().balance
 
+    // TODO: Use another parameter (than `userId`) for more security
+    private fun inquireAddress(userId: Int): AddressDao {
+        val userPath = secretProvider.makePath(userId, 0)
+        val q = AddressTable
+            .select { AddressTable.wallet eq name }
+            .andWhere { AddressTable.path eq userPath }
+            .firstOrNull()
+
+        if (q != null) return AddressDao.wrapRow(q)
+
+        val newPublicKey = secretProvider.getHotPublicKeyObject(userPath)
+        return AddressDao.new {
+            this.wallet = WalletDao.findById(name)!!
+            this.publicKey = newPublicKey.key.toByteArray()
+            this.provision = newPublicKey.toAddress().hex
+            this.path = userPath
+        }
+        
+    }
 
     override suspend fun syncBlockchain() {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
