@@ -40,7 +40,7 @@ abstract class Wallet(val name: String, val secretProvider: SecretProvider, val 
                         )
                     )
 //                    "litecoin" -> all.add(LitecoinWallet(address, xPrv))
-//                    "ethereum" -> all.add(EthereumWallet(address, xPrv))
+                    "ethereum" -> all.add(EthereumWallet(address, xPrv))
 //                    "ripple" -> all.add(RippleWallet(address, xPrv))
 //                    else -> throw RuntimeException("Unsupported wallet ${wc.first}!!!")
                 }

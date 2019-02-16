@@ -1,46 +1,56 @@
 package stacrypt.stawallet.ethereum
 
+import com.typesafe.config.Config
 import java.math.BigInteger
 import org.web3j.crypto.RawTransaction
 import redis.clients.jedis.Jedis
+import stacrypt.stawallet.ConfigSecretProvider
+import stacrypt.stawallet.Wallet
+import stacrypt.stawallet.WalletDaemon
+import stacrypt.stawallet.model.DepositDao
+import stacrypt.stawallet.model.InvoiceDao
 
+const val NETWORK_MAINNET = "mainnet"
+const val NETWORK_RINKEBY = "rinkeby"
+const val NETWORK_KOVAN = "kovan"
+const val NETWORK_ROPSTEN = "ropsten"
 
-class EthereumWallet(val coldAddress: String, val hotXPrv: String) {
+class EthereumWallet(name: String, config: Config, network: String) :
+    Wallet(name, ConfigSecretProvider(config, 60), network) {
+    override val daemon = geth
 
-    val coin = "eth"
-
-    /**
-     * Redis data structure for Bitcoin wallet:
-     *
-     * * Last watched block height       : "eth:block:pointer" : value
-     *      Addresses from index 0 to this pointer should actively be watched
-     *
-     * * Last Issued Hot Address Index   : "eth:addr:pointer" : value
-     *      Addresses from index 0 to this pointer should actively be watched
-     *
-     * * Deposit  History                : "eth:deposits:{address}" : hashMap(txid, amount, warmTxid, coldTxid)
-     *      We just record fully-confirmed transactions here
-     *
-     * * Withdraw History                : "eth:withdraws:{address}" : set(txid)
-     *
-     * * Invoice  History                : "eth:invoices:{invoiceId}" : txid
-     *      InvoiceId is a unique id which sent by client to prevent double withdrawal
-     *
-     */
-    private val database = object {
-
-        private val jedis = Jedis("localhost")
-        private val PREFIX = coin
-        private val KEY_UTXO = "utxo"
-
-//        var balance: Int
-//            get() = stacrypt.stawallet.getJedis.za
-//            set() = {}
+    override fun blockchainExplorerTxLink(txId: String): String? = when (this.network) {
+        NETWORK_MAINNET -> "https://etherscan.io/tx/$txId"
+        else -> "https://${this.network}.etherscan.io/tx/$txId"
     }
 
-    fun generateReceivingAddress(): String {
-        return "" // TODO
+    override val requiredConfirmations: Int
+        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+
+    override suspend fun syncBlockchain() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
+
+    override suspend fun subscribe() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override suspend fun lastUsableInvoice(user: String): InvoiceDao? {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override suspend fun invoiceDeposits(invoiceId: Int): List<DepositDao> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override suspend fun issueNewInvoice(user: String): InvoiceDao {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override suspend fun sendTo(address: String, amountToSend: Long, tag: Any?): Any {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
 
     fun sendTo(address: String, amountToSend: BigInteger): String {
 
