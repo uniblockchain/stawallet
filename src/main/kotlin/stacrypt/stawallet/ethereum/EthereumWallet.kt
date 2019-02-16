@@ -3,6 +3,7 @@ package stacrypt.stawallet.ethereum
 import com.typesafe.config.Config
 import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.kethereum.crypto.signMessage
 import org.kethereum.functions.calculateHash
 import org.kethereum.functions.encodeRLP
@@ -15,14 +16,22 @@ import stacrypt.stawallet.model.AddressDao
 import stacrypt.stawallet.model.AddressTable
 import stacrypt.stawallet.model.DepositDao
 import stacrypt.stawallet.model.InvoiceDao
-import org.web3j.protocol.Web3j
-import org.web3j.protocol.http.HttpService
+import org.web3j.protocol.core.DefaultBlockParameterName
+import org.web3j.protocol.core.DefaultBlockParameterNumber
+import stacrypt.stawallet.NotEnoughFundException
+import stacrypt.stawallet.TransactionPushException
+import java.lang.Exception
+import java.math.BigDecimal
 
 
 const val NETWORK_MAINNET = "mainnet"
 const val NETWORK_RINKEBY = "rinkeby"
 const val NETWORK_KOVAN = "kovan"
 const val NETWORK_ROPSTEN = "ropsten"
+
+val DEFAULT_TRANSATION_GAS_LIMIT = BigInteger("21_000")
+
+class AccountNonceMismatchException(message: String?) : Exception(message)
 
 class EthereumWallet(name: String, config: Config, network: String) :
     Wallet(name, ConfigSecretProvider(config, 60), network) {
@@ -40,6 +49,16 @@ class EthereumWallet(name: String, config: Config, network: String) :
             .andWhere { AddressTable.path eq secretProvider.makePath(0, null) }
             .last()
     )
+
+    private val latestConfirmedBlockNumber: BigInteger
+        get() = daemon.rpcClient!!.ethBlockNumber().send().blockNumber - requiredConfirmations.toBigInteger()
+
+    private val latestConfirmedWarmBalance: BigInteger
+        get() = daemon.rpcClient!!.ethGetBalance(
+            theOnlyWarmAddress.provision,
+            DefaultBlockParameterNumber(latestConfirmedBlockNumber)
+        ).send().balance
+
 
     override suspend fun syncBlockchain() {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -61,39 +80,45 @@ class EthereumWallet(name: String, config: Config, network: String) :
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override suspend fun sendTo(address: String, amountToSend: BigInteger, tag: Any?): Any {
+    override suspend fun sendTo(address: String, amountToSend: BigInteger, tag: Any?): Any = transaction {
 
-//        val privKey = HashUtil.sha3("cat".toByteArray())
-//        val ecKey = ECKey.fromPrivate(privKey)
-//
-//        val senderPrivKey = HashUtil.sha3("cow".toByteArray())
-//
-//        val gasPrice = Hex.decode("09184e72a000")
-//        val gas = Hex.decode("4255")
+        val gasPrice = daemon.rpcClient!!.ethGasPrice().send().gasPrice!!
+        val gasLimit = DEFAULT_TRANSATION_GAS_LIMIT
+        if ((amountToSend + (gasPrice * gasLimit)) > latestConfirmedWarmBalance) {
+            throw NotEnoughFundException(name, (amountToSend + (gasPrice * gasLimit)).weiToEth())
+        }
 
+        val blockchainNonce = daemon.rpcClient!!.ethGetTransactionCount(
+            theOnlyWarmAddress.provision, DefaultBlockParameterName.PENDING
+        ).send().transactionCount
+        val recordedNonce = theOnlyWarmAddress.nonce
 
-//        val transaction: stacrypt.stawallet.bitcoin.Transaction(null, gasPrice, gas, ecKey.getAddress(), amountToSend.toByteArray(), null)
+        if (recordedNonce != blockchainNonce.toInt())
+            throw AccountNonceMismatchException("recorded-nonce ($recordedNonce) != blockchain-nonce ($blockchainNonce)")
 
         val transaction = createTransactionWithDefaults(
             from = Address(theOnlyWarmAddress.provision),
             to = Address(address),
-            value = amountToSend
+            value = amountToSend,
+            gasLimit = gasLimit,
+            nonce = blockchainNonce,
+            gasPrice = gasPrice
         )
-        transaction.encodeRLP()
         val signature = secretProvider.getHotKeyPair(theOnlyWarmAddress.path).signMessage(transaction.calculateHash())
         val signedTransaction = SignedTransaction(transaction, signature)
 
-        val web3 = Web3j.build(HttpService())  // defaults to http://localhost:8545/
-        web3.ethSendRawTransaction(signedTransaction.encodeRLP().toHexString())
+        val result = daemon.rpcClient!!.ethSendRawTransaction(
+            signedTransaction.encodeRLP().toHexString()
+        ).send()
 
-//        val rawTransaction = RawTransaction.createEtherTransaction(
-//            BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN, address,
-//            BigInteger.valueOf(Long.MAX_VALUE)
-//        )
-//        val signedMessage: ByteArray = TransactionEncoder.signMessage(rawTransaction,);
-//        String hexValue = Numeric . toHexString (signedMessage);
+        theOnlyWarmAddress.nonce += 1
 
-        return "" // TODO
+        if (result.hasError()) throw TransactionPushException(name, transaction.toString(), result.error.toString())
+
+        return@transaction result.transactionHash
+
     }
 
 }
+
+fun BigInteger.weiToEth() = (this.toBigDecimal() / BigDecimal("1000000000000000000"))
