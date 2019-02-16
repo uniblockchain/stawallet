@@ -148,7 +148,7 @@ class BitcoinWallet(name: String, config: Config, network: String) :
         else throw NotEnoughFundException(name, amountToSend)
     }
 
-    override suspend fun sendTo(address: String, amountToSend: BigInteger, tag: Any?): String {
+    override suspend fun sendTo(address: String, amountToSend: Int, tag: Any?): String {
         transaction {
             val outputs = mutableMapOf(address to BigDecimal(amountToSend))
 

@@ -9,11 +9,12 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.walleth.khex.hexToByteArray
+import stacrypt.stawallet.NotEnoughFundException
 import stacrypt.stawallet.bitcoin.*
 import stacrypt.stawallet.model.*
 import stacrypt.stawallet.wallets
+import java.math.BigInteger
 import kotlin.test.assertFailsWith
-import kotlin.test.expect
 
 @KtorExperimentalAPI
 class BitcoinWalletTest : BaseApiTest() {
@@ -158,12 +159,12 @@ class BitcoinWalletTest : BaseApiTest() {
 
         assertFailsWith(NotEnoughFundException::class) {
             runBlocking {
-                bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 99999999)
+                bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 99999999.toBigInteger(), null)
             }
         }
 
         runBlocking {
-            bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 8173831)
+            bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 8173831.toBigInteger(), null)
         }
     }
 

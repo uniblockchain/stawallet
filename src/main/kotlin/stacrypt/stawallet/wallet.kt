@@ -6,7 +6,6 @@ import stacrypt.stawallet.bitcoin.NETWORK_MAINNET
 import stacrypt.stawallet.bitcoin.NETWORK_TESTNET_3
 import stacrypt.stawallet.ethereum.EthereumWallet
 import stacrypt.stawallet.model.DepositDao
-import stacrypt.stawallet.model.DepositTable
 import stacrypt.stawallet.model.InvoiceDao
 import java.math.BigInteger
 import java.security.InvalidParameterException

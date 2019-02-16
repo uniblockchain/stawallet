@@ -80,7 +80,7 @@ class EthereumWallet(name: String, config: Config, network: String) :
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override suspend fun sendTo(address: String, amountToSend: BigInteger, tag: Any?): Any = transaction {
+    override suspend fun sendTo(address: String, amountToSend: Int, tag: Any?): Any = transaction {
 
         val gasPrice = daemon.rpcClient!!.ethGasPrice().send().gasPrice!!
         val gasLimit = DEFAULT_TRANSATION_GAS_LIMIT
