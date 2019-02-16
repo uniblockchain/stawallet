@@ -35,11 +35,6 @@ class BitcoinWallet(name: String, config: Config, network: String) :
 
     override fun blockchainExplorerTxLink(txId: String) = "https://www.blockchain.com/btc/tx/$txId"
 
-    override suspend fun invoiceDeposits(invoiceId: Int): List<DepositDao> =
-        DepositDao.wrapRows(
-            DepositTable.select { DepositTable.invoice eq InvoiceDao[invoiceId].id }.orderBy(DepositTable.id, false)
-        ).toList()
-
     override suspend fun lastUsableInvoice(user: String): InvoiceDao? =
         InvoiceTable.innerJoin(AddressTable).select {
             (InvoiceTable.wallet eq name) and (InvoiceTable.user eq user) and (AddressTable.isActive eq true) and (InvoiceTable.expiration.isNull() or (InvoiceTable.expiration greater DateTime.now()))
@@ -62,8 +57,6 @@ class BitcoinWallet(name: String, config: Config, network: String) :
             this.provision = formatP2pkh(newPublicKey)
             this.path = newPath
         }
-
-
     }
 
     override suspend fun issueNewInvoice(user: String): InvoiceDao {

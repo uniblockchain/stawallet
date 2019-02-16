@@ -1,9 +1,9 @@
 package stacrypt.stawallet.ethereum
 
 import com.typesafe.config.Config
-import org.jetbrains.exposed.sql.andWhere
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.joda.time.DateTime
 import org.kethereum.crypto.signMessage
 import org.kethereum.crypto.toAddress
 import org.kethereum.functions.calculateHash
@@ -58,24 +58,51 @@ class EthereumWallet(name: String, config: Config, network: String) :
             DefaultBlockParameterNumber(latestConfirmedBlockNumber)
         ).send().balance
 
-    // TODO: Use another parameter (than `userId`) for more security
-    private fun inquireAddress(userId: Int): AddressDao {
-        val userPath = secretProvider.makePath(userId, 0)
+    /**
+     * Usually there is only one invoice (and address) per user.
+     * However, using this method, you will find it, or it will be created automatically if it doesn't exist.
+     */
+    private fun inquireInvoice(user: String): InvoiceDao {
+        val q = InvoiceTable.innerJoin(AddressTable)
+            .select { InvoiceTable.wallet eq name }
+            .andWhere { InvoiceTable.user eq user }
+            .andWhere { AddressTable.isActive eq true }
+            .andWhere { InvoiceTable.expiration.isNull() or (InvoiceTable.expiration greater DateTime.now()) }
+            .lastOrNull()
+
+        if (q != null) return InvoiceDao.wrapRow(q)
+
+        return InvoiceDao.new {
+            this.wallet = WalletDao.findById(name)!!
+            this.user = user
+            this.address = newAddress()
+        }
+    }
+
+    /**
+     * Issue a new address
+     */
+    private fun newAddress(): AddressDao {
         val q = AddressTable
             .select { AddressTable.wallet eq name }
-            .andWhere { AddressTable.path eq userPath }
+            .orderBy(AddressTable.id, false)
             .firstOrNull()
 
-        if (q != null) return AddressDao.wrapRow(q)
+        var newIndex = 0
+        if (q != null) {
+            val lastIssuedAddress = AddressDao.wrapRow(q)
+            newIndex = lastIssuedAddress.path.split("/").last().toInt() + 1
+        }
 
-        val newPublicKey = secretProvider.getHotPublicKeyObject(userPath)
+        val newPath = secretProvider.makePath(newIndex, 0)
+        val newPublicKey = secretProvider.getHotPublicKeyObject(newPath)
+
         return AddressDao.new {
             this.wallet = WalletDao.findById(name)!!
             this.publicKey = newPublicKey.key.toByteArray()
             this.provision = newPublicKey.toAddress().hex
-            this.path = userPath
+            this.path = newPath
         }
-        
     }
 
     override suspend fun syncBlockchain() {
@@ -86,16 +113,26 @@ class EthereumWallet(name: String, config: Config, network: String) :
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override suspend fun lastUsableInvoice(user: String): InvoiceDao? {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override suspend fun lastUsableInvoice(user: String): InvoiceDao? = inquireInvoice(user)
 
-    override suspend fun invoiceDeposits(invoiceId: Int): List<DepositDao> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
+    /**
+     * Using this method you will expire the (all) user's invoice(s) (if any).
+     * Then issue a new invoice (and address) for the user.
+     *
+     * *** WARNING:
+     * Usually you shouldn't use this method, because we assume that there is only ONE invoice (and address) per user.
+     *
+     * *** WARNING:
+     * If you use this method, user's deposits to the last recent address won't be watched anymore.
+     */
     override suspend fun issueNewInvoice(user: String): InvoiceDao {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        InvoiceDao.wrapRows(
+            InvoiceTable.select { InvoiceTable.wallet eq name }.andWhere { InvoiceTable.user eq user }
+        ).forEach {
+            it.expiration = DateTime.now()
+            // TODO: Deactivate the related address
+        }
+        return inquireInvoice(user)
     }
 
     override suspend fun sendTo(address: String, amountToSend: BigInteger, tag: Any?): Any = transaction {

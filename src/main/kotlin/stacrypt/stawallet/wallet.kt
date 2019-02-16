@@ -1,11 +1,14 @@
 package stacrypt.stawallet
 
 import io.ktor.config.tryGetString
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.select
 import stacrypt.stawallet.bitcoin.BitcoinWallet
 import stacrypt.stawallet.bitcoin.NETWORK_MAINNET
 import stacrypt.stawallet.bitcoin.NETWORK_TESTNET_3
 import stacrypt.stawallet.ethereum.EthereumWallet
 import stacrypt.stawallet.model.DepositDao
+import stacrypt.stawallet.model.DepositTable
 import stacrypt.stawallet.model.InvoiceDao
 import java.math.BigInteger
 import java.security.InvalidParameterException
@@ -80,7 +83,10 @@ abstract class Wallet(val name: String, val secretProvider: SecretProvider, val 
     /**
      * @Return the deposit records which were recorded for a specific invoiceId
      */
-    abstract suspend fun invoiceDeposits(invoiceId: Int): List<DepositDao>
+    open suspend fun invoiceDeposits(invoiceId: Int): List<DepositDao> =
+        DepositDao.wrapRows(
+            DepositTable.select { DepositTable.invoice eq InvoiceDao[invoiceId].id }.orderBy(DepositTable.id, false)
+        ).toList()
 
     abstract suspend fun issueNewInvoice(user: String): InvoiceDao
     abstract suspend fun sendTo(address: String, amountToSend: BigInteger, tag: Any?): Any
