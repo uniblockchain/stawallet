@@ -29,7 +29,7 @@ const val NETWORK_RINKEBY = "rinkeby"
 const val NETWORK_KOVAN = "kovan"
 const val NETWORK_ROPSTEN = "ropsten"
 
-val DEFAULT_TRANSATION_GAS_LIMIT = BigInteger("21_000")
+val DEFAULT_TRANSACTION_GAS_LIMIT = BigInteger("21000")
 
 class AccountNonceMismatchException(message: String?) : Exception(message)
 
@@ -80,10 +80,10 @@ class EthereumWallet(name: String, config: Config, network: String) :
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override suspend fun sendTo(address: String, amountToSend: Int, tag: Any?): Any = transaction {
+    override suspend fun sendTo(address: String, amountToSend: BigInteger, tag: Any?): Any = transaction {
 
         val gasPrice = daemon.rpcClient!!.ethGasPrice().send().gasPrice!!
-        val gasLimit = DEFAULT_TRANSATION_GAS_LIMIT
+        val gasLimit = DEFAULT_TRANSACTION_GAS_LIMIT
         if ((amountToSend + (gasPrice * gasLimit)) > latestConfirmedWarmBalance) {
             throw NotEnoughFundException(name, (amountToSend + (gasPrice * gasLimit)).weiToEth())
         }
