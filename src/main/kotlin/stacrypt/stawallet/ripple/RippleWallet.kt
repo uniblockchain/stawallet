@@ -10,6 +10,7 @@ import stacrypt.stawallet.model.AddressDao
 import stacrypt.stawallet.model.AddressTable
 import stacrypt.stawallet.model.DepositDao
 import stacrypt.stawallet.model.InvoiceDao
+import java.math.BigInteger
 import kotlin.math.roundToLong
 
 const val LEDGER_INDEX_VALIDATED = "validated"
@@ -20,7 +21,7 @@ val XRP_MINIMUM_BALANCE = 20.0.xrpToDrops()
 
 class RippleWallet(name: String, config: Config, network: String) : Wallet(
     name,
-    ConfigSecretProvider(config, if (network == NETWORK_MAINNET) 144 else 1),
+    ConfigSecretProvider(config, 144),
     network
 ) {
     override val daemon = rippled
@@ -46,15 +47,11 @@ class RippleWallet(name: String, config: Config, network: String) : Wallet(
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override suspend fun invoiceDeposits(invoiceId: Int): List<DepositDao> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
     override suspend fun issueNewInvoice(user: String): InvoiceDao {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override suspend fun sendTo(address: String, amountToSend: Int, tag: Any?): Any = transaction {
+    override suspend fun sendTo(address: String, amountToSend: BigInteger, tag: Any?): Any = transaction {
         val accountInfo = daemon.rpcClient.getAccountInfo(
             account = theOnlyHotAddress!!.provision,
             ledgerIndex = LEDGER_INDEX_VALIDATED
