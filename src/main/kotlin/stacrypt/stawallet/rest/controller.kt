@@ -1,6 +1,5 @@
 package stacrypt.stawallet.rest
 
-import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.http.ContentType.Application.FormUrlEncoded
 import io.ktor.http.HttpStatusCode
@@ -8,15 +7,12 @@ import io.ktor.http.Parameters
 import io.ktor.request.receiveParameters
 import io.ktor.response.respond
 import io.ktor.routing.*
-import io.ktor.util.pipeline.PipelineContext
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.transaction
 import org.joda.time.DateTime
-import stacrypt.stawallet.Wallet
 import stacrypt.stawallet.model.*
-import stacrypt.stawallet.wallets
 import java.lang.Exception
 
 fun Routing.walletsRouting() {
@@ -28,21 +24,18 @@ fun Routing.walletsRouting() {
         }
 
         route("/{wallet}") {
-            get("") {
-                transaction {
-                    call.respond(WalletDao[wallet.name].export())
-                }
-            }
-            invoicesRout()
-            depositsRout()
-            withdrawsRout()
+            reachGet("") { call.respond(WalletDao[wallet.name].export()) }
+
+            injectInvoicesRout()
+            injectDepositsRout()
+            injectWithdrawsRout()
         }
 
     }
 }
 
 
-fun Route.invoicesRout() = route("/invoices") {
+fun Route.injectInvoicesRout() = route("/invoices") {
     contentType(FormUrlEncoded) {
         /**
          * This service will generate a invoice for the user.
@@ -96,45 +89,32 @@ fun Route.invoicesRout() = route("/invoices") {
 
 }
 
-fun Route.depositsRout() = route("/deposits") {
-    get {
-        try {
-            transaction {
-                call.respond(
-                    DepositDao.wrapRows(
-                        DepositTable.leftJoin(InvoiceTable)
-                            .select { InvoiceTable.wallet eq wallet.name }
-                            .andWhere { InvoiceTable.user eq user }
-                            .orderBy(DepositTable.id)
-                            .limit(DepositResource.PAGE_SIZE, DepositResource.PAGE_SIZE * page)
-                    ).forEach { it.export(null, wallet) }
-                )
+fun Route.injectDepositsRout() = route("/deposits") {
+    reachGet("") {
+        call.respond(
+            DepositDao.wrapRows(
+                DepositTable.leftJoin(InvoiceTable)
+                    .select { InvoiceTable.wallet eq wallet.name }
+                    .andWhere { InvoiceTable.user eq user }
+                    .orderBy(DepositTable.id)
+                    .limit(DepositResource.PAGE_SIZE, DepositResource.PAGE_SIZE * page)
+            ).forEach { it.export(null, wallet) }
+        )
 
-            }
-        } catch (e: Exception) {
-            call.respond(HttpStatusCode.InternalServerError, e.toString())
-        }
     }
 }
 
-fun Route.withdrawsRout() = route("/withdraws") {
-    get {
-        try {
-            transaction {
-                call.respond(
-                    TaskDao.wrapRows(
-                        TaskTable
-                            .select { TaskTable.wallet eq wallet.name }
-                            .run { if (qs("user") != null) this.andWhere { TaskTable.user eq qs("page") } else this }
-                            .orderBy(TaskTable.id)
-                            .limit(WithdrawResource.PAGE_SIZE, WithdrawResource.PAGE_SIZE * (qs("page")?.toInt() ?: 0))
-                    ).forEach { it.export(null, wallet) }
-                )
-
-            }
-        } catch (e: Exception) {
-            call.respond(HttpStatusCode.InternalServerError, e.toString())
-        }
+fun Route.injectWithdrawsRout() = route("/withdraws") {
+    reachGet("") {
+        call.respond(
+            TaskDao.wrapRows(
+                TaskTable
+                    .select { TaskTable.wallet eq wallet.name }
+                    .run { if (qs("user") != null) this.andWhere { TaskTable.user eq qs("page") } else this }
+                    .orderBy(TaskTable.id)
+                    .limit(WithdrawResource.PAGE_SIZE, WithdrawResource.PAGE_SIZE * (qs("page")?.toInt() ?: 0))
+            ).forEach { it.export(null, wallet) }
+        )
     }
 
     contentType(FormUrlEncoded) {

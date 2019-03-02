@@ -11,7 +11,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.jackson.jackson
-import io.ktor.request.path
 import io.ktor.response.respondText
 import io.ktor.routing.get
 import io.ktor.routing.routing
@@ -20,13 +19,8 @@ import kotlinx.coroutines.*
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
-import stacrypt.stawallet.bitcoin.BitcoinWallet
-import stacrypt.stawallet.bitcoin.bitcoind
 import stacrypt.stawallet.model.*
-import stacrypt.stawallet.rest.depositsRout
-import stacrypt.stawallet.rest.invoicesRout
 import stacrypt.stawallet.rest.walletsRouting
-import stacrypt.stawallet.rest.withdrawsRout
 import java.net.URI
 import java.sql.Connection
 import java.util.logging.*
