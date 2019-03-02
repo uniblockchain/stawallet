@@ -127,7 +127,7 @@ fun Route.injectWithdrawsRout() = route("/withdraws") {
             val netAmount = form["netAmount"]!!.toLong()
             val grossAmount = form["grossAmount"]!!.toLong()
             val estimatedNetworkFee = form["estimatedNetworkFee"]!!.toLong()
-            val type = TaskType.valueOf(form["type"]!!.toLowerCase())
+            val type = TaskType.valueOf(form["type"]!!.toUpperCase())
 
             try {
                 transaction {
@@ -150,7 +150,7 @@ fun Route.injectWithdrawsRout() = route("/withdraws") {
                                 this.type = type
                                 this.status = if (isManual) TaskStatus.WAITING_MANUAL else TaskStatus.QUEUED
                                 this.trace = "${DateTime.now()} : Issued (${if (isManual) "manual" else "automatic"})"
-                            }
+                            }.export(null, wallet)
                         )
                 }
 

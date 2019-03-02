@@ -250,6 +250,30 @@ class BitcoinRestTest : BaseApiTest() {
     }
 
     @Test
+    fun testNewWithdrawHistory() {
+        testEngine!!.apply {
+            handleRequest(HttpMethod.Post, "$walletsUrl/test-btc-wallet$withdrawsUrl") {
+                addHeader(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded.toString())
+                setBody(
+                    listOf(
+                        "user" to "1",
+                        "businessUid" to "1AJbsFZ64EpEfS5UAjAfcUG8pH8Jn3rn1F",
+                        "isManual" to "true",
+                        "target" to "1AJbsFZ64EpEfS5UAjAfcUG8pH8Jn3rn1F",
+                        "netAmount" to "93511223",
+                        "grossAmount" to "93583223",
+                        "estimatedNetworkFee" to "485385",
+                        "type" to "withdraw"
+                    ).formUrlEncode()
+                )
+            }.apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                assertNotNull(response.content?.toJson()!!["id"].asText())
+            }
+        }
+    }
+
+    @Test
     fun testDepositHistory(): Unit {
 
         testEngine!!.apply {
