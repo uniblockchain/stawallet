@@ -224,6 +224,27 @@ class BitcoinRestTest : BaseApiTest() {
     }
 
     @Test
+    fun testNewInvoice() {
+        // New invoice
+        testEngine!!.apply {
+            handleRequest(HttpMethod.Post, "$walletsUrl/test-btc-wallet$invoicesUrl") {
+            }.apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                assertNotNull(response.content?.toJson()!![0]["id"].asText())
+                assertNotNull(response.content?.toJson()!![0]["wallet"].asText())
+                assertNotNull(response.content?.toJson()!![0]["user"].asText())
+                assertNotNull(response.content?.toJson()!![0]["creation"].asText())
+                assertNotNull(response.content?.toJson()!![0]["expiration"].asText())
+                assertNotNull(response.content?.toJson()!![0]["address"]["id"].asText())
+                assertNotNull(response.content?.toJson()!![0]["address"]["wallet"].asText())
+                assertNotNull(response.content?.toJson()!![0]["address"]["address"].asText())
+                assertNotNull(response.content?.toJson()!![0]["address"]["active"].asBoolean())
+            }
+        }
+
+    }
+
+    @Test
     fun testWithdrawHistory() {
         testEngine!!.apply {
             handleRequest(HttpMethod.Get, "$walletsUrl/test-btc-wallet$withdrawsUrl?user=1&page=0") {
@@ -250,7 +271,8 @@ class BitcoinRestTest : BaseApiTest() {
     }
 
     @Test
-    fun testNewWithdrawHistory() {
+    fun testNewWithdraw() {
+        val withdrawId: Int
         testEngine!!.apply {
             handleRequest(HttpMethod.Post, "$walletsUrl/test-btc-wallet$withdrawsUrl") {
                 addHeader(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded.toString())
@@ -268,7 +290,41 @@ class BitcoinRestTest : BaseApiTest() {
                 )
             }.apply {
                 assertEquals(HttpStatusCode.OK, response.status())
+                assertNotNull(response.content?.toJson()!!["id"].asInt())
+                withdrawId = response.content?.toJson()!!["id"].asInt()
+            }
+        }
+
+        // Change to manual
+        testEngine!!.apply {
+            handleRequest(HttpMethod.Put, "$walletsUrl/test-btc-wallet$withdrawsUrl/$withdrawId") {
+                addHeader(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded.toString())
+                setBody(
+                    listOf(
+                        "isManual" to "true"
+                    ).formUrlEncode()
+                )
+            }.apply {
+                assertEquals(HttpStatusCode.OK, response.status())
                 assertNotNull(response.content?.toJson()!!["id"].asText())
+                assertEquals("waiting_manual", response.content?.toJson()!!["status"].asText())
+            }
+        }
+
+        // Insert withdraw details manually
+        testEngine!!.apply {
+            handleRequest(HttpMethod.Put, "$walletsUrl/test-btc-wallet$withdrawsUrl/$withdrawId") {
+                addHeader(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded.toString())
+                setBody(
+                    listOf(
+                        "finalNetworkFee" to "485385",
+                        "txid" to "b6f6991d03df0e2e04dafffcd6bc418aac66049e2cd74b80f14ac86db1e3f0da"
+                    ).formUrlEncode()
+                )
+            }.apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                assertNotNull(response.content?.toJson()!!["id"].asText())
+                assertEquals("pushed", response.content?.toJson()!!["status"].asText())
             }
         }
     }
