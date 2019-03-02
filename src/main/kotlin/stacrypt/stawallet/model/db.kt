@@ -355,7 +355,7 @@ object TaskTable : IntIdTable("task") {
     /**
      * Some type of stacktrace for the actions, errors, etc.
      */
-    val trace = varchar("trace", 10_000)
+    val trace = varchar("trace", 10_000).nullable()
 
     /**
      * The proof of this transaction in the real world blockchain network

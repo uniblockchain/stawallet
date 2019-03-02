@@ -18,10 +18,7 @@ import stacrypt.stawallet.bitcoin.*
 import stacrypt.stawallet.model.*
 import stacrypt.stawallet.wallets
 import java.math.BigInteger
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
+import kotlin.test.*
 
 @KtorExperimentalAPI
 class BitcoinWalletTest : BaseApiTest() {
@@ -175,6 +172,18 @@ class BitcoinWalletTest : BaseApiTest() {
                 grossAmount = 198763
                 netAmount = 198000
             }
+
+            val withdraw1 = TaskDao.new(1) {
+                wallet = wallet1
+                businessUid = "c0d9c0a7-6eb4-4e03-a324-f53a8be1b789"
+                user = "1"
+                target = "1Mwz1i3MK7AruNFwF3X84FK4qMmpooLtZG"
+                grossAmount = 65740000
+                netAmount = 65020000
+                estimatedNetworkFee = 50000
+                type = TaskType.WITHDRAW
+                status = TaskStatus.QUEUED
+            }
         }
 
     }
@@ -244,15 +253,13 @@ class BitcoinWalletTest : BaseApiTest() {
                 assertNotNull(response.content?.toJson()!![0]["netAmount"]?.asText())
                 assertNotNull(response.content?.toJson()!![0]["grossAmount"]?.asText())
                 assertNotNull(response.content?.toJson()!![0]["estimatedNetworkFee"]?.asText())
-                assertNotNull(response.content?.toJson()!![0]["finalNetworkFee"]?.asText())
+                assertTrue(response.content?.toJson()!![0]["finalNetworkFee"].isNull)
                 assertNotNull(response.content?.toJson()!![0]["type"]?.asText())
-                assertNotNull(response.content?.toJson()!![0]["isManual"]?.asText())
                 assertNotNull(response.content?.toJson()!![0]["status"]?.asText())
-                assertNotNull(response.content?.toJson()!![0]["txid"]?.asText())
-                assertNotNull(response.content?.toJson()!![0]["proof"]?.asText())
+                assertTrue(response.content?.toJson()!![0]["txid"].isNull)
+                assertTrue(response.content?.toJson()!![0]["proof"].isNull)
                 assertNotNull(response.content?.toJson()!![0]["issuedAt"]?.asText())
-                assertNotNull(response.content?.toJson()!![0]["paidAt"]?.asText())
-                assertNotNull(response.content?.toJson()!![0]["trace"]?.asText())
+                assertTrue(response.content?.toJson()!![0]["paidAt"].isNull)
             }
         }
     }
