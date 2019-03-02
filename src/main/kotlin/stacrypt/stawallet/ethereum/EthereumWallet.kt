@@ -177,4 +177,4 @@ class EthereumWallet(name: String, config: Config, network: String) :
 
 }
 
-fun BigInteger.weiToEth() = (this.toBigDecimal() / BigDecimal("1000000000000000000"))
+fun BigInteger.weiToEth() = (this.toBigDecimal().divide(BigDecimal("1000000000000000000")))
