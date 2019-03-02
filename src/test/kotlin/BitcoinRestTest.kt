@@ -228,17 +228,51 @@ class BitcoinRestTest : BaseApiTest() {
         // New invoice
         testEngine!!.apply {
             handleRequest(HttpMethod.Post, "$walletsUrl/test-btc-wallet$invoicesUrl") {
+                addHeader(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded.toString())
+                setBody(
+                    listOf(
+                        "user" to "1"
+                    ).formUrlEncode()
+                )
             }.apply {
                 assertEquals(HttpStatusCode.OK, response.status())
-                assertNotNull(response.content?.toJson()!![0]["id"].asText())
-                assertNotNull(response.content?.toJson()!![0]["wallet"].asText())
-                assertNotNull(response.content?.toJson()!![0]["user"].asText())
-                assertNotNull(response.content?.toJson()!![0]["creation"].asText())
-                assertNotNull(response.content?.toJson()!![0]["expiration"].asText())
-                assertNotNull(response.content?.toJson()!![0]["address"]["id"].asText())
-                assertNotNull(response.content?.toJson()!![0]["address"]["wallet"].asText())
-                assertNotNull(response.content?.toJson()!![0]["address"]["address"].asText())
-                assertNotNull(response.content?.toJson()!![0]["address"]["active"].asBoolean())
+                assertNotNull(response.content?.toJson()!!["id"].asText())
+                assertNotNull(response.content?.toJson()!!["wallet"].asText())
+                assertNotNull(response.content?.toJson()!!["user"].asText())
+                assertNotNull(response.content?.toJson()!!["creation"].asText())
+                assertNotNull(response.content?.toJson()!!["expiration"].asText())
+                assertNotNull(response.content?.toJson()!!["address"]["id"].asText())
+                assertNotNull(response.content?.toJson()!!["address"]["wallet"].asText())
+                assertNotNull(response.content?.toJson()!!["address"]["address"].asText())
+                assertNotNull(response.content?.toJson()!!["address"]["active"].asBoolean())
+            }
+        }
+
+        // Call again to get conflict (because of existence of at least one unused invoice)
+        testEngine!!.apply {
+            handleRequest(HttpMethod.Post, "$walletsUrl/test-btc-wallet$invoicesUrl") {
+                addHeader(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded.toString())
+                setBody(
+                    listOf(
+                        "user" to "1"
+                    ).formUrlEncode()
+                )
+            }.apply {
+                assertEquals(HttpStatusCode.Conflict, response.status())
+            }
+        }
+
+        // Call again, but force to issue a new invoice (using `force` query string)
+        testEngine!!.apply {
+            handleRequest(HttpMethod.Post, "$walletsUrl/test-btc-wallet$invoicesUrl?force=true") {
+                addHeader(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded.toString())
+                setBody(
+                    listOf(
+                        "user" to "1"
+                    ).formUrlEncode()
+                )
+            }.apply {
+                assertEquals(HttpStatusCode.OK, response.status())
             }
         }
 
@@ -280,7 +314,7 @@ class BitcoinRestTest : BaseApiTest() {
                     listOf(
                         "user" to "1",
                         "businessUid" to "1AJbsFZ64EpEfS5UAjAfcUG8pH8Jn3rn1F",
-                        "isManual" to "true",
+                        "isManual" to "false",
                         "target" to "1AJbsFZ64EpEfS5UAjAfcUG8pH8Jn3rn1F",
                         "netAmount" to "93511223",
                         "grossAmount" to "93583223",

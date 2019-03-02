@@ -23,11 +23,6 @@ import kotlin.test.*
 @KtorExperimentalAPI
 class BitcoinWalletTest : BaseApiTest() {
 
-    private val walletsUrl = "/wallets"
-    private val depositsUrl = "/deposits"
-    private val withdrawsUrl = "/withdraws"
-    private val invoicesUrl = "/invoices"
-
     private lateinit var wallet1: WalletDao
 
     override fun configure() = super.configure().apply {

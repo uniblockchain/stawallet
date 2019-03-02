@@ -44,13 +44,16 @@ fun Route.injectInvoicesRout() = route("/invoices") {
          * a 409 status code which means that there is at least one active and unused invoice for this user. You could
          */
         post {
+            val form: Parameters = call.receiveParameters()
+            val user = form["user"]!!
+
             try {
                 transaction {
-                    val lastUsableInvoice = wallet.lastUsableInvoice(user!!)
+                    val lastUsableInvoice = wallet.lastUsableInvoice(user)
                     flushCache()
 
                     if (force || lastUsableInvoice == null || wallet.invoiceDeposits(lastUsableInvoice.id.value).isNotEmpty()) {
-                        call.respond(wallet.issueNewInvoice(user!!).export())
+                        call.respond(wallet.issueNewInvoice(user).export())
                     } else {
                         call.respond(
                             HttpStatusCode.Conflict,
@@ -211,7 +214,7 @@ fun Route.injectWithdrawsRout() = route("/withdraws") {
                             )
                         }
                     }
-                    call.respond(task!!)
+                    call.respond(task!!.export(null, wallet))
                 }
 
             } catch (e: Exception) {
