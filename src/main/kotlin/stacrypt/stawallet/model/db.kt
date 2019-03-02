@@ -4,6 +4,25 @@ import org.jetbrains.exposed.dao.EntityID
 import org.jetbrains.exposed.dao.IdTable
 import org.jetbrains.exposed.dao.IntIdTable
 import org.jetbrains.exposed.sql.Column
+import org.joda.time.DateTime
+
+
+/**
+ * A Blockchain or Ledger
+ */
+object BlockchainTable : IntIdTable("blockchain") {
+
+    /**
+     * Short code of the related cryptocurrency (e.g. `btc`). Always LOWERCASE
+     */
+    val currency = varchar("currency", 12)
+
+    /**
+     * e.g. `testnet3`. Always LOWERCASE
+     */
+    val network = varchar("network", 32)
+
+}
 
 /**
  * Each wallet could only handle one type of crypto-assets. But they may derived from a unique master seed
@@ -16,14 +35,9 @@ object WalletTable : IdTable<String>("wallet") {
     override val id: Column<EntityID<String>> = varchar("id", 32).primaryKey().entityId()
 
     /**
-     * Short code of the related cryptocurrency (e.g. `btc`). Always LOWERCASE
+     * Related blockchain
      */
-    val currency = varchar("currency", 12) //
-
-    /**
-     * e.g. Testnet
-     */
-    val network = varchar("network", 32)
+    val blockchain = reference("blockchain", BlockchainTable)
 
     /**
      * Fingerprint of the master seed
@@ -45,6 +59,11 @@ object WalletTable : IdTable<String>("wallet") {
      */
     val unconfirmedBalance = long("unconfirmed_balance").default(0)
 
+    /**
+     * Latest block height which has been synchronized with the blockchain watcher
+     */
+    val latestSyncedHeight = integer("latest_sync_height").default(0)
+
 }
 
 /**
@@ -53,9 +72,9 @@ object WalletTable : IdTable<String>("wallet") {
 object AddressTable : IntIdTable() {
 
     /**
-     * Public Key in binary format
+     * Related wallet
      */
-    val wallet = varchar("wallet", 12)
+    val wallet = reference("wallet", WalletTable)
 
     /**
      * Public Key in binary format
@@ -65,7 +84,7 @@ object AddressTable : IntIdTable() {
     /**
      * The way address being shown in the related cryptocurrency
      */
-    val provision = varchar("wif", 128)
+    val provision = varchar("provision", 128)
 
     /**
      * BIP-44 derivation path (from the wallet seed)
@@ -90,12 +109,12 @@ object InvoiceTable : IntIdTable("invoice") {
     /**
      * The wallet of this invoice
      */
-    val wallet = varchar("wallet", 12)
+    val wallet = reference("wallet", WalletTable)
 
     /**
-     * invoiceId, data, payload, etc.
+     * The address to be paid
      */
-    val addressId = integer("addressId")
+    val address = reference("address", AddressTable)
 
     /**
      * invoiceId, data, payload, etc.
@@ -110,7 +129,7 @@ object InvoiceTable : IntIdTable("invoice") {
     /**
      * The creation time
      */
-    val creation = datetime("creation")
+    val creation = datetime("creation").default(DateTime.now())
 
     /**
      * The expiration time:
@@ -122,33 +141,82 @@ object InvoiceTable : IntIdTable("invoice") {
 }
 
 /**
- * Any payment which is found (just to our HOT wallet)
+ * It is a proof for a reality of a transaction or deposit or etc. in the real world blockchain.
+ * Contains the block details, transaction detail and more.
+ *
+ * Note: These records are not accepted unless is referred by a `deposit`.
+ * So we can find the information of pending or unaccepted transactions here
+ */
+object ProofTable : IntIdTable("proof") {
+
+    /**
+     * Related blockchain
+     */
+    val blockchain = reference("blockchain", BlockchainTable)
+
+    /**
+     * Block hash of where the transaction located at
+     */
+    val txHash = varchar("tx_hash", 256)
+
+    /**
+     * Block hash of where the transaction located at
+     */
+    val blockHash = varchar("block_hash", 256).nullable()
+
+    /**
+     * Block height of where the transaction located at
+     */
+    val blockHeight = integer("block_height").nullable()
+
+    /**
+     * Confirmations left
+     */
+    val confirmationsLeft = integer("confirmations_left")
+
+    /**
+     * Extra information, link, etc
+     */
+    val extra = varchar("extra", 1_000).nullable()
+
+    /**
+     * Reason of unacceptability (`null` means `without-error`)
+     */
+    val error = varchar("error", 1_000).nullable()
+
+}
+
+/**
+ * Any payment which is found (just to our HOT wallet). These deposits are 100% accepted by us.
  */
 object DepositTable : IntIdTable() {
+
     /**
-     * The invoice of the this deposit is based on (if any, might be anonymous. We will appreciate!)
+     * The invoice of the this deposit is based on
      */
-    val invoiceId = integer("invoice").nullable()
+    val invoice = reference("invoice", InvoiceTable)
+
+    /**
+     * The proof of this deposit on the related blockchain on the real world
+     *
+     * Note: It will be filled automatically by blockchain watcher
+     */
+    val proof = reference("proof", ProofTable)
 
     /**
      * The amount we really received
      */
-    val grossAmount = long("grossAmount")
+    val grossAmount = long("gross_amount")
 
     /**
      * Amount the user will be charged in our system (whether any fee or commission decreased)
      */
-    val netAmount = long("netAmount")
+    val netAmount = long("net_amount")
 
     /**
-     * Origin of this deposit on the related blockchain
+     * Extra information (if required)
      */
-    val txid = varchar("txid", 256).nullable()
-
-    /**
-     * Reason of unacceptance, `null` means acceptable
-     */
-    val error = varchar("user", 128).nullable()
+    val extra = varchar("extra", 1_000).nullable()
 }
 
 enum class TaskType {
@@ -169,7 +237,44 @@ enum class TaskType {
 
 }
 
-enum class TaskStatus { FINISHED, CONFIRMING, PUSHED, WAITING_MANUAL, WAITING_LOW_BALANCE, ERROR, QUEUED }
+enum class TaskStatus {
+
+    /**
+     * The transaction pushed and confirmed in the network successfully
+     */
+    FINISHED,
+
+    /**
+     * The transaction has been mined and we are waiting for required confirmation
+     */
+    CONFIRMING,
+
+    /**
+     * The transaction has been pushed to the network, but has not been mined yet
+     */
+    PUSHED,
+
+    /**
+     * This transaction should be sent manually by admins (The transaction has not been created yet)
+     */
+    WAITING_MANUAL,
+
+    /**
+     * This transaction should be sent automatically but the balance is not enough
+     * (The transaction has not been created yet)
+     */
+    WAITING_LOW_BALANCE,
+
+    /**
+     * There is an error with this transaction
+     */
+    ERROR,
+
+    /**
+     * This transaction should be sent automatically ASAP (The transaction has not been created yet)
+     */
+    QUEUED
+}
 
 /**
  * Any task which should be done by the blockchain
@@ -179,7 +284,12 @@ object TaskTable : IntIdTable("task") {
     /**
      * Pay from this wallet
      */
-    val wallet = varchar("wallet", 12)
+    val wallet = reference("wallet", WalletTable)
+
+    /**
+     * It's a mandatory UNIQUE identifier which prevents double-spend
+     */
+    val businessUid = varchar("business_uid", 100).uniqueIndex("business_uid_uniqueness")
 
     /**
      * Pay to this address
@@ -187,19 +297,55 @@ object TaskTable : IntIdTable("task") {
     val target = varchar("target", 128)
 
     /**
+     * This invoice issued for which user id? (user is just a reference and not related to us)
+     *
+     * Best practice per `type`:
+     * * WITHDRAW -> Target user
+     * * DECHARGE -> In charge admin user
+     * * OVERFLOW -> `null`
+     */
+    val user = varchar("user", 128).nullable()
+
+    /**
      * Amount to be sent
      */
-    val amount = long("amount")
+    val netAmount = long("net_amount")
 
     /**
-     * Why we are transfering this money
+     * Amount the user will be charged in our system (whether any fee or commission decreased)
+     *
+     * Note: The network fee is not related to this field
+     *
+     * Note 2: It is JUST to log what happened. It means that this number has no meaning to us.
      */
-    val type = enumeration("type", TaskType::class)
+    val grossAmount = long("gross_amount")
 
     /**
-     * What is the currenct status of this task?
+     * We estimate this number when we want to issue a withdraw records
+     *
+     * Note: It is JUST to log what happened. It means that this number has no meaning to us.
+     *
+     * Note 2: We STRONGLY recommend to calculate this number before issue a withdraw record (there is a function estimate fee)
      */
-    val status = enumeration("status", TaskStatus::class)
+    val estimatedNetworkFee = long("estimated_fee")
+
+    /**
+     * Final network fee
+     *
+     * It will be calculated when we pushed the transaction to the network
+     *
+     */
+    val finalNetworkFee = long("final_network_fee").nullable()
+
+    /**
+     * Why we are transferring this money
+     */
+    val type = enumerationByName("type", 50, TaskType::class)
+
+    /**
+     * What is the current status of this task?
+     */
+    val status = enumerationByName("status", 50, TaskStatus::class).default(TaskStatus.QUEUED)
 
     /**
      * The related transaction id in the related blockchain
@@ -209,51 +355,24 @@ object TaskTable : IntIdTable("task") {
     /**
      * Some type of stacktrace for the actions, errors, etc.
      */
-    val trace = varchar("trace", 10_000)
-}
-
-enum class EventSide { RECEIVED, SENT }
-enum class EventSeverity { INFO, WARNING, ERROR, KILLER }
-
-/**
- * Whatever happened to the blockchain which has any effect on our wallet
- */
-object EventTable : IntIdTable("event") {
+    val trace = varchar("trace", 10_000).nullable()
 
     /**
-     * Which wallet?
+     * The proof of this transaction in the real world blockchain network
+     *
+     * Note: It will be filled automatically by blockchain watcher
      */
-    val wallet = varchar("wallet", 12)
+    val proof = reference("proof", ProofTable).nullable()
 
     /**
-     * Which key is related to?
+     * The creation time
      */
-    val addressId = integer("address_id")
+    val issuedAt = datetime("issued_at").default(DateTime.now())
 
     /**
-     * What is the transaction id in blockchain?
+     * Time of pushing the transaction into network:
      */
-    val txid = varchar("txid", 256).nullable()
-
-    /**
-     * Height of the block which this happened
-     */
-    val blocHeight = long("blockHeight").nullable()
-
-    /**
-     * Any message?
-     */
-    val message = varchar("message", 256).nullable()
-
-    /**
-     * Any extra data?
-     */
-    val payload = varchar("payload", 256).nullable()
-
-    /**
-     * Severity
-     */
-    val severity = enumeration("severity", EventSeverity::class).default(EventSeverity.INFO)
+    val paidAt = datetime("paid_at").nullable()
 
 }
 
@@ -265,12 +384,12 @@ object UtxoTable : IntIdTable("utxo") {
     /**
      * Which wallet it belongs to
      */
-    val wallet = varchar("wallet", 12)
+    val wallet = reference("wallet", WalletTable)
 
     /**
-     * Id of the related key
+     * Id of the related address
      */
-    val addressId = integer("address_id")
+    val address = reference("address", AddressTable)
 
     /**
      * Amount
@@ -286,6 +405,20 @@ object UtxoTable : IntIdTable("utxo") {
      * Index of this utxo in the origin transaction's input
      */
     val vout = integer("vout")
+
+    /**
+     * The proof of where we found this on the real world
+     *
+     * Note: It will be filled automatically by blockchain watcher
+     */
+    val discoveryProof = reference("discovery_proof", ProofTable)
+
+    /**
+     * The proof of where we spent this on the real world
+     *
+     * Note: It will be filled automatically by blockchain watcher
+     */
+    val spendProof = reference("spend_proof", ProofTable).nullable()
 
     /**
      * Index of this utxo in the origin transaction's input

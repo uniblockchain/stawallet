@@ -373,3 +373,17 @@ data class EstimateSmartResult(
     val errors: List<String>? = null,
     val blocks: Int? = null
 )
+
+data class SignTransactionResult(
+    val hex: String? = null,
+    val complete: Boolean? = null,
+    val errors: List<SignTransactionError>? = null
+)
+
+data class SignTransactionError(
+    val txid: String?,
+    val vout: Int?,
+    val scriptSig: String?,
+    val sequence: Int?,
+    val error: String?
+)

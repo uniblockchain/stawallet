@@ -31,16 +31,17 @@ dependencies {
 
 
     compile(kotlin("stdlib-jdk8"))
-    compile("com.typesafe:config:1.3.2")
+//    compile("com.typesafe:config:1.3.2")
     compile("com.github.briandilley.jsonrpc4j:jsonrpc4j:1.5.3")
     compile("redis.clients:jedis:3.0.1")
 
     compile("org.postgresql:postgresql:42.2.5")
-    compile("org.jetbrains.exposed:exposed:0.11.2")
+    compile("org.jetbrains.exposed:exposed:0.12.1")
 
     compile("com.github.walleth.kethereum:bip32:$kethereumVersion")
     compile("com.github.walleth.kethereum:functions:$kethereumVersion")
     compile("com.github.walleth.kethereum:bip44:$kethereumVersion")
+    compile("com.github.walleth.kethereum:crypto:$kethereumVersion")
 
 //    compile("org.slf4j:slf4j:1.7.5")
 //    compile("org.slf4j:slf4j-core:1.7.5")
@@ -58,12 +59,14 @@ dependencies {
 //    compile("org.ethereum:ethereumj-core:1.9.1-RELEASE")
     compile("org.web3j:core:4.0.0")
 
-    compile("org.bitcoinj:bitcoinj-core:0.14.7")
+//    compile("org.bitcoinj:bitcoinj-core:0.14.7")
     compile("io.github.novacrypto:BIP32:2018.10.06")
     compile("io.github.novacrypto:BIP32derivation:2018.10.06")
 
     testCompile("io.ktor:ktor-server-test-host:1.0.0")
     testCompile("com.opentable.components:otj-pg-embedded:0.13.0")
+
+    testImplementation("io.mockk:mockk:1.9")
 
 }
 
