@@ -1,5 +1,6 @@
 package stacrypt.stawallet.rest
 
+import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.http.ContentType.Application.FormUrlEncoded
 import io.ktor.http.HttpStatusCode
@@ -7,11 +8,13 @@ import io.ktor.http.Parameters
 import io.ktor.request.receiveParameters
 import io.ktor.response.respond
 import io.ktor.routing.*
+import io.ktor.util.pipeline.PipelineContext
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.transaction
 import org.joda.time.DateTime
+import stacrypt.stawallet.Wallet
 import stacrypt.stawallet.model.*
 import stacrypt.stawallet.wallets
 import java.lang.Exception
@@ -24,10 +27,10 @@ fun Routing.walletsRouting() {
             }
         }
 
-        route("/{walletId}") {
+        route("/{wallet}") {
             get("") {
                 transaction {
-                    call.respond(WalletDao[call.parameters["walletId"].toString()].export())
+                    call.respond(WalletDao[wallet.name].export())
                 }
             }
             invoicesRout()
@@ -48,18 +51,13 @@ fun Route.invoicesRout() = route("/invoices") {
          * a 409 status code which means that there is at least one active and unused invoice for this user. You could
          */
         post {
-            val form: Parameters = call.receiveParameters()
-            val user = form["user"]!!
-            val force = call.request.queryParameters["force"]?.toBoolean() ?: false
-
             try {
                 transaction {
-                    val wallet = wallets.findLast { it.name == call.parameters["walletId"] }!!
-                    val lastUsableInvoice = wallet.lastUsableInvoice(user)
+                    val lastUsableInvoice = wallet.lastUsableInvoice(user!!)
                     flushCache()
 
                     if (force || lastUsableInvoice == null || wallet.invoiceDeposits(lastUsableInvoice.id.value).isNotEmpty()) {
-                        call.respond(wallet.issueNewInvoice(user).export())
+                        call.respond(wallet.issueNewInvoice(user!!).export())
                     } else {
                         call.respond(
                             HttpStatusCode.Conflict,
@@ -81,51 +79,27 @@ fun Route.invoicesRout() = route("/invoices") {
      * new invoice for this user.
      * 404 Not Found exception. So you should try to post an invoice first.
      */
-    get {
-        val user = call.request.queryParameters["user"]!!.toString()
-
-        try {
-            transaction {
-                val wallet = wallets.findLast { it.name == call.parameters["walletId"].toString() }!!
-
-                call.respond(
-                    InvoiceDao.wrapRows(InvoiceTable.select {
-                        (InvoiceTable.wallet eq wallet.name) and (InvoiceTable.user eq user)
-                    }.orderBy(InvoiceTable.creation, false)).toList().map { it.export() }
-                )
-            }
-        } catch (e: Exception) {
-            call.respond(HttpStatusCode.InternalServerError, e.toString())
-        }
-
+    reachGet("") {
+        call.respond(
+            InvoiceDao.wrapRows(InvoiceTable.select {
+                (InvoiceTable.wallet eq wallet.name) and (InvoiceTable.user eq user)
+            }.orderBy(InvoiceTable.creation, false)).toList().map { it.export() }
+        )
     }
 
-    get("/{invoiceId}") {
-        try {
-            transaction {
-                val wallet = wallets.findLast { it.name == call.parameters["walletId"].toString() }!!
-                val invoice = InvoiceDao[call.parameters["invoiceId"]!!.toInt()]
-                if (invoice.wallet.id.value != wallet.name) call.respond(HttpStatusCode.NotFound)
-                call.respond(invoice.export())
-            }
-        } catch (e: Exception) {
-            call.respond(HttpStatusCode.InternalServerError, e.toString())
-        }
 
+    reachGet("/{invoiceId}") {
+        val invoice = InvoiceDao[call.parameters["invoiceId"]!!.toInt()]
+        if (invoice.wallet.id.value != wallet.name) call.respond(HttpStatusCode.NotFound)
+        call.respond(invoice.export())
     }
 
 }
 
 fun Route.depositsRout() = route("/deposits") {
     get {
-        val qp: Parameters = call.request.queryParameters
-        val user = qp["user"]
-        val page = qp["page"]?.toInt() ?: 0
-
         try {
             transaction {
-                val wallet = wallets.findLast { it.name == call.parameters["wallet"].toString() }!!
-
                 call.respond(
                     DepositDao.wrapRows(
                         DepositTable.leftJoin(InvoiceTable)
@@ -145,20 +119,15 @@ fun Route.depositsRout() = route("/deposits") {
 
 fun Route.withdrawsRout() = route("/withdraws") {
     get {
-        val user = call.request.queryParameters["user"]
-        val page = call.request.queryParameters["page"]?.toInt() ?: 0
-
         try {
             transaction {
-                val wallet = wallets.findLast { it.name == call.parameters["wallet"].toString() }!!
-
                 call.respond(
                     TaskDao.wrapRows(
                         TaskTable
                             .select { TaskTable.wallet eq wallet.name }
-                            .run { if (user != null) this.andWhere { TaskTable.user eq user } else this }
+                            .run { if (qs("user") != null) this.andWhere { TaskTable.user eq qs("page") } else this }
                             .orderBy(TaskTable.id)
-                            .limit(WithdrawResource.PAGE_SIZE, WithdrawResource.PAGE_SIZE * page)
+                            .limit(WithdrawResource.PAGE_SIZE, WithdrawResource.PAGE_SIZE * (qs("page")?.toInt() ?: 0))
                     ).forEach { it.export(null, wallet) }
                 )
 
@@ -191,7 +160,7 @@ fun Route.withdrawsRout() = route("/withdraws") {
                     else
                         call.respond(
                             TaskDao.new {
-                                this.wallet = WalletDao[call.parameters["walletId"]!!]
+                                this.wallet = WalletDao[this@post.wallet.name]
                                 this.businessUid = businessUid
                                 this.user = user
                                 this.target = target
@@ -219,7 +188,7 @@ fun Route.withdrawsRout() = route("/withdraws") {
             try {
                 transaction {
                     val task = TaskDao.findById(call.parameters["id"]!!.toInt())
-                    if (task == null || task.wallet.id.value != call.parameters["walletId"]!!) {
+                    if (task == null || task.wallet.id.value != wallet.name) {
                         call.respond(
                             HttpStatusCode.NotFound,
                             "Withdraw record not found"

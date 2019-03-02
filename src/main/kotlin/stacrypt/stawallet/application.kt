@@ -61,8 +61,8 @@ fun Application.module(testing: Boolean = false) {
     install(AutoHeadResponse)
 
     install(CallLogging) {
-        level = org.slf4j.event.Level.INFO
-        filter { call -> call.request.path().startsWith("/") }
+        level = org.slf4j.event.Level.TRACE
+//        filter { call -> call.request.path().startsWith("/") }
     }
 
     install(CORS) {

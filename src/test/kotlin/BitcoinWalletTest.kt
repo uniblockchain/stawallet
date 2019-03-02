@@ -28,7 +28,7 @@ class BitcoinWalletTest : BaseApiTest() {
 
     private val walletsUrl = "/wallets"
     private val depositsUrl = "/deposits"
-    private val withdrawsUrl = "/invoices"
+    private val withdrawsUrl = "/withdraws"
     private val invoicesUrl = "/invoices"
 
     private lateinit var wallet1: WalletDao
@@ -162,7 +162,7 @@ class BitcoinWalletTest : BaseApiTest() {
                 }
             }
 
-            val invoice1 = InvoiceDao.new {
+            val invoice1 = InvoiceDao.new(1) {
                 wallet = wallet1
                 address = address2
                 user = "1"
@@ -196,39 +196,64 @@ class BitcoinWalletTest : BaseApiTest() {
 
     @Test
     fun testInvoice() {
-
-        // 1. Issue new invoice
-
-
-        val bitcoinWallet = wallets[0]
-
-        assertFailsWith(NotEnoughFundException::class) {
-            runBlocking {
-                bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 99999999.toBigInteger(), null)
+        testEngine!!.apply {
+            handleRequest(HttpMethod.Get, "$walletsUrl/test-btc-wallet$invoicesUrl?user=1&page=0") {
+            }.apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                assertNotNull(response.content?.toJson()!![0]["id"].asText())
+                assertNotNull(response.content?.toJson()!![0]["wallet"].asText())
+                assertNotNull(response.content?.toJson()!![0]["user"].asText())
+                assertNotNull(response.content?.toJson()!![0]["creation"].asText())
+                assertNotNull(response.content?.toJson()!![0]["expiration"].asText())
+                assertNotNull(response.content?.toJson()!![0]["address"]["id"].asText())
+                assertNotNull(response.content?.toJson()!![0]["address"]["wallet"].asText())
+                assertNotNull(response.content?.toJson()!![0]["address"]["address"].asText())
+                assertNotNull(response.content?.toJson()!![0]["address"]["active"].asBoolean())
             }
         }
 
-        runBlocking {
-            bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 8173831.toBigInteger(), null)
+        testEngine!!.apply {
+            handleRequest(HttpMethod.Get, "$walletsUrl/test-btc-wallet$invoicesUrl/1") {
+            }.apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                assertNotNull(response.content?.toJson()!!["id"].asText())
+                assertNotNull(response.content?.toJson()!!["wallet"].asText())
+                assertNotNull(response.content?.toJson()!!["user"].asText())
+                assertNotNull(response.content?.toJson()!!["creation"].asText())
+                assertNotNull(response.content?.toJson()!!["expiration"].asText())
+                assertNotNull(response.content?.toJson()!!["address"]["id"])
+                assertNotNull(response.content?.toJson()!!["address"]["wallet"])
+                assertNotNull(response.content?.toJson()!!["address"]["address"])
+                assertNotNull(response.content?.toJson()!!["address"]["active"])
+            }
         }
     }
 
     @Test
     fun testWithdrawHistory() {
-
-        // 1. Issue new invoice
-
-
-        val bitcoinWallet = wallets[0]
-
-        assertFailsWith(NotEnoughFundException::class) {
-            runBlocking {
-                bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 99999999.toBigInteger(), null)
+        testEngine!!.apply {
+            handleRequest(HttpMethod.Get, "$walletsUrl/test-btc-wallet$withdrawsUrl?user=1&page=0") {
+            }.apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                assertEquals(1, response.content?.toJson()?.toList()?.size)
+                assertNotNull(response.content?.toJson()!![0]["id"].asText())
+                assertNotNull(response.content?.toJson()!![0]["businessUid"]?.asText())
+                assertNotNull(response.content?.toJson()!![0]["wallet"]?.asText())
+                assertNotNull(response.content?.toJson()!![0]["user"]?.asText())
+                assertNotNull(response.content?.toJson()!![0]["target"]?.asText())
+                assertNotNull(response.content?.toJson()!![0]["netAmount"]?.asText())
+                assertNotNull(response.content?.toJson()!![0]["grossAmount"]?.asText())
+                assertNotNull(response.content?.toJson()!![0]["estimatedNetworkFee"]?.asText())
+                assertNotNull(response.content?.toJson()!![0]["finalNetworkFee"]?.asText())
+                assertNotNull(response.content?.toJson()!![0]["type"]?.asText())
+                assertNotNull(response.content?.toJson()!![0]["isManual"]?.asText())
+                assertNotNull(response.content?.toJson()!![0]["status"]?.asText())
+                assertNotNull(response.content?.toJson()!![0]["txid"]?.asText())
+                assertNotNull(response.content?.toJson()!![0]["proof"]?.asText())
+                assertNotNull(response.content?.toJson()!![0]["issuedAt"]?.asText())
+                assertNotNull(response.content?.toJson()!![0]["paidAt"]?.asText())
+                assertNotNull(response.content?.toJson()!![0]["trace"]?.asText())
             }
-        }
-
-        runBlocking {
-            bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 8173831.toBigInteger(), null)
         }
     }
 
@@ -236,7 +261,7 @@ class BitcoinWalletTest : BaseApiTest() {
     fun testDepositHistory(): Unit {
 
         testEngine!!.apply {
-            handleRequest(HttpMethod.Get, "$walletsUrl/test-btc-wallet/$depositsUrl?user=1&page=0") {
+            handleRequest(HttpMethod.Get, "$walletsUrl/test-btc-wallet$depositsUrl?user=1&page=0") {
             }.apply {
                 assertEquals(HttpStatusCode.OK, response.status())
                 assertNotNull(response.content?.toJson()!!["id"].asText())

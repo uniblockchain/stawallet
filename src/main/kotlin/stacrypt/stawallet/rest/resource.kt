@@ -57,7 +57,7 @@ data class AddressResource(
 fun InvoiceDao.export(role: ClientRole? = null) =
     InvoiceResource(
         id = id.value,
-        walletId = wallet.id.value,
+        wallet = wallet.id.value,
         extra = extra,
         user = user,
         creation = creation,
@@ -68,7 +68,7 @@ fun InvoiceDao.export(role: ClientRole? = null) =
 
 data class InvoiceResource(
     val id: Int,
-    val walletId: String,
+    val wallet: String,
     val extra: String?,
     val user: String?,
     val creation: DateTime,
