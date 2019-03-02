@@ -45,6 +45,7 @@ class WalletRestTest : BaseApiTest() {
         put("wallets.test-btc-wallet.requiredConfirmations", "4")
 
         put("wallets.test-eth-wallet.cryptocurrency", "ethereum")
+        put("wallets.test-eth-wallet.network", "mainnet")
         put("wallets.test-eth-wallet.type", "address")
         put(
             "wallets.test-eth-wallet.seed",

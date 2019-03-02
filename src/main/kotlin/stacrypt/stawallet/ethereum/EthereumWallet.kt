@@ -43,11 +43,12 @@ class EthereumWallet(name: String, config: Config, network: String) :
     override var requiredConfirmations = config.getInt("requiredConfirmations")
 
     // TODO: Use a hard derived address for warm wallet
-    private val theOnlyWarmAddress: AddressDao = AddressDao.wrapRow(
-        AddressTable.select { AddressTable.wallet eq name }
-            .andWhere { AddressTable.path eq secretProvider.makePath(0, 1) }
-            .last()
-    )
+    private val theOnlyWarmAddress: AddressDao
+        get() = AddressDao.wrapRow(
+            AddressTable.select { AddressTable.wallet eq name }
+                .andWhere { AddressTable.path eq secretProvider.makePath(0, 1) }
+                .last()
+        )
 
     private val latestConfirmedBlockNumber: BigInteger
         get() = daemon.rpcClient!!.ethBlockNumber().send().blockNumber - requiredConfirmations.toBigInteger()

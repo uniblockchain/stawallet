@@ -118,8 +118,9 @@ fun Route.invoicesRout() = route("/invoices") {
 
 fun Route.depositsRout() = route("/deposits") {
     get {
-        val user = call.request.queryParameters["user"]
-        val page = call.request.queryParameters["page"]?.toInt() ?: 0
+        val qp: Parameters = call.request.queryParameters
+        val user = qp["user"]
+        val page = qp["page"]?.toInt() ?: 0
 
         try {
             transaction {

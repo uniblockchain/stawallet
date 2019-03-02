@@ -40,7 +40,7 @@ class RippleWallet(name: String, config: Config, network: String) : Wallet(
 
             if (q != null) return AddressDao.wrapRow(q)
             return AddressDao.new {
-                this.provision =
+//                this.provision =
             }
         }
 

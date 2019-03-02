@@ -1,9 +1,13 @@
 package com.perfect.apartmentrental
 
 import io.ktor.application.Application
+import io.ktor.http.*
+import io.ktor.server.testing.handleRequest
+import io.ktor.server.testing.setBody
 import io.ktor.util.KtorExperimentalAPI
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.exposed.sql.QueryParameter
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.After
 import org.junit.Before
@@ -14,10 +18,18 @@ import stacrypt.stawallet.bitcoin.*
 import stacrypt.stawallet.model.*
 import stacrypt.stawallet.wallets
 import java.math.BigInteger
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 
 @KtorExperimentalAPI
 class BitcoinWalletTest : BaseApiTest() {
+
+    private val walletsUrl = "/wallets"
+    private val depositsUrl = "/deposits"
+    private val withdrawsUrl = "/invoices"
+    private val invoicesUrl = "/invoices"
 
     private lateinit var wallet1: WalletDao
 
@@ -149,6 +161,20 @@ class BitcoinWalletTest : BaseApiTest() {
                     this.confirmationsLeft = 2
                 }
             }
+
+            val invoice1 = InvoiceDao.new {
+                wallet = wallet1
+                address = address2
+                user = "1"
+            }
+
+
+            val deposit1 = DepositDao.new {
+                invoice = invoice1
+                proof = utxo1.discoveryProof
+                grossAmount = 198763
+                netAmount = 198000
+            }
         }
 
     }
@@ -167,5 +193,67 @@ class BitcoinWalletTest : BaseApiTest() {
             bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 8173831.toBigInteger(), null)
         }
     }
+
+    @Test
+    fun testInvoice() {
+
+        // 1. Issue new invoice
+
+
+        val bitcoinWallet = wallets[0]
+
+        assertFailsWith(NotEnoughFundException::class) {
+            runBlocking {
+                bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 99999999.toBigInteger(), null)
+            }
+        }
+
+        runBlocking {
+            bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 8173831.toBigInteger(), null)
+        }
+    }
+
+    @Test
+    fun testWithdrawHistory() {
+
+        // 1. Issue new invoice
+
+
+        val bitcoinWallet = wallets[0]
+
+        assertFailsWith(NotEnoughFundException::class) {
+            runBlocking {
+                bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 99999999.toBigInteger(), null)
+            }
+        }
+
+        runBlocking {
+            bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 8173831.toBigInteger(), null)
+        }
+    }
+
+    @Test
+    fun testDepositHistory(): Unit {
+
+        testEngine!!.apply {
+            handleRequest(HttpMethod.Get, "$walletsUrl/test-btc-wallet/$depositsUrl?user=1&page=0") {
+            }.apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                assertNotNull(response.content?.toJson()!!["id"].asText())
+                assertNotNull(response.content?.toJson()!!["email"].asText())
+                assertNotNull(response.content?.toJson()!!["role"].asText())
+                assertNotNull(response.content?.toJson()!!["token"].asText())
+                assertFalse(response.content?.toJson()!!.has("password"))
+            }
+        }
+
+
+//        testEngine!!.apply {
+//            handleRequest(HttpMethod.Get, "/deposits?user=1&page=0").apply {
+//                assertEquals(HttpStatusCode.OK, response.status())
+//            }
+//        }
+    }
+
 
 }
