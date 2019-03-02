@@ -58,12 +58,45 @@ class BitcoinWalletTest : BaseApiTest() {
                     "172GCPPDgvE7vX5LXuZDPfHvAT8yPEhr5Y" to 634559.toBigDecimal()
                 )
             )
-        } returns "0200000002e5cd19b1dd75c127d62434c5fddb140771b831751e8a7150cff2ae177e0763ac0000000000fffffffffb6de835b578aee4f807a1a27ccf125e641ff69684948dae8a117e856f5561500100000000ffffffff02002752d567e702001976a914cbfe55279bf0aeceaaafa5393bf717df39eaaf7488ac00df607ab63900001976a914420ddb1c8b15e9beebf21c526c1265cd49b9320e88ac00000000"
+        } returns "0200000002e5cd19b1dd75c127d62434c5fddb140771b831751e8a7150cff2ae177e0763ac0000000000fffffffffb6de8" +
+                "35b578aee4f807a1a27ccf125e641ff69684948dae8a117e856f5561500100000000ffffffff02002752d567e702001976a9" +
+                "14cbfe55279bf0aeceaaafa5393bf717df39eaaf7488ac00df607ab63900001976a914420ddb1c8b15e9beebf21c526c1265" +
+                "cd49b9320e88ac00000000"
+        every {
+            bitcoind.rpcClient.signRawTransactionWithKey(
+                hexString = "0200000002e5cd19b1dd75c127d62434c5fddb140771b831751e8a7150cff2ae177e0763ac0000000000ffff" +
+                        "fffffb6de835b578aee4f807a1a27ccf125e641ff69684948dae8a117e856f5561500100000000ffffffff020027" +
+                        "52d567e702001976a914cbfe55279bf0aeceaaafa5393bf717df39eaaf7488ac00df607ab63900001976a914420d" +
+                        "db1c8b15e9beebf21c526c1265cd49b9320e88ac00000000",
+                privKeys = listOf(
+                    "KxNCVv5CbGcPaGvDHTcN8V4a9dTzfp3CjDjMf14gPcypB7GBfW18",
+                    "L4XghQx1yLmizft19PYg5g7uFceJPY2ZELXHSamdmEkgByWC4GJD"
+                )
+            )
+        } returns SignTransactionResult(
+            hex = "0100000002f579ae58b619acb6a1d2d7718774020a257fc876ece390a746c9ec0e99c9239d000000006a47304402201a01" +
+                    "01673ddb98f7e80a1f01548bc302dc1f63a420e831792d894ab70390184a02205312353f80e4f11b9886e69411a94832" +
+                    "8b144b8c3760ba291d1d2132f5229ca0012102f6aa1275cf3b5528b92810d1087fe7bc73d72288ce2b7cf717cdcd2daa" +
+                    "38ba41ffffffff050dd1d1b3ac73bf787cc54b310532f608e76e5f9d3661f5d03b9ea227721409000000006a47304402" +
+                    "206bd5aa6356110a604a98b22bb78bb682438fd7e284780210f50b065cd9f257800220625a36c1d12480938a6d6592ac" +
+                    "b8ea13fdbaf50bfcf16c5d976f7818709c0ad0012102206a4500544e40633e49f067a0934863533145ed2f4e157f9813" +
+                    "807ff848e288ffffffff0284590200000000001976a914a4735a41c3a9e35db18e2e27820a14329946245988ac783007" +
+                    "000000000017a9149566ecefcf3b444abd5b1ebf12345fe216a804b98700000000",
+            complete = true
+        )
         every {
             bitcoind.rpcClient.sendRawTransaction(
-                ""
+                transaction = "0100000002f579ae58b619acb6a1d2d7718774020a257fc876ece390a746c9ec0e99c9239d000000006a47" +
+                        "304402201a0101673ddb98f7e80a1f01548bc302dc1f63a420e831792d894ab70390184a02205312353f80e4f11b" +
+                        "9886e69411a948328b144b8c3760ba291d1d2132f5229ca0012102f6aa1275cf3b5528b92810d1087fe7bc73d722" +
+                        "88ce2b7cf717cdcd2daa38ba41ffffffff050dd1d1b3ac73bf787cc54b310532f608e76e5f9d3661f5d03b9ea227" +
+                        "721409000000006a47304402206bd5aa6356110a604a98b22bb78bb682438fd7e284780210f50b065cd9f2578002" +
+                        "20625a36c1d12480938a6d6592acb8ea13fdbaf50bfcf16c5d976f7818709c0ad0012102206a4500544e40633e49" +
+                        "f067a0934863533145ed2f4e157f9813807ff848e288ffffffff0284590200000000001976a914a4735a41c3a9e3" +
+                        "5db18e2e27820a14329946245988ac783007000000000017a9149566ecefcf3b444abd5b1ebf12345fe216a804b9" +
+                        "8700000000"
             )
-        } returns ""
+        } returns "7c6dd126a8d86dfadcb5ab17185973f01010062e7e94f49bbd8e597496c42824"
     }
 
     @After
@@ -88,21 +121,21 @@ class BitcoinWalletTest : BaseApiTest() {
 
             val address1 = AddressDao.new {
                 this.wallet = wallet1
-                this.path = "m/44'/0'/0/0/0"
+                this.path = "m/44'/0'/0'/0/0"
                 this.publicKey = "0x02395cc1c6b46fabb771188d007b5f9bde500888a1d1aae7baaac54ce0f5951fc4".hexToByteArray()
                 this.provision = "1FT1C5QJY699upasj23GYNDghDbJZqmczN"
             }
 
             val address2 = AddressDao.new {
                 this.wallet = wallet1
-                this.path = "m/44'/0'/0/0/1"
+                this.path = "m/44'/0'/0'/0/1"
                 this.publicKey = "0x022a104970d7f85c9c97e9d86c6bba7ef9243413b6cd7d94492ab587145a11e5c2".hexToByteArray()
                 this.provision = "1D6CqUvHtQRXU4TZrrj5j1iofo8f4oXyLj"
             }
 
             val address3 = AddressDao.new {
                 this.wallet = wallet1
-                this.path = "m/44'/0'/0/0/2"
+                this.path = "m/44'/0'/0'/0/2"
                 this.publicKey = "0x031a5107e2a3c3ea5dbb07e53b9da3488717c263d4fecd2aea602de457117410b3".hexToByteArray()
                 this.provision = "1Mwz1i3MK7AruNFwF3X84FK4qMmpooLtZG"
             }
@@ -159,31 +192,6 @@ class BitcoinWalletTest : BaseApiTest() {
                 }
             }
 
-            val invoice1 = InvoiceDao.new(1) {
-                wallet = wallet1
-                address = address2
-                user = "1"
-            }
-
-
-            val deposit1 = DepositDao.new {
-                invoice = invoice1
-                proof = utxo1.discoveryProof
-                grossAmount = 198763
-                netAmount = 198000
-            }
-
-            val withdraw1 = TaskDao.new(1) {
-                wallet = wallet1
-                businessUid = "c0d9c0a7-6eb4-4e03-a324-f53a8be1b789"
-                user = "1"
-                target = "1Mwz1i3MK7AruNFwF3X84FK4qMmpooLtZG"
-                grossAmount = 65740000
-                netAmount = 65020000
-                estimatedNetworkFee = 50000
-                type = TaskType.WITHDRAW
-                status = TaskStatus.QUEUED
-            }
         }
 
     }
@@ -198,94 +206,11 @@ class BitcoinWalletTest : BaseApiTest() {
             }
         }
 
-        runBlocking {
-            bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 8173831.toBigInteger(), null)
-        }
-    }
-
-    @Test
-    fun testInvoice() {
-        testEngine!!.apply {
-            handleRequest(HttpMethod.Get, "$walletsUrl/test-btc-wallet$invoicesUrl?user=1&page=0") {
-            }.apply {
-                assertEquals(HttpStatusCode.OK, response.status())
-                assertNotNull(response.content?.toJson()!![0]["id"].asText())
-                assertNotNull(response.content?.toJson()!![0]["wallet"].asText())
-                assertNotNull(response.content?.toJson()!![0]["user"].asText())
-                assertNotNull(response.content?.toJson()!![0]["creation"].asText())
-                assertNotNull(response.content?.toJson()!![0]["expiration"].asText())
-                assertNotNull(response.content?.toJson()!![0]["address"]["id"].asText())
-                assertNotNull(response.content?.toJson()!![0]["address"]["wallet"].asText())
-                assertNotNull(response.content?.toJson()!![0]["address"]["address"].asText())
-                assertNotNull(response.content?.toJson()!![0]["address"]["active"].asBoolean())
+        assertEquals("7c6dd126a8d86dfadcb5ab17185973f01010062e7e94f49bbd8e597496c42824",
+            runBlocking {
+                bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 8173831.toBigInteger(), null)
             }
-        }
-
-        testEngine!!.apply {
-            handleRequest(HttpMethod.Get, "$walletsUrl/test-btc-wallet$invoicesUrl/1") {
-            }.apply {
-                assertEquals(HttpStatusCode.OK, response.status())
-                assertNotNull(response.content?.toJson()!!["id"].asText())
-                assertNotNull(response.content?.toJson()!!["wallet"].asText())
-                assertNotNull(response.content?.toJson()!!["user"].asText())
-                assertNotNull(response.content?.toJson()!!["creation"].asText())
-                assertNotNull(response.content?.toJson()!!["expiration"].asText())
-                assertNotNull(response.content?.toJson()!!["address"]["id"])
-                assertNotNull(response.content?.toJson()!!["address"]["wallet"])
-                assertNotNull(response.content?.toJson()!!["address"]["address"])
-                assertNotNull(response.content?.toJson()!!["address"]["active"])
-            }
-        }
+        )
     }
-
-    @Test
-    fun testWithdrawHistory() {
-        testEngine!!.apply {
-            handleRequest(HttpMethod.Get, "$walletsUrl/test-btc-wallet$withdrawsUrl?user=1&page=0") {
-            }.apply {
-                assertEquals(HttpStatusCode.OK, response.status())
-                assertEquals(1, response.content?.toJson()?.toList()?.size)
-                assertNotNull(response.content?.toJson()!![0]["id"].asText())
-                assertNotNull(response.content?.toJson()!![0]["businessUid"]?.asText())
-                assertNotNull(response.content?.toJson()!![0]["wallet"]?.asText())
-                assertNotNull(response.content?.toJson()!![0]["user"]?.asText())
-                assertNotNull(response.content?.toJson()!![0]["target"]?.asText())
-                assertNotNull(response.content?.toJson()!![0]["netAmount"]?.asText())
-                assertNotNull(response.content?.toJson()!![0]["grossAmount"]?.asText())
-                assertNotNull(response.content?.toJson()!![0]["estimatedNetworkFee"]?.asText())
-                assertTrue(response.content?.toJson()!![0]["finalNetworkFee"].isNull)
-                assertNotNull(response.content?.toJson()!![0]["type"]?.asText())
-                assertNotNull(response.content?.toJson()!![0]["status"]?.asText())
-                assertTrue(response.content?.toJson()!![0]["txid"].isNull)
-                assertTrue(response.content?.toJson()!![0]["proof"].isNull)
-                assertNotNull(response.content?.toJson()!![0]["issuedAt"]?.asText())
-                assertTrue(response.content?.toJson()!![0]["paidAt"].isNull)
-            }
-        }
-    }
-
-    @Test
-    fun testDepositHistory(): Unit {
-
-        testEngine!!.apply {
-            handleRequest(HttpMethod.Get, "$walletsUrl/test-btc-wallet$depositsUrl?user=1&page=0") {
-            }.apply {
-                assertEquals(HttpStatusCode.OK, response.status())
-                assertNotNull(response.content?.toJson()!!["id"].asText())
-                assertNotNull(response.content?.toJson()!!["email"].asText())
-                assertNotNull(response.content?.toJson()!!["role"].asText())
-                assertNotNull(response.content?.toJson()!!["token"].asText())
-                assertFalse(response.content?.toJson()!!.has("password"))
-            }
-        }
-
-
-//        testEngine!!.apply {
-//            handleRequest(HttpMethod.Get, "/deposits?user=1&page=0").apply {
-//                assertEquals(HttpStatusCode.OK, response.status())
-//            }
-//        }
-    }
-
 
 }

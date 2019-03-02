@@ -141,7 +141,7 @@ class BitcoinWallet(name: String, config: Config, network: String) :
         else throw NotEnoughFundException(name, amountToSend)
     }
 
-    override suspend fun sendTo(address: String, amountToSend: BigInteger, tag: Any?): String {
+    override suspend fun sendTo(address: String, amountToSend: BigInteger, tag: Any?): String =
         transaction {
             val outputs = mutableMapOf(address to BigDecimal(amountToSend))
 
@@ -184,12 +184,8 @@ class BitcoinWallet(name: String, config: Config, network: String) :
 
             utxos.forEach { it.isSpent = true }
 
-            return@transaction txHash
-
+            txHash
         }
-        // TODO: Handle exception
-        throw Exception()
-    }
 }
 
 const val VERSION_BYTE_P2PKH_MAINNET = 0
