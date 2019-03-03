@@ -305,9 +305,12 @@ class BitcoinRestTest : BaseApiTest() {
     }
 
     @Test
-    fun testWithdrawById() {
+    fun testWithdrawByBusinessId() {
         testEngine!!.apply {
-            handleRequest(HttpMethod.Get, "$walletsUrl/test-btc-wallet$withdrawsUrl/1") {
+            handleRequest(
+                HttpMethod.Get,
+                "$walletsUrl/test-btc-wallet$withdrawsUrl/c0d9c0a7-6eb4-4e03-a324-f53a8be1b789"
+            ) {
             }.apply {
                 assertEquals(HttpStatusCode.OK, response.status())
                 assertEquals(1, response.content?.toJson()!!["id"].asInt())

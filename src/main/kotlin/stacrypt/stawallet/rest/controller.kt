@@ -141,11 +141,11 @@ fun Route.injectWithdrawsRout() = route("/withdraws") {
         )
     }
 
-    reachGet("/{withdrawId}") {
+    reachGet("/{businessUid}") {
         call.respond(
             TaskDao.wrapRow(
                 TaskTable.select { TaskTable.wallet eq wallet.name }
-                    .andWhere { TaskTable.id eq call.parameters["withdrawId"]!!.toInt() }
+                    .andWhere { TaskTable.businessUid eq call.parameters["businessUid"]!! }
                     .last()
             ).export(null, wallet)
         )

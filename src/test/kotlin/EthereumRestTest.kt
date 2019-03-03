@@ -110,7 +110,7 @@ class EthereumRestTest : BaseApiTest() {
                     this.blockchain = wallet1.blockchain
                     this.txHash = "0xdd1f195a7fd44781f40b6b485670668762a48f71aefe474f078b61515da5b11b"
                     this.blockHash = "0x04d59327166c691ef0eff327f464c3bb814ae4360d5da9733b820e99caf6d1ea"
-                    this.blockHeight =7291344
+                    this.blockHeight = 7291344
                     this.confirmationsLeft = 0
                 }
                 grossAmount = 198763
@@ -249,9 +249,12 @@ class EthereumRestTest : BaseApiTest() {
     }
 
     @Test
-    fun testWithdrawById() {
+    fun testWithdrawByBusinessId() {
         testEngine!!.apply {
-            handleRequest(HttpMethod.Get, "$walletsUrl/test-eth-wallet$withdrawsUrl/1") {
+            handleRequest(
+                HttpMethod.Get,
+                "$walletsUrl/test-eth-wallet$withdrawsUrl/c0d9c0a7-6eb4-4e03-a324-f53a8be1b789"
+            ) {
             }.apply {
                 assertEquals(HttpStatusCode.OK, response.status())
                 assertEquals(1, response.content?.toJson()!!["id"].asInt())
