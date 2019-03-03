@@ -166,7 +166,7 @@ class BitcoinRestTest : BaseApiTest() {
             }
 
 
-            val deposit1 = DepositDao.new {
+            val deposit1 = DepositDao.new(1) {
                 invoice = invoice1
                 proof = utxo1.discoveryProof
                 grossAmount = 198763
@@ -305,6 +305,17 @@ class BitcoinRestTest : BaseApiTest() {
     }
 
     @Test
+    fun testWithdrawById() {
+        testEngine!!.apply {
+            handleRequest(HttpMethod.Get, "$walletsUrl/test-btc-wallet$withdrawsUrl/1") {
+            }.apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                assertEquals(1, response.content?.toJson()!!["id"].asInt())
+            }
+        }
+    }
+
+    @Test
     fun testNewWithdraw() {
         val withdrawId: Int
         testEngine!!.apply {
@@ -393,14 +404,19 @@ class BitcoinRestTest : BaseApiTest() {
                 assertNotNull(response.content?.toJson()!![0]["invoice"]["address"].asText())
             }
         }
-
-
-//        testEngine!!.apply {
-//            handleRequest(HttpMethod.Get, "/deposits?user=1&page=0").apply {
-//                assertEquals(HttpStatusCode.OK, response.status())
-//            }
-//        }
     }
 
+    @Test
+    fun testDepositById(): Unit {
+
+        testEngine!!.apply {
+            handleRequest(HttpMethod.Get, "$walletsUrl/test-btc-wallet$depositsUrl/1") {
+            }.apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                assertEquals(1, response.content?.toJson()!!["id"].asInt())
+            }
+        }
+
+    }
 
 }

@@ -104,7 +104,7 @@ class EthereumRestTest : BaseApiTest() {
                 user = "1"
             }
 
-            val deposit1 = DepositDao.new {
+            val deposit1 = DepositDao.new(1) {
                 invoice = invoice1
                 proof = ProofDao.new {
                     this.blockchain = wallet1.blockchain
@@ -249,6 +249,17 @@ class EthereumRestTest : BaseApiTest() {
     }
 
     @Test
+    fun testWithdrawById() {
+        testEngine!!.apply {
+            handleRequest(HttpMethod.Get, "$walletsUrl/test-eth-wallet$withdrawsUrl/1") {
+            }.apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                assertEquals(1, response.content?.toJson()!!["id"].asInt())
+            }
+        }
+    }
+
+    @Test
     fun testNewWithdraw() {
         val withdrawId: Int
         testEngine!!.apply {
@@ -338,12 +349,19 @@ class EthereumRestTest : BaseApiTest() {
             }
         }
 
+    }
 
-//        testEngine!!.apply {
-//            handleRequest(HttpMethod.Get, "/deposits?user=1&page=0").apply {
-//                assertEquals(HttpStatusCode.OK, response.status())
-//            }
-//        }
+    @Test
+    fun testDepositById(): Unit {
+
+        testEngine!!.apply {
+            handleRequest(HttpMethod.Get, "$walletsUrl/test-eth-wallet$depositsUrl/1") {
+            }.apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                assertEquals(1, response.content?.toJson()!!["id"].asInt())
+            }
+        }
+
     }
 
 
