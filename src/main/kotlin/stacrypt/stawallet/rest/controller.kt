@@ -9,6 +9,7 @@ import io.ktor.response.respond
 import io.ktor.routing.*
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.andWhere
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.transaction
 import org.joda.time.DateTime
@@ -29,6 +30,7 @@ fun Routing.walletsRouting() {
             injectInvoicesRout()
             injectDepositsRout()
             injectWithdrawsRout()
+            injectTransactionsRout()
         }
 
     }
@@ -105,6 +107,25 @@ fun Route.injectDepositsRout() = route("/deposits") {
         )
 
     }
+    reachGet("/{depositId}") {
+        call.respond(
+            DepositDao.wrapRow(
+                DepositTable.leftJoin(InvoiceTable)
+                    .select { InvoiceTable.wallet eq wallet.name }
+                    .andWhere { DepositTable.id eq call.parameters["depositId"]!!.toInt() }
+                    .last()
+            ).export(null, wallet)
+        )
+    }
+}
+
+fun Route.injectTransactionsRout() = route("/transactions") {
+    reachGet("") {
+        call.respond(
+            TODO("Implement with a proper SQL query.")
+        )
+
+    }
 }
 
 fun Route.injectWithdrawsRout() = route("/withdraws") {
@@ -117,6 +138,16 @@ fun Route.injectWithdrawsRout() = route("/withdraws") {
                     .orderBy(TaskTable.id, false)
                     .limit(WithdrawResource.PAGE_SIZE, WithdrawResource.PAGE_SIZE * page)
             ).map { it.export(null, wallet) }
+        )
+    }
+
+    reachGet("/{withdrawId}") {
+        call.respond(
+            TaskDao.wrapRow(
+                TaskTable.select { TaskTable.wallet eq wallet.name }
+                    .andWhere { TaskTable.id eq call.parameters["withdrawId"]!!.toInt() }
+                    .last()
+            ).export(null, wallet)
         )
     }
 
