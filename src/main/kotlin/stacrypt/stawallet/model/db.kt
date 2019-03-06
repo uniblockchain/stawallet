@@ -5,6 +5,8 @@ import org.jetbrains.exposed.dao.IdTable
 import org.jetbrains.exposed.dao.IntIdTable
 import org.jetbrains.exposed.sql.Column
 import org.joda.time.DateTime
+import stacrypt.stawallet.model.ProofTable.default
+import stacrypt.stawallet.model.TaskTable.default
 
 
 /**
@@ -184,6 +186,12 @@ object ProofTable : IntIdTable("proof") {
      */
     val error = varchar("error", 1_000).nullable()
 
+    /**
+     * Latest update which is occurred to this record.
+     * TODO: Automatically update it (DB level)
+     */
+    val updatedAt = datetime("updated_at").default(DateTime.now())
+
 }
 
 /**
@@ -217,6 +225,9 @@ object DepositTable : IntIdTable() {
      * Extra information (if required)
      */
     val extra = varchar("extra", 1_000).nullable()
+
+    val createdAt = datetime("created_at").default(DateTime.now())
+
 }
 
 enum class TaskType {

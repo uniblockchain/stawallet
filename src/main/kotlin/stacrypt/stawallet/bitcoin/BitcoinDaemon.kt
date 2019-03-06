@@ -26,12 +26,28 @@ object bitcoind : WalletDaemon() {
         return rpcClient.estimateSmartFee(6).feerate?.btcToSat()
     }
 
-    fun addBlockchainWatcher(blockchainId: Int, walletName: String, requiresConfirmations: Int) {
+    fun addBlockchainWatcher(
+        blockchainId: Int,
+        walletName: String,
+        requiresConfirmations: Int
+    ): BitcoinBlockchainWatcher? {
+        var watcher: BitcoinBlockchainWatcher? = null
         runBlocking {
             supervisorScope {
-                val watcher = BitcoinBlockchainWatcher(blockchainId, walletName, requiresConfirmations)
-                blockchainWatchers.add(Pair(this, watcher))
-                watcher.startWatcher()
+                watcher = BitcoinBlockchainWatcher(blockchainId, walletName, requiresConfirmations)
+                blockchainWatchers.add(Pair(this, watcher!!))
+                watcher!!.startWatcher()
+            }
+
+        }
+        return watcher
+    }
+
+    fun removeBlockchainWatcher(watcher: BitcoinBlockchainWatcher) {
+        runBlocking {
+            supervisorScope {
+                blockchainWatchers.removeAll { it.second == watcher }
+                watcher.stopWatcherAndJoin()
             }
 
         }
@@ -51,6 +67,9 @@ class BitcoinBlockchainWatcher(
     }
 
     private val dispatcher: CoroutineDispatcher = newSingleThreadContext("$walletName-watcher")
+
+    private var mempoolWatcherJob: Job? = null
+    private var blockWatcherJob: Job? = null
 
     private fun startMempoolWatcherJob(scope: CoroutineScope) = scope.launch {
         while (true) {
@@ -98,13 +117,23 @@ class BitcoinBlockchainWatcher(
 
     fun startWatcher() {
         GlobalScope.launch(this.dispatcher) {
-            val mempoolWatcherJob = startMempoolWatcherJob(this)
+            mempoolWatcherJob = startMempoolWatcherJob(this)
         }
 
         GlobalScope.launch(this.dispatcher) {
-            val blockWatcherJob = startBlockWatcherJob(this)
+            blockWatcherJob = startBlockWatcherJob(this)
         }
 
+    }
+
+    suspend fun stopWatcherAndJoin() {
+        if (mempoolWatcherJob?.isActive == true) mempoolWatcherJob!!.cancelAndJoin()
+        if (blockWatcherJob?.isActive == true) blockWatcherJob!!.cancelAndJoin()
+    }
+
+    fun stopWatcher() {
+        if (mempoolWatcherJob?.isActive == true) mempoolWatcherJob!!.cancel()
+        if (blockWatcherJob?.isActive == true) blockWatcherJob!!.cancel()
     }
 
     /**
@@ -304,6 +333,7 @@ class BitcoinBlockchainWatcher(
         ) {
             with(SqlExpressionBuilder) {
                 it.update(ProofTable.confirmationsLeft, ProofTable.confirmationsLeft - 1)
+                it[ProofTable.updatedAt] = DateTime.now()
             }
         }
     }

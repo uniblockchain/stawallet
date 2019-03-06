@@ -21,7 +21,7 @@ import java.math.BigInteger
 import kotlin.test.*
 
 @KtorExperimentalAPI
-class BitcoinWalletTest : BaseApiTest() {
+class BitcoinBlockchainWatcherTest : BaseApiTest() {
 
     private lateinit var wallet1: WalletDao
 
@@ -192,20 +192,12 @@ class BitcoinWalletTest : BaseApiTest() {
     }
 
     @Test
-    fun testSendTo() {
-        val bitcoinWallet = wallets[0]
+    fun testIncreaseConfirmation() {
+        val bitcoinWallet = wallets[0] as BitcoinWallet
 
-        assertFailsWith(NotEnoughFundException::class) {
-            runBlocking {
-                bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 99999999.toBigInteger(), null)
-            }
-        }
+        bitcoinWallet.startBlockchainWatcher()
 
-        assertEquals("7c6dd126a8d86dfadcb5ab17185973f01010062e7e94f49bbd8e597496c42824",
-            runBlocking {
-                bitcoinWallet.sendTo("1KbcrHQfw54dVpMx7sp8V78yDk1WotGozn", 8173831.toBigInteger(), null)
-            }
-        )
+        bitcoinWallet.stopBlockchainWatcher()
     }
 
     @Test

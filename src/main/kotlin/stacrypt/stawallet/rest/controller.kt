@@ -96,17 +96,36 @@ fun Route.injectInvoicesRout() = route("/invoices") {
 
 fun Route.injectDepositsRout() = route("/deposits") {
     reachGet("") {
+
+        /**
+         * Whether the result shown in the reverse order (LIFO). Useful to get new deposits.
+         */
+        val isAsc = qs("asc")?.toBoolean() ?: false
+
+        /**
+         * Getting the list of events after a specific time. Useful to get new deposits.
+         */
+        val after = qs("after")?.toLong()
+
         call.respond(
             DepositDao.wrapRows(
-                DepositTable.leftJoin(InvoiceTable)
+                DepositTable.leftJoin(InvoiceTable).innerJoin(InvoiceTable).innerJoin(ProofTable)
                     .select { InvoiceTable.wallet eq wallet.name }
+                    .run {
+                        if (after != null) this.andWhere {
+                            (ProofTable.updatedAt greaterEq DateTime(after)) or (DepositTable.createdAt greaterEq DateTime(
+                                after
+                            ))
+                        } else this
+                    }
                     .andWhere { InvoiceTable.user eq user }
-                    .orderBy(DepositTable.id)
+                    .orderBy(DepositTable.id, isAsc)
                     .limit(DepositResource.PAGE_SIZE, DepositResource.PAGE_SIZE * page)
             ).map { it.export(null, wallet) }
         )
 
     }
+
     reachGet("/{depositId}") {
         call.respond(
             DepositDao.wrapRow(
