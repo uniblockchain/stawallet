@@ -61,29 +61,26 @@ class BitcoinBlockchainWatcher(
     private val confirmationsRequires: Int
 ) {
 
-    companion object {
-        const val WATCHER_TRANSACTION_DELAY = 1_000L
-        const val WATCHER_BLOCK_DELAY = 10_000L
-    }
+    val blockWatchGap get() = config.getLong("daemons.bitcoind.watcher.blockWatchGap")
+    val mempoolWatchGap get() = config.getLong("daemons.bitcoind.watcher.mempoolWatchGap")
 
-    private val dispatcher: CoroutineDispatcher = newSingleThreadContext("$walletName-watcher")
+    val dispatcher: CoroutineDispatcher = newSingleThreadContext("$walletName-watcher")
 
     private var mempoolWatcherJob: Job? = null
-    private var blockWatcherJob: Job? = null
+    var blockWatcherJob: Job? = null
 
     private fun startMempoolWatcherJob(scope: CoroutineScope) = scope.launch {
         while (true) {
-            delay(WATCHER_TRANSACTION_DELAY)
+            delay(mempoolWatchGap)
             (bitcoind.rpcClient.getMempoolDescendants() as List<Transaction>).forEach { tx ->
                 processOrphanTransaction(tx)
             }
         }
     }
 
-
     private fun startBlockWatcherJob(scope: CoroutineScope) = scope.launch {
         while (true) {
-            delay(WATCHER_BLOCK_DELAY)
+            delay(blockWatchGap)
 
             // Find out witch block height should we sync with (if there is any unsynced block)
             val currentBestBlockHeight = bitcoind.rpcClient.getBlockCount()
@@ -104,13 +101,18 @@ class BitcoinBlockchainWatcher(
                     )
                 }
 
-                // Now it's time to update previous (unconfirmed) block's confirmations
-                for (i in 0..confirmationsRequires) {
-                    val b = bitcoind.rpcClient.getBlock(
-                        bitcoind.rpcClient.getBlockHash(latestSyncedHeight - i)
-                    )
-                    b.tx?.forEach { increaseConfirmations(blockInfo = b, txHash = it) }
+                transaction {
+                    // Now it's time to update previous (unconfirmed) block's confirmations
+                    for (i in 0..confirmationsRequires) {
+                        val b = bitcoind.rpcClient.getBlock(
+                            bitcoind.rpcClient.getBlockHash(latestSyncedHeight - i)
+                        )
+                        b.tx?.forEach { increaseConfirmations(blockInfo = b, txHash = it) }
+                    }
+
+                    walletDao.latestSyncedHeight = latestSyncedHeight
                 }
+
             }
         }
     }
@@ -321,7 +323,7 @@ class BitcoinBlockchainWatcher(
 
     }
 
-    private fun increaseConfirmations(blockInfo: BlockInfo, txHash: String) = transaction {
+    private fun increaseConfirmations(blockInfo: BlockInfo, txHash: String) {
         ProofTable.update(
             {
                 (ProofTable.blockchain eq blockchainId)

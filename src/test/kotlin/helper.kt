@@ -33,7 +33,13 @@ abstract class BaseApiTest {
     open fun configure(): MutableMap<String, String> = mutableMapOf(
         "ktor.deployment.environment" to "test",
         "db.uri" to "postgresql://postgres:postgres@localhost:${pg.embeddedPostgres.port}/postgres"
-    )
+    ).apply {
+        put("daemons.bitcoind.rpc.username", "")
+        put("daemons.bitcoind.rpc.password", "")
+        put("daemons.bitcoind.rpc.host", "")
+        put("daemons.bitcoind.rpc.port", "")
+        put("daemons.bitcoind.rpc.secure", "")
+    }
 
     @Ignore
     open fun mockup(app: Application) {
