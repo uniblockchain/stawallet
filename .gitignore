@@ -2,3 +2,6 @@
 .gradle
 out
 .attach_pid*
+data
+build
+*.iml

@@ -1,9 +1,14 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 val kethereumVersion = 0.67
 
+
 plugins {
     kotlin("jvm") version "1.3.11"
+//    id ("com.palantir.docker") version "0.21.0"
+//    id ("com.palantir.docker-compose") version "0.21.0"
+    id("com.github.johnrengelman.shadow") version "4.0.4"
 }
 
 group = "stacrypt"
@@ -70,6 +75,16 @@ dependencies {
 
 }
 
+val mainClassName = "io.ktor.server.netty.EngineMain" // Starting with 1.0.0-beta-3
+
+
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
+}
+
+
+tasks.withType<ShadowJar> {
+    baseName = "stawallet"
+    classifier = ""
+    version = ""
 }
