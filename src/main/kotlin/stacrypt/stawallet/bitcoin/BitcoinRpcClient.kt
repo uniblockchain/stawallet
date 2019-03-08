@@ -23,7 +23,7 @@ object BitcoinRpcClientFactory {
         user = config.getString("daemons.bitcoind.rpc.username"),
         password = config.getString("daemons.bitcoind.rpc.password"),
         host = config.getString("daemons.bitcoind.rpc.host"),
-        port = config.getInt("daemons.bitcoind.rpc.port"),
+        port = config.getString("daemons.bitcoind.rpc.port").toIntOrNull() ?: 0,
         secure = config.getBoolean("daemons.bitcoind.rpc.secure")
     )
 
@@ -393,7 +393,7 @@ interface BitcoinRpcClient {
     fun signRawTransaction(transactionId: String)
 
     @JsonRpcMethod("signrawtransactionwithkey")
-    fun signRawTransactionWithKey(hexString: String, privKeys: List<String>) : SignTransactionResult
+    fun signRawTransactionWithKey(hexString: String, privKeys: List<String>): SignTransactionResult
 
     @JsonRpcMethod("submitblock")
     fun submitBlock(blockData: String)
