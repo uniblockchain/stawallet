@@ -12,7 +12,7 @@ jobs:
           paths:
             - ~/.gradle
           key: circleci-ktor-prometheus-feature-{{ checksum "build.gradle" }}
-      - run: gradle clear
+      - run: gradle clean
       - run: gradle build
       - run: gradle test
       - run:
