@@ -185,7 +185,7 @@ class BitcoinBlockchainWatcherTest : BaseApiTest() {
         var watcherThread: Thread? = null
         runBlocking { launch(watcher.dispatcher) { watcherThread = Thread.currentThread() } }
         assertNotNull(watcherThread)
-        assertEquals("test-btc-wallet-watcher", watcherThread!!.name)
+        assertTrue { watcherThread!!.name.startsWith("test-btc-wallet-watcher") } // FIXME: It could be better
 
         assertTrue { watcher.blockWatcherJob?.isActive!! }
 
