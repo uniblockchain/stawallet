@@ -21,7 +21,6 @@ cache:
     - $HOME/.gradle/wrapper/
 
 script:
-  - ./gradlew test build
-  - ./gradlew clear test build
+  - ./gradlew clean test build
 after_success:
   - ./gradlew :shadowJar && scp build/libs/stawallet.jar "$SSH_USER@$SSH_HOST:~/stawallet/build/libs/stawallet.jar"
