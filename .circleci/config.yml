@@ -18,5 +18,5 @@ jobs:
       - run: gradle test
       - run:
           name: Deploy to Beta
-          command: ./gradlew :shadowJar && scp build/libs/stawallet.jar $SSH_USER@$SSH_HOST:~/stawallet/build/libs/stawallet.jar
+          command: ./gradlew :shadowJar && scp build/libs/stawallet.jar "$SSH_USER@$SSH_HOST:~/stawallet/build/libs/stawallet.jar"
 
