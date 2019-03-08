@@ -109,7 +109,7 @@ fun Route.injectDepositsRout() = route("/deposits") {
 
         call.respond(
             DepositDao.wrapRows(
-                DepositTable.leftJoin(InvoiceTable).innerJoin(InvoiceTable).innerJoin(ProofTable)
+                DepositTable.leftJoin(InvoiceTable).innerJoin(ProofTable)
                     .select { InvoiceTable.wallet eq wallet.name }
                     .run {
                         if (after != null) this.andWhere {

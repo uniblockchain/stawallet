@@ -1,0 +1,22 @@
+version: 2
+jobs:
+  build:
+    working_directory: ../
+    docker:
+      - image: gradle:4.10-jdk8
+    steps:
+      - checkout
+      - restore_cache:
+          key: circleci-stawallet-{{ checksum "build.gradle" }}
+      - run: gradle dependencies
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: circleci-ktor-prometheus-feature-{{ checksum "build.gradle" }}
+      - run: gradle clear
+      - run: gradle build
+      - run: gradle test
+      - run:
+          name: Deploy to Beta
+          command: ./gradlew :shadowJar && scp build/libs/stawallet.jar $SSH_USER@$SSH_HOST:~/stawallet/build/libs/stawallet.jar
+

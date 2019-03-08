@@ -87,4 +87,11 @@ tasks.withType<ShadowJar> {
     baseName = "stawallet"
     classifier = ""
     version = ""
+    manifest {
+        attributes("Main-Class" to mainClassName)
+    }
+}
+
+tasks.withType<Wrapper> {
+    gradleVersion = "4.10"
 }

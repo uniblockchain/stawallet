@@ -70,50 +70,50 @@ class UtxoInvoiceRestTest : BaseApiTest() {
 
     }
 
-    @Test
-    fun testInvoicePost(): Unit {
-
-        /**
-         * First we try to make a utxo for a new user
-         */
-        testEngine!!.apply {
-            handleRequest(Post, "$walletsUrl/test-btc-wallet/invoices") {
-                addHeader(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded.toString())
-                setBody(listOf("user" to "1").formUrlEncode())
-            }.apply {
-                /**
-                 * The results should show us that we have new invoice as well as new address
-                 */
-                assertEquals(OK, response.status())
-                assertEquals("test-btc-wallet", response.content?.toJson()!!["walletId"].asText())
-                assertEquals("1", response.content?.toJson()!!["user"].asText())
-                assertEquals(
-                    "mhXKmTxYhA5bb6yVPs95RJ8J2ELWr6Qowp",
-                    response.content?.toJson()!!["address"]["address"].asText()
-                )
-                assertNotNull(response.content?.toJson()!!["id"].asText())
-                assertNotNull(response.content?.toJson()!!["creation"].asText())
-
-                assertTrue(response.content?.toJson()!!["extra"].isNull)
-                assertTrue(response.content?.toJson()!!["expiration"].isNull)
-            }
-        }
-
-
-        /**
-         * We try to generate a new invoice for the user. It should not be successful because the user already have an
-         * unused invoice.
-         */
-        testEngine!!.apply {
-            handleRequest(Post, "$walletsUrl/test-btc-wallet/invoices") {
-                addHeader(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded.toString())
-                setBody(listOf("user" to "1").formUrlEncode())
-            }.apply {
-                assertEquals(Conflict, response.status())
-            }
-        }
-
-
-    }
+//    @Test
+//    fun testInvoicePost(): Unit {
+//
+//        /**
+//         * First we try to make a utxo for a new user
+//         */
+//        testEngine!!.apply {
+//            handleRequest(Post, "$walletsUrl/test-btc-wallet/invoices") {
+//                addHeader(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded.toString())
+//                setBody(listOf("user" to "1").formUrlEncode())
+//            }.apply {
+//                /**
+//                 * The results should show us that we have new invoice as well as new address
+//                 */
+//                assertEquals(OK, response.status())
+//                assertEquals("test-btc-wallet", response.content?.toJson()!!["walletId"].asText())
+//                assertEquals("1", response.content?.toJson()!!["user"].asText())
+//                assertEquals(
+//                    "mhXKmTxYhA5bb6yVPs95RJ8J2ELWr6Qowp",
+//                    response.content?.toJson()!!["address"]["address"].asText()
+//                )
+//                assertNotNull(response.content?.toJson()!!["id"].asText())
+//                assertNotNull(response.content?.toJson()!!["creation"].asText())
+//
+//                assertTrue(response.content?.toJson()!!["extra"].isNull)
+//                assertTrue(response.content?.toJson()!!["expiration"].isNull)
+//            }
+//        }
+//
+//
+//        /**
+//         * We try to generate a new invoice for the user. It should not be successful because the user already have an
+//         * unused invoice.
+//         */
+//        testEngine!!.apply {
+//            handleRequest(Post, "$walletsUrl/test-btc-wallet/invoices") {
+//                addHeader(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded.toString())
+//                setBody(listOf("user" to "1").formUrlEncode())
+//            }.apply {
+//                assertEquals(Conflict, response.status())
+//            }
+//        }
+//
+//
+//    }
 
 }
