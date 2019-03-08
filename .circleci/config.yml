@@ -11,7 +11,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.gradle
-          key: circleci-ktor-prometheus-feature-{{ checksum "build.gradle" }}
+          key: circleci-stawallet-{{ checksum "build.gradle" }}
       - run: gradle clean
       - run: gradle build
       - run: gradle test
