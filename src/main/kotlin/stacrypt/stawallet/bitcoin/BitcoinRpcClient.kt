@@ -23,7 +23,7 @@ object BitcoinRpcClientFactory {
         user = config.getString("daemons.bitcoind.rpc.username"),
         password = config.getString("daemons.bitcoind.rpc.password"),
         host = config.getString("daemons.bitcoind.rpc.host"),
-        port = config.getString("daemons.bitcoind.rpc.port").toIntOrNull() ?: 0,
+        port = config.getInt("daemons.bitcoind.rpc.port"),
         secure = config.getBoolean("daemons.bitcoind.rpc.secure")
     )
 
