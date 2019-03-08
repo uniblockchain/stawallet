@@ -6,12 +6,12 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: circleci-stawallet-{{ checksum "build.gradle" }}
+          key: circleci-stawallet-{{ checksum "build.gradle.kts" }}
       - run: gradle dependencies
       - save_cache:
           paths:
             - ~/.gradle
-          key: circleci-stawallet-{{ checksum "build.gradle" }}
+          key: circleci-stawallet-{{ checksum "build.gradle.kts" }}
       - run: gradle clean
       - run: gradle build
       - run: gradle test
