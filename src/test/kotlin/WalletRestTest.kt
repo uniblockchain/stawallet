@@ -1,4 +1,4 @@
-package com.perfect.apartmentrental
+package stacrypt.stawallet
 
 import io.ktor.application.Application
 import io.ktor.http.HttpMethod

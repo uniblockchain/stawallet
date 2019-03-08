@@ -1,4 +1,4 @@
-package com.perfect.apartmentrental
+package stacrypt.stawallet
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
