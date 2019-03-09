@@ -28,10 +28,11 @@ before_deploy:
   - eval "$(ssh-agent -s)"
   - chmod 600 /tmp/deploy_rsa
   - ssh-add /tmp/deploy_rsa
+  - ./gradlew shadowJar
 
 deploy:
   provider: script
   skip_cleanup: true
-  script: ./gradlew shadowJar && scp build/libs/stawallet.jar "$SSH_USER@$SSH_HOST:~/stawallet/build/libs/stawallet.jar"
+  script: scp build/libs/stawallet.jar "$SSH_USER@$SSH_HOST:~/stawallet/build/libs/stawallet.jar"
   on:
     branch: master
