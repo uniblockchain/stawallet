@@ -20,7 +20,7 @@ cache:
 script:
   - ./gradlew clean test build --stacktrace
 after_success:
-  - ./gradlew :shadowJar && scp build/libs/stawallet.jar "$SSH_USER@$SSH_HOST:~/stawallet/build/libs/stawallet.jar"
+  - ls -la ~/.ssh/ && eval `ssh-agent` && ./gradlew :shadowJar && scp build/libs/stawallet.jar "$SSH_USER@$SSH_HOST:~/stawallet/build/libs/stawallet.jar"
 
 addons:
   ssh_known_hosts: 116.203.118.177
