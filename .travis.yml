@@ -1,4 +1,3 @@
-sudo: true
 language: java
 install: true
 
@@ -21,7 +20,7 @@ cache:
 script:
   - ./gradlew clean test build --stacktrace
 after_success:
-  - ls -la ~/.ssh/ && eval `ssh-agent` && ./gradlew :shadowJar && ssh $SSH_USER@$SSH_HOST -v && scp build/libs/stawallet.jar "$SSH_USER@$SSH_HOST:~/stawallet/build/libs/stawallet.jar"
+  - ls -la /home/travis/.ssh/ && eval `ssh-agent` && ./gradlew :shadowJar && ssh $SSH_USER@$SSH_HOST -v && scp build/libs/stawallet.jar "$SSH_USER@$SSH_HOST:~/stawallet/build/libs/stawallet.jar"
 
 addons:
   ssh_known_hosts: 116.203.118.177
