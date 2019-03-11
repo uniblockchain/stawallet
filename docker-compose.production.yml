@@ -13,13 +13,18 @@ services:
     networks:
       stawallet_net:
         ipv4_address: 172.16.238.198
+    environment:
+      DATABASE_URL: "postgresql://dev:devpass@db:5432/stawallet"
+      DATABASE_SALT: secret-salt
 
   db:
     container_name: stawallet_postgres
     image: postgres
     restart:  always
     environment:
-      POSTGRES_PASSWORD: test
+      POSTGRES_DB: stawallet
+      POSTGRES_PASSWORD: devpass
+      POSTGRES_USER: dev
     volumes:
       - ./data/db:/var/lib/postgresql/data
     ports:
