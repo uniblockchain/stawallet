@@ -4,11 +4,8 @@ services:
 
   app:
     container_name: stawallet_app
-    image: stawallet_image
+    image: stacrypt/bstawallet
     restart: always
-    build:
-      context: .
-      dockerfile: ./Dockerfile
     ports:
       - 8080:8080
     depends_on:

@@ -1,3 +1,9 @@
+env:
+  global:
+    - COMMIT=${TRAVIS_COMMIT::8}
+    - secure: OB9OkshKm71Gk258zJYuEUQ2GkqeXGGtbuBbxuLu/HI+XkJBC/lifIjdtdNx/TRrEYlu/hhPHvo2zF9AbrU4Ykhmpx+nx1Eg26rsJqV6SRuNZ14t1fIpg/FQqQUJPNLr/tJRtOE1BcRFQ3saTumtUel8bUAeO6dDLpTjQAaeQrWznyrgNPf+bHNvfoxK9OTE7eM55Jbcm1oi/HF/sz/jGOAm1rLOYm/vePFu07vAUk9EXuTsYHt12Auo1UgfFuAxx+hUeXUwGzjpzNqlUGS/pfy1XHDyhP6TYoDPn8WfAY6+qUl4VBwcvRxQzkaNp40KsHNPLuJWGGdcQ47YDG4M+nAzA4tUX5p3UknOf3kEUbvtC/XcsACnK7v3N37/TdCoPcrEhnkFP1AvsXmWRGcsmthbb9CTPnT3zeF792V2II0KoQaE3WyDWq0ipYbXLQdevX2Pkacgwui4zkTxlxY8e3lMImheduleuecVCw7IThml7wf8xh0wI25SA2f9kX8l1kJfUrAruvxkIyPwlC/bBZP+xSbiByoUk8ezDwpZJeoTMy7p+eUvgMVPc0egFYJ2xJr3leNkltc7YxbisAz5Zk9RvCvJQo11bDFNjbrAkdbMyhV1cSnGXQkNEAWWPFTiN3AQguWgcMcK6aZszS+unZ1ioGvGhsWk3tGeveuCkew=
+    - secure: FS/s6Rs+hMW4gZPFX3bL/kHpjJKKcTzefOwdWXwCk0TJ4zmPcGCAoSLHhdo88U/nmkHNxdLg4wiIZJQ/2hHQf93zbK3U6G3CibwfLBitIuKDP5pfKiWQSjOikrBKirKOP4Ef/f+b7C5IZ6TEN8KnAd+MoxrFuEPssg0nZ8peZbO6nRzG2DfPjZSXqwgzL2RIwdd51S6xe4xcMd+7VONCeIPGsK4TLqFFw1UPhF0SuN49GyA8vf2v1PLSVakGZTfNK8YOrbwmShfMJLj6M/5PrHZSnOhtaoQ8LLRVKHHu+21cvZMFMPee/HOpj1j+5iKmC55XC6cjPdIVfa/oW0Z8i3EbqRteQ0sjybtypYeOK1EaRRlQkATciZgX6GuyOYHUCXRrZ22KPaz2HOz1F6rzhjIX3z3cUSeFftfpk5Obtcex6CY5WeKIFnZ9PcHTGDYdPC5UEraSLHK0JrYtqmizbnh5sdzYw+ibhAM9ihjTuuyyCeisJoPlwVeXGPPflyCReVghZVATRyWj3GSjt9YuaD5RKYD+WJHnS5V3bdYvMHN56H/raZK33EYTR2JWC70lVlecuTg0dy4TE4jIf8Tm3bKj0zXRXwLeusxaWa24xc3MEzrzZEU+Zs5H4qToUHqQgS/Ow9nasPeIa5SEiE+MOvuf3jHP5EXlKlo3ttJ6pGg=
+
 language: java
 install: true
 jdk:
@@ -16,6 +22,8 @@ script:
 - "./gradlew clean test build --stacktrace"
 addons:
   ssh_known_hosts: 116.203.118.177
+services:
+  - docker
 before_deploy:
 - openssl aes-256-cbc -K $encrypted_11587ee85302_key -iv $encrypted_11587ee85302_iv
   -in deploy_rsa.enc -out /tmp/deploy_rsa -d
@@ -23,13 +31,16 @@ before_deploy:
 - chmod 600 /tmp/deploy_rsa
 - ssh-add /tmp/deploy_rsa
 - "./gradlew shadowJar"
+- docker login -u $DOCKER_USER -p $DOCKER_PASS
+- export REPO=stacrypt/bstawallet
+- export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH
+  ; fi`
+- docker build -f Dockerfile -t $REPO:$COMMIT .
+- docker tag $REPO:$COMMIT $REPO:$TAG
 deploy:
   provider: script
   skip_cleanup: true
-  script: scp build/libs/stawallet.jar "$SSH_USER@$SSH_HOST:~/stawallet/build/libs/stawallet.jar"
+  script: docker push $REPO && scp docker-compose.production.yml "$SSH_USER@$SSH_HOST:~/stawallet/docker-compose.yml"
+    && ssh $SSH_USER@$SSH_HOST "cd stawallet/ && docker-compose up --force-recreate --build -d"
   on:
     branch: master
-env:
-  global:
-  - secure: OB9OkshKm71Gk258zJYuEUQ2GkqeXGGtbuBbxuLu/HI+XkJBC/lifIjdtdNx/TRrEYlu/hhPHvo2zF9AbrU4Ykhmpx+nx1Eg26rsJqV6SRuNZ14t1fIpg/FQqQUJPNLr/tJRtOE1BcRFQ3saTumtUel8bUAeO6dDLpTjQAaeQrWznyrgNPf+bHNvfoxK9OTE7eM55Jbcm1oi/HF/sz/jGOAm1rLOYm/vePFu07vAUk9EXuTsYHt12Auo1UgfFuAxx+hUeXUwGzjpzNqlUGS/pfy1XHDyhP6TYoDPn8WfAY6+qUl4VBwcvRxQzkaNp40KsHNPLuJWGGdcQ47YDG4M+nAzA4tUX5p3UknOf3kEUbvtC/XcsACnK7v3N37/TdCoPcrEhnkFP1AvsXmWRGcsmthbb9CTPnT3zeF792V2II0KoQaE3WyDWq0ipYbXLQdevX2Pkacgwui4zkTxlxY8e3lMImheduleuecVCw7IThml7wf8xh0wI25SA2f9kX8l1kJfUrAruvxkIyPwlC/bBZP+xSbiByoUk8ezDwpZJeoTMy7p+eUvgMVPc0egFYJ2xJr3leNkltc7YxbisAz5Zk9RvCvJQo11bDFNjbrAkdbMyhV1cSnGXQkNEAWWPFTiN3AQguWgcMcK6aZszS+unZ1ioGvGhsWk3tGeveuCkew=
-  - secure: FS/s6Rs+hMW4gZPFX3bL/kHpjJKKcTzefOwdWXwCk0TJ4zmPcGCAoSLHhdo88U/nmkHNxdLg4wiIZJQ/2hHQf93zbK3U6G3CibwfLBitIuKDP5pfKiWQSjOikrBKirKOP4Ef/f+b7C5IZ6TEN8KnAd+MoxrFuEPssg0nZ8peZbO6nRzG2DfPjZSXqwgzL2RIwdd51S6xe4xcMd+7VONCeIPGsK4TLqFFw1UPhF0SuN49GyA8vf2v1PLSVakGZTfNK8YOrbwmShfMJLj6M/5PrHZSnOhtaoQ8LLRVKHHu+21cvZMFMPee/HOpj1j+5iKmC55XC6cjPdIVfa/oW0Z8i3EbqRteQ0sjybtypYeOK1EaRRlQkATciZgX6GuyOYHUCXRrZ22KPaz2HOz1F6rzhjIX3z3cUSeFftfpk5Obtcex6CY5WeKIFnZ9PcHTGDYdPC5UEraSLHK0JrYtqmizbnh5sdzYw+ibhAM9ihjTuuyyCeisJoPlwVeXGPPflyCReVghZVATRyWj3GSjt9YuaD5RKYD+WJHnS5V3bdYvMHN56H/raZK33EYTR2JWC70lVlecuTg0dy4TE4jIf8Tm3bKj0zXRXwLeusxaWa24xc3MEzrzZEU+Zs5H4qToUHqQgS/Ow9nasPeIa5SEiE+MOvuf3jHP5EXlKlo3ttJ6pGg=
