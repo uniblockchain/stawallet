@@ -68,6 +68,8 @@ dependencies {
     compile("io.github.novacrypto:BIP32:2018.10.06")
     compile("io.github.novacrypto:BIP32derivation:2018.10.06")
 
+    compile("com.github.mahdi13:markdownk:1.4")
+
     testCompile("io.ktor:ktor-server-test-host:1.0.0")
     testCompile("com.opentable.components:otj-pg-embedded:0.13.0")
 
