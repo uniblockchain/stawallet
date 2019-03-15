@@ -59,7 +59,7 @@ object WalletTable : IdTable<String>("wallet") {
 
     /**
      * TODO: Review it's usage
-         * Unconfirmed balance, which we are waiting for it to be confirmed in the new feature
+     * Unconfirmed balance, which we are waiting for it to be confirmed in the new feature
      */
     val unconfirmedBalance = long("unconfirmed_balance").default(0)
 
@@ -177,6 +177,12 @@ object ProofTable : IntIdTable("proof") {
      * Confirmations left
      */
     val confirmationsLeft = integer("confirmations_left")
+
+    /**
+     * The serialized string of block hashes which wad made this transaction got the received transactions
+     * block_hash_1:block_hash_2:block_hash_3:
+     */
+    val confirmationsTrace = varchar("confirmations_trace", 10_000).nullable()
 
     /**
      * Extra information, link, etc

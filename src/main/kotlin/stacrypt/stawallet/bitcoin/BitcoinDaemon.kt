@@ -379,10 +379,12 @@ class BitcoinBlockchainWatcher(
                     .and(ProofTable.blockHash eq blockInfo.hash)
                     .and(ProofTable.blockHeight eq blockInfo.height!!.toInt())
                     .and(ProofTable.confirmationsLeft greater 0)
+                    .and(ProofTable.confirmationsTrace notLike "%${blockInfo.hash}%")
             }
         ) {
             with(SqlExpressionBuilder) {
                 it.update(ProofTable.confirmationsLeft, ProofTable.confirmationsLeft - 1)
+                it.update(ProofTable.confirmationsTrace, ProofTable.confirmationsTrace.concat("${blockInfo.hash}:"))
                 it[ProofTable.updatedAt] = DateTime.now()
             }
         }

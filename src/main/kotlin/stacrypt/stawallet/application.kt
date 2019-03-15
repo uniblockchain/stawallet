@@ -114,10 +114,10 @@ fun initBaseData(force: Boolean = false) {
                             }
                             seedFingerprint = "" // FIXME
                             path = "m/44'/1'/0'"
-                            latestSyncedHeight = 1_484_765
+                            latestSyncedHeight = 1_484_780
                         }
                     } else {
-                        WalletDao["btc"].latestSyncedHeight = 1_484_775
+                        WalletDao["btc"].latestSyncedHeight = 1_484_780
                     }
                 }
             }

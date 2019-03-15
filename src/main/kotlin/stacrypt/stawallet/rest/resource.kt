@@ -96,6 +96,7 @@ fun ProofDao.export(role: ClientRole? = null, wallet: stacrypt.stawallet.Wallet)
         blockHash = this.blockHash,
         link = wallet.blockchainExplorerTxLink(this.txHash),
         confirmationsLeft = this.confirmationsLeft,
+        confirmationsTrace = (this.confirmationsTrace ?: "").split(":").filter { it.isNotEmpty() },
         extra = this.extra,
         error = this.error
     )
@@ -124,6 +125,7 @@ data class ProofResource(
     val blockHash: String?,
     val blockHeight: Int?,
     val confirmationsLeft: Int,
+    val confirmationsTrace: List<String>,
     val link: String?,
     val extra: String?,
     val error: String?
