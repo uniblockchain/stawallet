@@ -127,7 +127,13 @@ class BitcoinBlockchainWatcher(
                             val b = bitcoind.rpcClient.getBlock(
                                 bitcoind.rpcClient.getBlockHash(latestSyncedHeight - i)
                             )
-                            b.tx?.forEach { increaseConfirmations(blockInfo = b, txHash = it) }
+                            b.tx?.forEach {
+                                increaseConfirmations(
+                                    analyzingBlockHash = blockToAnalyze,
+                                    blockInfo = b,
+                                    txHash = it
+                                )
+                            }
                         }
 
                         walletDao.latestSyncedHeight = latestSyncedHeight + 1
@@ -371,7 +377,7 @@ class BitcoinBlockchainWatcher(
 
     }
 
-    private fun increaseConfirmations(blockInfo: BlockInfo, txHash: String) {
+    private fun increaseConfirmations(analyzingBlockHash: String, blockInfo: BlockInfo, txHash: String) {
         ProofTable.update(
             {
                 (ProofTable.blockchain eq blockchainId)
@@ -379,12 +385,12 @@ class BitcoinBlockchainWatcher(
                     .and(ProofTable.blockHash eq blockInfo.hash)
                     .and(ProofTable.blockHeight eq blockInfo.height!!.toInt())
                     .and(ProofTable.confirmationsLeft greater 0)
-                    .and(ProofTable.confirmationsTrace notLike "%${blockInfo.hash}%")
+                    .and(ProofTable.confirmationsTrace notLike "%$analyzingBlockHash%")
             }
         ) {
             with(SqlExpressionBuilder) {
                 it.update(ProofTable.confirmationsLeft, ProofTable.confirmationsLeft - 1)
-                it.update(ProofTable.confirmationsTrace, ProofTable.confirmationsTrace.concat("${blockInfo.hash}:"))
+                it.update(ProofTable.confirmationsTrace, ProofTable.confirmationsTrace.concat("$analyzingBlockHash:"))
                 it[ProofTable.updatedAt] = DateTime.now()
             }
         }
