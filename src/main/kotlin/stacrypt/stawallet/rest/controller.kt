@@ -74,15 +74,21 @@ fun Route.injectInvoicesRout() = route("/invoices") {
      * Give us the invoice list of the mentioned user.
      * If there is not any invoice for this user, this Api will return an empty list.
      * If the result was empty or there ws not any active invoice fot the user, you should call Post method to request a
-     * new invoice for this user.
-     * 404 Not Found exception. So you should try to post an invoice first.
+     * new invoice for this user. Also it will implicitly issue new invoice, so you usually won't get empty response.
+     * TODO: Implicit data insertion should be replaced with a better method. It's not a good idea.
      */
     reachGet("") {
-        call.respond(
-            InvoiceDao.wrapRows(InvoiceTable.select {
-                (InvoiceTable.wallet eq wallet.name) and (InvoiceTable.user eq user)
-            }.orderBy(InvoiceTable.creation, false)).toList().map { it.export() }
-        )
+        var response = InvoiceDao.wrapRows(InvoiceTable.select {
+            (InvoiceTable.wallet eq wallet.name) and (InvoiceTable.user eq user)
+        }.orderBy(InvoiceTable.creation, false)).toList().map { it.export() }
+        if (response.isEmpty() && user != null) {
+            try {
+                response = listOf(transaction { wallet.issueNewInvoice(user!!).export() })
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, e.toString())
+            }
+        }
+        call.respond(response)
     }
 
 
