@@ -7,6 +7,8 @@ import org.joda.time.DateTime
 import stacrypt.stawallet.*
 import stacrypt.stawallet.model.*
 import java.lang.Exception
+import java.util.logging.Level
+import java.util.logging.Logger
 import kotlin.math.max
 
 object bitcoind : WalletDaemon() {
@@ -61,6 +63,10 @@ class BitcoinBlockchainWatcher(
     private val confirmationsRequires: Int
 ) {
 
+    companion object {
+        private val logger = Logger.getLogger("watcher")
+    }
+
     val blockWatchGap get() = config.getLong("daemons.bitcoind.watcher.blockWatchGap")
     val mempoolWatchGap get() = config.getLong("daemons.bitcoind.watcher.mempoolWatchGap")
 
@@ -72,9 +78,10 @@ class BitcoinBlockchainWatcher(
     private fun startMempoolWatcherJob(scope: CoroutineScope) = scope.launch {
         while (true) {
             delay(mempoolWatchGap)
-            (bitcoind.rpcClient.getMempoolDescendants() as List<Transaction>).forEach { tx ->
-                processOrphanTransaction(tx)
-            }
+            // TODO Implement
+//            (bitcoind.rpcClient.getMempoolDescendants() as List<Transaction>).forEach { tx ->
+//                processOrphanTransaction(tx)
+//            }
         }
     }
 
@@ -82,37 +89,54 @@ class BitcoinBlockchainWatcher(
         while (true) {
             delay(blockWatchGap)
 
-            // Find out witch block height should we sync with (if there is any unsynced block)
-            val currentBestBlockHeight = bitcoind.rpcClient.getBlockCount()
-            val walletDao = transaction { WalletDao.findById(walletName) }!!
-            val latestSyncedHeight = walletDao.latestSyncedHeight
-            // TODO: Store and compare `bestblockhash` and get back in case of incompatibility
-            if (currentBestBlockHeight > latestSyncedHeight) {
-                // We have one or more new bocks to sync with
-                // TODO: Compare database with with `previousblockhash` of the following value
-                val nextBlock =
-                    bitcoind.rpcClient.getBlockWithTransactions(
-                        bitcoind.rpcClient.getBlockHash(latestSyncedHeight + 1)
-                    )
-                nextBlock.tx?.forEach { tx ->
-                    processTransaction(
-                        nextBlock,
-                        tx
-                    )
-                }
+            try {
+                // Find out witch block height should we sync with (if there is any unsynced block)
+                val currentBestBlockHeight = bitcoind.rpcClient.getBlockCount()
+                val walletDao = transaction { WalletDao.findById(walletName) }!!
+                val latestSyncedHeight = walletDao.latestSyncedHeight
+                // TODO: Store and compare `bestblockhash` and get back in case of incompatibility
 
-                transaction {
-                    // Now it's time to update previous (unconfirmed) block's confirmations
-                    for (i in 0..confirmationsRequires) {
-                        val b = bitcoind.rpcClient.getBlock(
-                            bitcoind.rpcClient.getBlockHash(latestSyncedHeight - i)
+                logger.log(Level.INFO, "$walletDao: Starting a new watching iteration...")
+                logger.log(Level.INFO, "$walletDao: Latest Synced Height is: $latestSyncedHeight")
+                logger.log(Level.INFO, "$walletDao: Current best block hash is: $currentBestBlockHeight")
+
+                if (currentBestBlockHeight > latestSyncedHeight) {
+                    // We have one or more new bocks to sync with
+                    // TODO: Compare database with with `previousblockhash` of the following value
+                    logger.log(Level.INFO, "$walletDao: We are looking for block in height: ${latestSyncedHeight + 1}")
+
+                    val blockToAnalyze = bitcoind.rpcClient.getBlockHash(latestSyncedHeight + 1)
+
+                    logger.log(Level.INFO, "$walletDao: We are looking for block with hash: ${latestSyncedHeight + 1}")
+
+
+                    val nextBlock = bitcoind.rpcClient.getBlockWithTransactions(blockToAnalyze)
+                    nextBlock.tx?.forEach { tx ->
+                        logger.log(Level.FINE, "$walletDao: We are looking at transaction: ${tx.hash}")
+                        processTransaction(
+                            nextBlock,
+                            tx
                         )
-                        b.tx?.forEach { increaseConfirmations(blockInfo = b, txHash = it) }
                     }
 
-                    walletDao.latestSyncedHeight = latestSyncedHeight
-                }
+                    transaction {
+                        // Now it's time to update previous (unconfirmed) block's confirmations
+                        for (i in 0..confirmationsRequires) {
+                            val b = bitcoind.rpcClient.getBlock(
+                                bitcoind.rpcClient.getBlockHash(latestSyncedHeight - i)
+                            )
+                            b.tx?.forEach { increaseConfirmations(blockInfo = b, txHash = it) }
+                        }
 
+                        walletDao.latestSyncedHeight = latestSyncedHeight
+                    }
+
+                } else {
+                    logger.log(Level.INFO, "$walletDao: There is nothing new, so we skip this iteration")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                logger.log(Level.INFO, "Exception happened, we will come back again in the next iteration")
             }
         }
     }

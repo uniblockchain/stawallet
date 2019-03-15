@@ -1,7 +1,7 @@
 package stacrypt.stawallet
 
 import com.fasterxml.jackson.databind.SerializationFeature
-import com.typesafe.config.*
+import com.typesafe.config.Config
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
@@ -15,15 +15,17 @@ import io.ktor.response.respondText
 import io.ktor.routing.get
 import io.ktor.routing.routing
 import io.ktor.util.KtorExperimentalAPI
-import kotlinx.coroutines.*
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.transaction
+import stacrypt.stawallet.bitcoin.BitcoinWallet
 import stacrypt.stawallet.model.*
 import stacrypt.stawallet.rest.walletsRouting
 import java.net.URI
 import java.sql.Connection
-import java.util.logging.*
+import java.util.logging.Level
+import java.util.logging.Logger
 
 
 lateinit var config: Config
@@ -44,13 +46,6 @@ fun Application.module(testing: Boolean = false) {
     wallets = Wallet.initFromConfig()
 
     logger.log(Level.WARNING, "Syncing wallets:")
-
-    wallets.forEach {
-        runBlocking {
-            // TODO: Sync coins
-        }
-    }
-
 
     install(AutoHeadResponse)
 
@@ -89,6 +84,43 @@ fun Application.module(testing: Boolean = false) {
 
         walletsRouting()
 
+    }
+
+
+    initBaseData(true) // FIXME: Development-only
+
+    initWatchers()
+
+}
+
+fun initWatchers() {
+    wallets.forEach {
+        if (it is BitcoinWallet) it.startBlockchainWatcher()
+    }
+
+}
+
+// FIXME This function is ONLY for DEVELOPMENT purposes and should not be used in production.
+fun initBaseData(force: Boolean = false) {
+    wallets.forEach { wallet ->
+        try {
+            transaction {
+                if (wallet is BitcoinWallet) {
+                    WalletTable.deleteWhere { WalletTable.id eq "btc" }
+                    WalletDao.new("btc") {
+                        blockchain = BlockchainDao.new {
+                            this.currency = "tbtc"
+                            this.network = "testnet3"
+                        }
+                        seedFingerprint = "" // FIXME
+                        path = "m/44'/1'/0'"
+                        latestSyncedHeight = 1_390_000
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            println("It seems the ${wallet.name} wallet is already exists in database (or could not be added).")
+        }
     }
 }
 

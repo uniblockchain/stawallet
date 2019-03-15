@@ -52,12 +52,14 @@ object WalletTable : IdTable<String>("wallet") {
     val path = varchar("path", 64)
 
     /**
+     * TODO: Review it's usage
      * Confirmed amount which is payable
      */
     val balance = long("balance").default(0)
 
     /**
-     * Unconfirmed balance, which we are waiting for it to be confirmed in the new feature
+     * TODO: Review it's usage
+         * Unconfirmed balance, which we are waiting for it to be confirmed in the new feature
      */
     val unconfirmedBalance = long("unconfirmed_balance").default(0)
 
