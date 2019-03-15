@@ -75,6 +75,12 @@ class ProofDao(id: EntityID<Int>) : IntEntity(id) {
     var extra by ProofTable.extra
     var error by ProofTable.error
 
+    /**
+     * We just store the confirmationsTrace and confirmationsLeft, so we cal calculate the `confirmationsRequires`
+     */
+    val confirmationsRequires: Int
+        get() = confirmationsLeft + (confirmationsTrace?.split(",")?.count { it.isNotEmpty() } ?: 0)
+
 }
 
 class DepositDao(id: EntityID<Int>) : IntEntity(id) {

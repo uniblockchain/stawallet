@@ -180,7 +180,8 @@ object ProofTable : IntIdTable("proof") {
 
     /**
      * The serialized string of block hashes which wad made this transaction got the received transactions
-     * block_hash_1:block_hash_2:block_hash_3:
+     * BlockHashes are separated by `,` character
+     * block_hash_1,block_hash_2,block_hash_3
      */
     val confirmationsTrace = varchar("confirmations_trace", 10_000).nullable()
 

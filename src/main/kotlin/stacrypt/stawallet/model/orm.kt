@@ -13,6 +13,5 @@ class Concat<T>(val expr: Expression<*>, vararg val items: String) : Function<T?
 fun FunctionProvider.concat(expr: Expression<*>, builder: QueryBuilder, vararg items: String) =
     "CONCAT(${expr.toSQL(builder)} , '${items.joinToString(" ,")}')"
 
-
-fun <T : Any?> Column<T>.concat(vararg items: String): Concat<T> =
-    Concat<T>(this, *items)
+fun <T : String?> Column<T>.concat(vararg items: String): Concat<T> =
+    Concat(this, *items)
