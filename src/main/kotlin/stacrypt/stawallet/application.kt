@@ -87,14 +87,16 @@ fun Application.module(testing: Boolean = false) {
     }
 
 
-    initBaseData(true) // FIXME: Development-only
-
-    initWatchers()
-
+    // FIXME
+    if (!testing) {
+        initBaseData(true) // FIXME: Development-only
+        initWatchers()
+    }
 }
 
 fun initWatchers() {
     wallets.forEach {
+        // FIXME
         if (it is BitcoinWallet) it.startBlockchainWatcher()
     }
 

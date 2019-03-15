@@ -124,9 +124,8 @@ class BitcoinBlockchainWatcher(
                     transaction {
                         // Now it's time to update previous (unconfirmed) block's confirmations
                         for (i in 0..confirmationsRequires) {
-                            val b = bitcoind.rpcClient.getBlock(
-                                bitcoind.rpcClient.getBlockHash(latestSyncedHeight - i)
-                            )
+                            val blockHash = bitcoind.rpcClient.getBlockHash(latestSyncedHeight - i)
+                            val b = bitcoind.rpcClient.getBlock(blockHash)
                             b.tx?.forEach {
                                 increaseConfirmations(
                                     analyzingBlockHash = blockToAnalyze,
@@ -139,23 +138,19 @@ class BitcoinBlockchainWatcher(
                         walletDao.latestSyncedHeight = latestSyncedHeight + 1
                     }
 
-                    transaction {
-
-                    }
-
                     /**
                      * Try to move the extra amount of confirmed balance to the cold wallet
                      */
-                    transaction {
+//                    transaction {
                         // TODO: Implement
-                        val confirmedBalance =
-                            UtxoTable.join(
-                                ProofTable, JoinType.INNER, UtxoTable.discoveryProof, null, null
-                            )
-                                .select { UtxoTable.wallet eq walletDao.id }
-                                .andWhere { UtxoTable.spendProof.isNull() }
-                                .andWhere { UtxoTable.isSpent eq false }
-                    }
+//                        val confirmedBalance =
+//                            UtxoTable.join(
+//                                ProofTable, JoinType.INNER, UtxoTable.discoveryProof, null, null
+//                            )
+//                                .select { UtxoTable.wallet eq walletDao.id }
+//                                .andWhere { UtxoTable.spendProof.isNull() }
+//                                .andWhere { UtxoTable.isSpent eq false }
+//                    }
 
                 } else {
                     logger.log(Level.INFO, "$walletDao: There is nothing new, so we skip this iteration")

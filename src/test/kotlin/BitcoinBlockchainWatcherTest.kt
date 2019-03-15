@@ -212,9 +212,7 @@ class BitcoinBlockchainWatcherTest : BaseApiTest() {
         verifyOrder {
             bitcoind.rpcClient.getBlockCount()
             bitcoind.rpcClient.getBlockHash(123457)
-            bitcoind.rpcClient.getBlockCount()
             bitcoind.rpcClient.getBlockWithTransactions("0000000000000000000404014bd39d4d432cdb1d4e29cc340ccf0e53374e9763")
-            bitcoind.rpcClient.getBlockCount()
             for (i in 0..4) {
                 bitcoind.rpcClient.getBlockHash(123456 - i)
                 bitcoind.rpcClient.getBlock(match { it.startsWith("00000000") })
