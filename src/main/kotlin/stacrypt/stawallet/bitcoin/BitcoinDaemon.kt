@@ -87,7 +87,6 @@ class BitcoinBlockchainWatcher(
 
     private fun startBlockWatcherJob(scope: CoroutineScope) = scope.launch {
         while (true) {
-            delay(blockWatchGap)
 
             try {
                 // Find out witch block height should we sync with (if there is any unsynced block)
@@ -103,7 +102,10 @@ class BitcoinBlockchainWatcher(
                 if (currentBestBlockHeight > latestSyncedHeight) {
                     // We have one or more new bocks to sync with
                     // TODO: Compare database with with `previousblockhash` of the following value
-                    logger.log(Level.INFO, "$walletDao: We are looking for block in height: ${latestSyncedHeight + 1}")
+                    logger.log(
+                        Level.WARNING,
+                        "$walletDao: We are looking for block in height: ${latestSyncedHeight + 1}"
+                    )
 
                     val blockToAnalyze = bitcoind.rpcClient.getBlockHash(latestSyncedHeight + 1)
 
@@ -128,7 +130,7 @@ class BitcoinBlockchainWatcher(
                             b.tx?.forEach { increaseConfirmations(blockInfo = b, txHash = it) }
                         }
 
-                        walletDao.latestSyncedHeight = latestSyncedHeight
+                        walletDao.latestSyncedHeight = latestSyncedHeight + 1
                     }
 
                 } else {
@@ -137,6 +139,8 @@ class BitcoinBlockchainWatcher(
             } catch (e: Exception) {
                 e.printStackTrace()
                 logger.log(Level.INFO, "Exception happened, we will come back again in the next iteration")
+            } finally {
+                delay(blockWatchGap)
             }
         }
     }
@@ -163,14 +167,20 @@ class BitcoinBlockchainWatcher(
     }
 
     /**
-     * Here we are serching for any associated address in our watching addresses for each incoming transaction utxo.
+     * Here we are searching for any associated address in our watching addresses for each incoming transaction utxo.
      */
-    private fun findAssociatedAddress(vout: TransactionOutput) = transaction {
-        AddressTable
-            .select { AddressTable.isActive eq true }
-            .andWhere { AddressTable.wallet eq WalletDao[walletName].id }
-            .andWhere { AddressTable.provision eq (vout.scriptPubKey?.addresses?.lastOrNull() as String) }
-            .lastOrNull()?.run { AddressDao.wrapRow(this) }
+    private fun findAssociatedAddress(vout: TransactionOutput): AddressDao? = transaction {
+        // TODO: Review how we should recognize the addresses
+        val address = vout.scriptPubKey?.addresses?.lastOrNull()
+        if (vout.scriptPubKey?.type == "pubkeyhash" || address is String) {
+            AddressTable
+                .select { AddressTable.isActive eq true }
+                .andWhere { AddressTable.wallet eq WalletDao[walletName].id }
+                .andWhere { AddressTable.provision eq (address as String) }
+                .lastOrNull()?.run { AddressDao.wrapRow(this) }
+        } else {
+            null
+        }
     }
 
     /**
@@ -189,7 +199,7 @@ class BitcoinBlockchainWatcher(
             proof = if (q == null)
             // Create a new proof for this
                 ProofDao.new {
-                    this.blockchain = blockchain
+                    this.blockchain = WalletDao[walletName].blockchain
                     this.blockHash = block.hash
                     this.blockHeight = block.height!!.toInt()
                     this.txHash = tx.hash!!
@@ -298,12 +308,20 @@ class BitcoinBlockchainWatcher(
         } catch (e: Exception) {
             // TODO Report to the boss
             // Maybe invalid block info
+            logger.log(Level.INFO, "Error inquiring proof for tx: ${tx.hash}")
         }
         proof as ProofDao
 
         tx.vout
             ?.asSequence()
-            ?.map { vout -> Pair(findAssociatedAddress(vout), vout) }
+            ?.map { vout ->
+                val associatedAddress = findAssociatedAddress(vout)
+                if (associatedAddress == null) logger.log(
+                    Level.INFO,
+                    "${tx.hash}: This transaction's vout: ${vout.n} doesn't have any associated pubkey address"
+                )
+                Pair(associatedAddress, vout)
+            }
             ?.filter { it.first != null }
             ?.map {
 
