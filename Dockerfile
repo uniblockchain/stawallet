@@ -16,7 +16,6 @@ RUN chown -R $APPLICATION_USER /app
 USER $APPLICATION_USER
 
 # We copy the FAT Jar we built into the /app folder and sets that folder as the working directory.
-RUN echo "salam"
 COPY --chown=ktor:ktor ./build/libs/stawallet.jar /app/stawallet.jar
 WORKDIR /app
 RUN pwd
