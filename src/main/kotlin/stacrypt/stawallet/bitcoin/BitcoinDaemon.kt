@@ -139,6 +139,24 @@ class BitcoinBlockchainWatcher(
                         walletDao.latestSyncedHeight = latestSyncedHeight + 1
                     }
 
+                    transaction {
+
+                    }
+
+                    /**
+                     * Try to move the extra amount of confirmed balance to the cold wallet
+                     */
+                    transaction {
+                        // TODO: Implement
+                        val confirmedBalance =
+                            UtxoTable.join(
+                                ProofTable, JoinType.INNER, UtxoTable.discoveryProof, null, null
+                            )
+                                .select { UtxoTable.wallet eq walletDao.id }
+                                .andWhere { UtxoTable.spendProof.isNull() }
+                                .andWhere { UtxoTable.isSpent eq false }
+                    }
+
                 } else {
                     logger.log(Level.INFO, "$walletDao: There is nothing new, so we skip this iteration")
                 }
