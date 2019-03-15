@@ -114,7 +114,7 @@ class BitcoinBlockchainWatcher(
 
                     val nextBlock = bitcoind.rpcClient.getBlockWithTransactions(blockToAnalyze)
                     nextBlock.tx?.forEach { tx ->
-                        logger.log(Level.FINE, "$walletDao: We are looking at transaction: ${tx.hash}")
+                        logger.log(Level.FINE, "$walletDao: We are looking at transaction: ${tx.txid}")
                         processTransaction(
                             nextBlock,
                             tx
@@ -190,7 +190,7 @@ class BitcoinBlockchainWatcher(
     private fun inquireProof(block: BlockInfoWithTransactions, tx: Transaction): ProofDao =
         transaction {
             val q = ProofTable.select { ProofTable.blockchain eq blockchainId }
-                .andWhere { ProofTable.txHash eq tx.hash!! }
+                .andWhere { ProofTable.txHash eq tx.txid!! }
                 .andWhere { ProofTable.blockHash eq block.hash!! }
                 .andWhere { ProofTable.blockHeight eq block.height!!.toInt() }
                 .firstOrNull()
@@ -202,7 +202,7 @@ class BitcoinBlockchainWatcher(
                     this.blockchain = WalletDao[walletName].blockchain
                     this.blockHash = block.hash
                     this.blockHeight = block.height!!.toInt()
-                    this.txHash = tx.hash!!
+                    this.txHash = tx.txid!!
                     this.confirmationsLeft = confirmationsRequires
                 }
             else
@@ -226,12 +226,12 @@ class BitcoinBlockchainWatcher(
         proof: ProofDao
     ) =
         transaction {
-            if (UtxoTable.select { (UtxoTable.txid eq transaction.hash!!) and (UtxoTable.vout eq transactionOutput.n!!.toInt()) }.count() == 0) {
+            if (UtxoTable.select { (UtxoTable.txid eq transaction.txid!!) and (UtxoTable.vout eq transactionOutput.n!!.toInt()) }.count() == 0) {
                 // This is new UTXO!
                 UtxoDao.new {
                     this.address = address
                     this.wallet = address.wallet
-                    this.txid = transaction.hash!!
+                    this.txid = transaction.txid!!
                     this.vout = transactionOutput.n!!.toInt()
                     this.amount = transactionOutput.value!!.toLong()
                     this.discoveryProof = proof
@@ -308,7 +308,7 @@ class BitcoinBlockchainWatcher(
         } catch (e: Exception) {
             // TODO Report to the boss
             // Maybe invalid block info
-            logger.log(Level.INFO, "Error inquiring proof for tx: ${tx.hash}")
+            logger.log(Level.INFO, "Error inquiring proof for tx: ${tx.txid}")
         }
         proof as ProofDao
 
@@ -318,7 +318,7 @@ class BitcoinBlockchainWatcher(
                 val associatedAddress = findAssociatedAddress(vout)
                 if (associatedAddress == null) logger.log(
                     Level.INFO,
-                    "${tx.hash}: This transaction's vout: ${vout.n} doesn't have any associated pubkey address"
+                    "${tx.txid}: This transaction's vout: ${vout.n} doesn't have any associated pubkey address"
                 )
                 Pair(associatedAddress, vout)
             }
@@ -328,11 +328,14 @@ class BitcoinBlockchainWatcher(
                 /**
                  * Insert new UTXOs
                  */
+                logger.log(Level.INFO, "$walletName: New UTXO found!!!!!!")
 
                 try {
                     insertNewUtxo(it.first!!, tx, it.second, proof)
+                    logger.log(Level.INFO, "$walletName: New UTXO added!!!!!!")
                 } catch (e: Exception) {
 
+                    logger.log(Level.INFO, "$walletName: New UTXO adding error :(")
                     // TODO Report to the boss
                 }
                 it
@@ -348,15 +351,18 @@ class BitcoinBlockchainWatcher(
                 /**
                  * Insert new Deposit
                  */
+                logger.log(Level.INFO, "$walletName: New Deposit found!!!!!!")
 
                 try {
                     insertNewDeposit(
                         relatedInvoice = v.firstOrNull()?.first,
-                        transactionHash = tx.hash!!,
+                        transactionHash = tx.txid!!,
                         amount = v.sumByLong { it.second.value!!.toLong() },
                         proof = proof
                     )
+                    logger.log(Level.INFO, "$walletName: New Deposit added!!!!!!")
                 } catch (e: Exception) {
+                    logger.log(Level.INFO, "$walletName: New Deposit adding error :(")
 
                     // TODO Report to the boss
                 }

@@ -106,15 +106,18 @@ fun initBaseData(force: Boolean = false) {
         try {
             transaction {
                 if (wallet is BitcoinWallet) {
-                    WalletTable.deleteWhere { WalletTable.id eq "btc" }
-                    WalletDao.new("btc") {
-                        blockchain = BlockchainDao.new {
-                            this.currency = "tbtc"
-                            this.network = "testnet3"
+                    if (WalletDao.findById("btc") == null) {
+                        WalletDao.new("btc") {
+                            blockchain = BlockchainDao.new {
+                                this.currency = "tbtc"
+                                this.network = "testnet3"
+                            }
+                            seedFingerprint = "" // FIXME
+                            path = "m/44'/1'/0'"
+                            latestSyncedHeight = 1_484_765
                         }
-                        seedFingerprint = "" // FIXME
-                        path = "m/44'/1'/0'"
-                        latestSyncedHeight = 1_390_000
+                    } else {
+                        WalletDao["btc"].latestSyncedHeight = 1_484_775
                     }
                 }
             }
