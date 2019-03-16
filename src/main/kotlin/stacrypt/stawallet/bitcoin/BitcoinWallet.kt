@@ -80,11 +80,7 @@ class BitcoinWallet(name: String, config: Config, network: String) :
 
     override val daemon = bitcoind
 
-    private var blockchainWatcher: BitcoinBlockchainWatcher? = null
-
-    fun isBlockchainWatcherActive() = blockchainWatcher != null // FIXME
-
-    fun startBlockchainWatcher(): BitcoinBlockchainWatcher {
+    override fun startBlockchainWatcher(): BaseBlockchainWatcher {
         blockchainWatcher = bitcoind.addBlockchainWatcher(
             transaction { WalletDao[name].blockchain.id.value },
             name,
@@ -93,8 +89,8 @@ class BitcoinWallet(name: String, config: Config, network: String) :
         return blockchainWatcher!!
     }
 
-    fun stopBlockchainWatcher() =
-        bitcoind.removeBlockchainWatcher(blockchainWatcher!!)
+    override fun stopBlockchainWatcher() =
+        bitcoind.removeBlockchainWatcher((blockchainWatcher as BitcoinBlockchainWatcher?)!!)
 
     init {
 //        rpcClient.getMemoryInfo()

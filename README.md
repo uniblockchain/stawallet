@@ -47,6 +47,52 @@ Stawallet is a service to simplify the deposit and withdraw of cryptocurrency as
 6. Configure the `application.conf` by the rpc server IPs and Ports.
 7. Start Stawallet and enjoy it. Take care!
 
+## Cli
+Stawallet provides a simple and useful "Command Line Interface".
+
+#### Install CLI
+```bash
+./gradlew instalDist
+alias stawallet=./build/install/stawallet/bin/stawallet
+```
+
+Make sure everythings are ok using the following command:
+```bash
+stawallet -h
+```
+
+#### Create Database
+```bash
+sudo -u postgres psql -c "$(stawallet database create 2> /dev/null)"
+```
+
+use `-f` flag to drop the existing database (if exists)
+
+#### Create Database Schema
+```bash
+stawallet database create init
+```
+
+#### Create Database Schema
+```bash
+stawallet database create init
+```
+
+#### Populate Database (using your configuration file)
+```bash
+stawallet database create populate
+```
+
+#### Run blockchain watcher for each wallet
+```bash
+stawallet watch my-lovely-btc-wallet
+```
+
+#### Start REST Api server
+```bash
+stawallet serve
+```
+
 ## UseCases
 * Exchange internal coins
 * Custodian coins providers

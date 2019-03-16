@@ -3,13 +3,13 @@ package stacrypt.stawallet
 import io.ktor.config.tryGetString
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.select
-import stacrypt.stawallet.bitcoin.BitcoinWallet
-import stacrypt.stawallet.bitcoin.NETWORK_MAINNET
-import stacrypt.stawallet.bitcoin.NETWORK_TESTNET_3
+import org.jetbrains.exposed.sql.transactions.transaction
+import stacrypt.stawallet.bitcoin.*
 import stacrypt.stawallet.ethereum.EthereumWallet
 import stacrypt.stawallet.model.DepositDao
 import stacrypt.stawallet.model.DepositTable
 import stacrypt.stawallet.model.InvoiceDao
+import stacrypt.stawallet.model.WalletDao
 import java.math.BigInteger
 import java.security.InvalidParameterException
 import java.util.logging.Level
@@ -91,4 +91,13 @@ abstract class Wallet(val name: String, val secretProvider: SecretProvider, val 
 
     abstract suspend fun issueNewInvoice(user: String): InvoiceDao
     abstract suspend fun sendTo(address: String, amountToSend: BigInteger, tag: Any?): Any
+
+
+    var blockchainWatcher: BaseBlockchainWatcher? = null
+    fun isBlockchainWatcherActive() = blockchainWatcher != null // FIXME
+    abstract fun startBlockchainWatcher(): BaseBlockchainWatcher
+    abstract fun stopBlockchainWatcher()
+
 }
+
+interface BaseBlockchainWatcher

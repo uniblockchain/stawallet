@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import stacrypt.stawallet.BaseBlockchainWatcher
 import stacrypt.stawallet.ConfigSecretProvider
 import stacrypt.stawallet.NotEnoughFundException
 import stacrypt.stawallet.Wallet
@@ -25,6 +26,14 @@ class RippleWallet(name: String, config: Config, network: String) : Wallet(
     ConfigSecretProvider(config, 144),
     network
 ) {
+    override fun startBlockchainWatcher(): BaseBlockchainWatcher {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun stopBlockchainWatcher() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     override val daemon = rippled
 
     /**

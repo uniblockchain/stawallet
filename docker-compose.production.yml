@@ -19,7 +19,7 @@ services:
 
   db:
     container_name: stawallet_postgres
-    image: postgres
+    image:
     restart:  always
     environment:
       POSTGRES_DB: stawallet

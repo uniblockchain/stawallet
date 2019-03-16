@@ -11,12 +11,9 @@ import org.kethereum.functions.encodeRLP
 import org.kethereum.model.*
 import org.walleth.khex.toHexString
 import java.math.BigInteger
-import stacrypt.stawallet.ConfigSecretProvider
-import stacrypt.stawallet.Wallet
 import org.web3j.protocol.core.DefaultBlockParameterName
 import org.web3j.protocol.core.DefaultBlockParameterNumber
-import stacrypt.stawallet.NotEnoughFundException
-import stacrypt.stawallet.TransactionPushException
+import stacrypt.stawallet.*
 import stacrypt.stawallet.model.*
 import java.lang.Exception
 import java.math.BigDecimal
@@ -33,6 +30,14 @@ class AccountNonceMismatchException(message: String?) : Exception(message)
 
 class EthereumWallet(name: String, config: Config, network: String) :
     Wallet(name, ConfigSecretProvider(config, 60), network) {
+    override fun startBlockchainWatcher(): BaseBlockchainWatcher {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun stopBlockchainWatcher() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     override val daemon = geth
 
     override fun blockchainExplorerTxLink(txId: String): String? = when (this.network) {

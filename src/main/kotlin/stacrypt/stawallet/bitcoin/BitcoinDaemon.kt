@@ -61,7 +61,7 @@ class BitcoinBlockchainWatcher(
     private val blockchainId: Int,
     private val walletName: String,
     private val confirmationsRequires: Int
-) {
+) : BaseBlockchainWatcher {
 
     companion object {
         private val logger = Logger.getLogger("watcher")
@@ -142,7 +142,7 @@ class BitcoinBlockchainWatcher(
                      * Try to move the extra amount of confirmed balance to the cold wallet
                      */
 //                    transaction {
-                        // TODO: Implement
+                    // TODO: Implement
 //                        val confirmedBalance =
 //                            UtxoTable.join(
 //                                ProofTable, JoinType.INNER, UtxoTable.discoveryProof, null, null

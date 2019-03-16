@@ -2,6 +2,7 @@ package stacrypt.stawallet
 
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
@@ -17,7 +18,6 @@ import io.ktor.routing.routing
 import io.ktor.util.KtorExperimentalAPI
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.transaction
 import stacrypt.stawallet.bitcoin.BitcoinWallet
 import stacrypt.stawallet.model.*
@@ -28,12 +28,12 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 
-lateinit var config: Config
-lateinit var wallets: List<Wallet>
+val wallets: List<Wallet> by lazy { Wallet.initFromConfig() }
 private val logger = Logger.getLogger("Application")
 
-fun main(args: Array<String>) = io.ktor.server.netty.EngineMain.main(args)
+//fun main(args: Array<String>) = io.ktor.server.netty.EngineMain.main(args)
 
+fun watch(walletName: String) = wallets.findLast { it.name == walletName }!!.startBlockchainWatcher()
 
 @UseExperimental(KtorExperimentalAPI::class)
 @kotlin.jvm.JvmOverloads
@@ -43,7 +43,6 @@ fun Application.module(testing: Boolean = false) {
 
     logger.log(Level.WARNING, "Initializing wallets:")
 
-    wallets = Wallet.initFromConfig()
 
     logger.log(Level.WARNING, "Syncing wallets:")
 
@@ -75,7 +74,7 @@ fun Application.module(testing: Boolean = false) {
         }
     }
 
-    initDatabase()
+    connectToDatabase()
 
     routing {
         get("/") {
@@ -90,48 +89,16 @@ fun Application.module(testing: Boolean = false) {
     // FIXME
     if (!testing) {
         initBaseData(true) // FIXME: Development-only
-        initWatchers()
+
     }
 }
 
-fun initWatchers() {
-    wallets.forEach {
-        // FIXME
-        if (it is BitcoinWallet) it.startBlockchainWatcher()
-    }
-
-}
 
 // FIXME This function is ONLY for DEVELOPMENT purposes and should not be used in production.
 fun initBaseData(force: Boolean = false) {
-    wallets.forEach { wallet ->
-        try {
-            transaction {
-                if (wallet is BitcoinWallet) {
-                    if (WalletDao.findById("btc") == null) {
-                        WalletDao.new("btc") {
-                            blockchain = BlockchainDao.new {
-                                this.currency = "tbtc"
-                                this.network = "testnet3"
-                            }
-                            seedFingerprint = "" // FIXME
-                            path = "m/44'/1'/0'"
-                            latestSyncedHeight = 1_484_780
-                        }
-                    } else {
-                        WalletDao["btc"].latestSyncedHeight = 1_484_780
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            println("It seems the ${wallet.name} wallet is already exists in database (or could not be added).")
-        }
-    }
 }
 
-@KtorExperimentalAPI
-fun initDatabase(dropIfExists: Boolean = false) {
-
+fun connectToDatabase() {
     val connectionStringUri =
         URI.create(config.getString("db.uri").replace("postgres://", "postgresql://"))
     Database.connect(
@@ -141,17 +108,6 @@ fun initDatabase(dropIfExists: Boolean = false) {
         driver = "org.postgresql.Driver",
         setupConnection = { connection: Connection -> connection.autoCommit = false; }
     )
-
-    val tables = arrayOf(WalletTable, AddressTable, InvoiceTable, DepositTable, ProofTable, TaskTable, UtxoTable)
-
-    transaction {
-        if (dropIfExists) {
-            SchemaUtils.drop(*tables)
-            flushCache()
-        }
-        SchemaUtils.create(*tables)
-        commit()
-    }
 }
 
 fun HoconApplicationConfig.getTypesafeConfig(): Config {

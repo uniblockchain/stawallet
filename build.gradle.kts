@@ -6,9 +6,11 @@ val kethereumVersion = 0.67
 
 plugins {
     kotlin("jvm") version "1.3.11"
-//    id ("com.palantir.docker") version "0.21.0"
+    application
+    //    id ("com.palantir.docker") version "0.21.0"
 //    id ("com.palantir.docker-compose") version "0.21.0"
     id("com.github.johnrengelman.shadow") version "4.0.4"
+    id("org.flywaydb.flyway") version "5.2.4"
 }
 
 group = "stacrypt"
@@ -70,6 +72,8 @@ dependencies {
 
     compile("com.github.mahdi13:markdownk:1.4")
 
+    compile("com.github.ajalt:clikt:1.6.0")
+
     testCompile("io.ktor:ktor-server-test-host:1.0.0")
     testCompile("com.opentable.components:otj-pg-embedded:0.13.0")
 
@@ -77,8 +81,12 @@ dependencies {
 
 }
 
-val mainClassName = "io.ktor.server.netty.EngineMain" // Starting with 1.0.0-beta-3
+val entrypoint = "stacrypt.stawallet.MainKt"
+//val mainClassName = "io.ktor.server.netty.EngineMain" // Starting with 1.0.0-beta-3
 
+application {
+    mainClassName = entrypoint
+}
 
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
@@ -90,7 +98,7 @@ tasks.withType<ShadowJar> {
     classifier = ""
     version = ""
     manifest {
-        attributes("Main-Class" to mainClassName)
+        attributes("Main-Class" to entrypoint)
     }
 }
 
