@@ -2,9 +2,10 @@ version: "3.6"
 
 services:
 
-  app:
-    container_name: stawallet_app
+  api:
+    container_name: stawallet_api
     image: stacrypt/bstawallet
+    command: api
     restart: always
     ports:
       - 8080:8080
@@ -17,9 +18,37 @@ services:
       DATABASE_URL: "postgresql://dev:devpass@db:5432/stawallet"
       DATABASE_SALT: secret-salt
 
+  tbtc_wtcher:
+    container_name: stawallet_tbtc_watcher
+    image: stacrypt/bstawallet
+    command: watcher TBTC
+    restart: always
+    depends_on:
+      - db
+    networks:
+      stawallet_net:
+        ipv4_address: 172.16.238.181
+    environment:
+      DATABASE_URL: "postgresql://dev:devpass@db:5432/stawallet"
+      DATABASE_SALT: secret-salt
+
+  cli:
+    container_name: stawallet_cli
+    image: stacrypt/bstawallet
+    command: cli
+    restart: always
+    depends_on:
+      - db
+    networks:
+      stawallet_net:
+        ipv4_address: 172.16.238.191
+    environment:
+      DATABASE_URL: "postgresql://dev:devpass@db:5432/stawallet"
+      DATABASE_SALT: secret-salt
+
   db:
     container_name: stawallet_postgres
-    image:
+    image: stacrypt/bstawallet_db
     restart:  always
     environment:
       POSTGRES_DB: stawallet

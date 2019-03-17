@@ -26,13 +26,14 @@ WORKDIR /stawallet
 
 EXPOSE 8080
 
-CMD ["./stawallet/bin/stawallet", "database", "init"]
-CMD ["./stawallet/bin/stawallet", "database", "populate"]
+#CMD ["./stawallet/bin/stawallet", "database", "init"]
+#CMD ["./stawallet/bin/stawallet", "database", "populate"]
 #CMD ["./stawallet/bin/stawallet", "serve"]
 # TODO: Set proper memory and cpu limit in java command
 # We launch java to execute the jar, with good defauls intended for containers.
-CMD ["java", "-server", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-XX:InitialRAMFraction=2", "-XX:MinRAMFraction=2", "-XX:MaxRAMFraction=2", "-XX:+UseG1GC", "-XX:MaxGCPauseMillis=100", "-XX:+UseStringDeduplication", "-jar", "/stawallet/stawallet.jar"]
+#CMD ["java", "-server", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-XX:InitialRAMFraction=2", "-XX:MinRAMFraction=2", "-XX:MaxRAMFraction=2", "-XX:+UseG1GC", "-XX:MaxGCPauseMillis=100", "-XX:+UseStringDeduplication", "-jar", "/stawallet/stawallet.jar"]
 
-
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+ENTRYPOINT [ "/docker-entrypoint.sh" ]
 
 HEALTHCHECK --interval=15s --timeout=15s --retries=15 CMD curl -f http://127.0.0.1:8080/
