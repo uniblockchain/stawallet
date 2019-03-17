@@ -1,13 +1,9 @@
 package stacrypt.stawallet.ripple
 
-import com.typesafe.config.Config
 import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
-import stacrypt.stawallet.BaseBlockchainWatcher
-import stacrypt.stawallet.ConfigSecretProvider
-import stacrypt.stawallet.NotEnoughFundException
-import stacrypt.stawallet.Wallet
+import stacrypt.stawallet.*
 import stacrypt.stawallet.model.AddressDao
 import stacrypt.stawallet.model.AddressTable
 import stacrypt.stawallet.model.DepositDao
@@ -21,9 +17,9 @@ const val NETWORK_MAINNET = "mainnet"
 
 val XRP_MINIMUM_BALANCE = 20.0.xrpToDrops()
 
-class RippleWallet(name: String, config: Config, network: String) : Wallet(
+class RippleWallet(name: String, network: String, secretProvider: SecretProvider) : Wallet(
     name,
-    ConfigSecretProvider(config, 144),
+    secretProvider,
     network
 ) {
     override fun startBlockchainWatcher(): BaseBlockchainWatcher {
@@ -49,7 +45,7 @@ class RippleWallet(name: String, config: Config, network: String) : Wallet(
 
             if (q != null) return AddressDao.wrapRow(q)
             return AddressDao.new {
-//                this.provision =
+                //                this.provision =
             }
         }
 

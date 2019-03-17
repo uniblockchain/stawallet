@@ -56,7 +56,7 @@ Stawallet provides a simple and useful "Command Line Interface".
 alias stawallet=./build/install/stawallet/bin/stawallet
 ```
 
-Make sure everythings are ok using the following command:
+Make sure everything are ok using the following command:
 ```bash
 stawallet -h
 ```
@@ -67,11 +67,6 @@ sudo -u postgres psql -c "$(stawallet database create 2> /dev/null)"
 ```
 
 use `-f` flag to drop the existing database (if exists)
-
-#### Create Database Schema
-```bash
-stawallet database create init
-```
 
 #### Create Database Schema
 ```bash

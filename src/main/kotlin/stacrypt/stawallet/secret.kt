@@ -1,6 +1,5 @@
 package stacrypt.stawallet
 
-import com.typesafe.config.Config
 import org.kethereum.bip32.model.Seed
 import org.kethereum.bip32.toKey
 import org.kethereum.crypto.CURVE
@@ -8,18 +7,15 @@ import org.kethereum.crypto.model.ECKeyPair
 import org.kethereum.crypto.model.PUBLIC_KEY_SIZE
 import org.kethereum.crypto.model.PublicKey
 import org.kethereum.crypto.signMessage
-import org.kethereum.crypto.toAddress
 import org.kethereum.crypto.toHex
 import org.kethereum.extensions.toBigInteger
 import org.kethereum.extensions.toBytesPadded
 import org.kethereum.hashes.sha256
 import org.walleth.khex.hexToByteArray
-import java.math.BigInteger
-import java.security.KeyPair
 
 
 // FIXME: Highly dangerous because of `hotSeed` variable accessibility (e.g. using reflection)
-abstract class SecretProvider(private val walletNumber: Int = 0) {
+abstract class SecretProvider(private val accountId: Int) {
 
     companion object {
         const val MAGIC_NUMBER = 44
@@ -27,11 +23,11 @@ abstract class SecretProvider(private val walletNumber: Int = 0) {
 
     abstract val coinType: Int
 
-    protected abstract var hotSeed: ByteArray
-    abstract var coldAddress: String
+    protected abstract val hotSeed: ByteArray
+    abstract val coldAddress: String
 
     fun makePath(index: Int, change: Int?) =
-        "m/$MAGIC_NUMBER'/$coinType'/$walletNumber'/${if (change != null) "$change/$index" else "$index"}"
+        "m/$MAGIC_NUMBER'/$coinType'/$accountId'/${if (change != null) "$change/$index" else "$index"}"
 
 
     fun getHotAddress(index: Int, change: Int?): String {
@@ -66,20 +62,14 @@ abstract class SecretProvider(private val walletNumber: Int = 0) {
 }
 
 
-class ConfigSecretProvider(val config: Config, override var coinType: Int) : SecretProvider(0) {
-
-
-    override var hotSeed: ByteArray
-        get() = config.getString("seed").hexToByteArray()
-        set(value) {
-            throw Exception()
-        }
-
-    override var coldAddress: String
-        get() = config.getString("coldAddress")
-        set(value) {
-            throw Exception()
-        }
+class SimpleSecretProvider(
+    private val hotSeedGenerator: () -> ByteArray,
+    override var coinType: Int,
+    accountId: Int,
+    override val coldAddress: String
+) :
+    SecretProvider(accountId) {
+    override val hotSeed get () = hotSeedGenerator.invoke()
 }
 
 fun ByteArray.getCompressedPublicKey(): ByteArray {

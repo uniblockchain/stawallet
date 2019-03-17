@@ -27,11 +27,13 @@ private val logger = Logger.getLogger("wallet")
 data class InvalidBitcoinAddressException(val wallet: String, val address: String?) :
     Exception("wallet $wallet invalid address: $address")
 
-class BitcoinWallet(name: String, config: Config, network: String) :
-    Wallet(name, ConfigSecretProvider(config, if (network == NETWORK_MAINNET) 0 else 1), network) {
-
-    override var requiredConfirmations = config.getInt("requiredConfirmations")
-//        if (config.hasPath("requiredConfirmations")) config.getInt("requiredConfirmations") else null
+class BitcoinWallet(
+    name: String,
+    network: String,
+    override val requiredConfirmations: Int,
+    secretProvider: SecretProvider
+) :
+    Wallet(name, secretProvider, network) {
 
     override fun blockchainExplorerTxLink(txId: String) = "https://www.blockchain.com/btc/tx/$txId"
 
@@ -76,6 +78,9 @@ class BitcoinWallet(name: String, config: Config, network: String) :
         const val TX_BASE_SIZE = 10 // Bytes
         const val TX_INPUT_SIZE = 148 // Bytes
         const val TX_OUTPUT_SIZE = 34 // Bytes
+
+        fun coinType(network: String) = if (network == NETWORK_MAINNET) 0 else 1
+
     }
 
     override val daemon = bitcoind

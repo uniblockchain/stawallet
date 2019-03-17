@@ -1,6 +1,5 @@
 package stacrypt.stawallet.ethereum
 
-import com.typesafe.config.Config
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
@@ -28,8 +27,13 @@ val DEFAULT_TRANSACTION_GAS_LIMIT = BigInteger("21000")
 
 class AccountNonceMismatchException(message: String?) : Exception(message)
 
-class EthereumWallet(name: String, config: Config, network: String) :
-    Wallet(name, ConfigSecretProvider(config, 60), network) {
+class EthereumWallet(name: String, network: String, override val requiredConfirmations: Int, secretProvider: SecretProvider) :
+    Wallet(name, secretProvider, network) {
+
+    companion object {
+        fun coinType() = 60
+    }
+
     override fun startBlockchainWatcher(): BaseBlockchainWatcher {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
@@ -44,8 +48,6 @@ class EthereumWallet(name: String, config: Config, network: String) :
         NETWORK_MAINNET -> "https://etherscan.io/tx/$txId"
         else -> "https://${this.network}.etherscan.io/tx/$txId"
     }
-
-    override var requiredConfirmations = config.getInt("requiredConfirmations")
 
     // TODO: Use a hard derived address for warm wallet
     private val theOnlyWarmAddress: AddressDao

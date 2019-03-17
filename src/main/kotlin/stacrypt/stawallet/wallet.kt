@@ -4,6 +4,7 @@ import io.ktor.config.tryGetString
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.walleth.khex.hexToByteArray
 import stacrypt.stawallet.bitcoin.*
 import stacrypt.stawallet.ethereum.EthereumWallet
 import stacrypt.stawallet.model.DepositDao
@@ -35,23 +36,35 @@ abstract class Wallet(val name: String, val secretProvider: SecretProvider, val 
 
                 val network = config.tryGetString("wallets.${wc.first}.network")
                 when (config.getString("wallets.${wc.first}.cryptocurrency")) {
-                    "bitcoin" -> all.add(
+                    "BTC" -> all.add(
                         BitcoinWallet(
-                            wc.first,
-                            config.getConfig("wallets.${wc.first}"),
-                            when (network) {
+                            name = wc.first,
+                            network = when (network) {
                                 "mainnet" -> NETWORK_MAINNET
                                 "testnet3" -> NETWORK_TESTNET_3
                                 else -> throw InvalidParameterException("Network '$network' is not supported")
-                            }
+                            },
+                            requiredConfirmations = config.getInt("wallets.${wc.first}.requiredConfirmations"),
+                            secretProvider = SimpleSecretProvider(
+                                hotSeedGenerator = { config.getString("secrets.hotSeed").hexToByteArray() },
+                                accountId = config.getInt("wallets.${wc.first}.accountId"),
+                                coinType = BitcoinWallet.coinType(network),
+                                coldAddress = config.getString("wallets.${wc.first}.coldAddress")
+                            )
                         )
                     )
 //                    "litecoin" -> all.add(LitecoinWallet(address, xPrv))
-                    "ethereum" -> all.add(
+                    "ETH" -> all.add(
                         EthereumWallet(
-                            wc.first,
-                            config.getConfig("wallets.${wc.first}"),
-                            network ?: throw InvalidParameterException("No network specified")
+                            name = wc.first,
+                            network = network ?: throw InvalidParameterException("No network specified"),
+                            requiredConfirmations = config.getInt("wallets.${wc.first}.requiredConfirmations"),
+                            secretProvider = SimpleSecretProvider(
+                                hotSeedGenerator = { config.getString("secrets.hotSeed").hexToByteArray() },
+                                accountId = config.getInt("wallets.${wc.first}.accountId"),
+                                coinType = BitcoinWallet.coinType(network),
+                                coldAddress = config.getString("wallets.${wc.first}.coldAddress")
+                            )
                         )
                     )
 //                    "ripple" -> all.add(RippleWallet(address, xPrv))
