@@ -60,7 +60,7 @@ class UtxoInvoiceRestTest : BaseApiTest() {
         transaction {
             wallet1 = WalletDao.new("test-btc-wallet") {
                 this.blockchain = BlockchainDao.new {
-                    this.currency = "btc"
+                    this.currency = "BTC"
                     this.network = NETWORK_TESTNET_3
                 }
                 this.seedFingerprint = "00:00:00:00:00:00:00:00"

@@ -67,15 +67,18 @@ class EthereumRestTest : BaseApiTest() {
         super.mockup(app)
 
         transaction {
-            wallet1 = WalletDao.new("test-eth-wallet") {
-                this.blockchain = BlockchainDao.new {
-                    this.currency = "eth"
-                    this.network = NETWORK_MAINNET
-                }
-                this.seedFingerprint = "00:00:00:00:00:00:00:00"
-                this.path = "m/44'/60'/0'"
-            }
+//            wallet1 = WalletDao.new("test-eth-wallet") {
+//                this.blockchain = BlockchainDao.new {
+//                    this.currency = "ETH"
+//                    this.network = NETWORK_MAINNET
+//                }
+//                this.seedFingerprint = "00:00:00:00:00:00:00:00"
+//                this.path = "m/44'/60'/0'"
+//            }
+//            flushCache()
+            wallets.forEach { it.initializeToDb(true) }
             flushCache()
+            wallet1 = WalletDao["test-eth-wallet"]
 
             val address1 = AddressDao.new {
                 this.wallet = wallet1

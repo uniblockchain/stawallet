@@ -208,14 +208,14 @@ class BitcoinWallet(
         }
 
         if (walletDao == null) {
-            WalletDao.new("btc") {
+            walletDao = WalletDao.new(name) {
                 blockchain = BlockchainTable.select { BlockchainTable.currency eq CRYPTOCURRENCY }
-                    .andWhere { BlockchainTable.network eq network }
+                    .andWhere { BlockchainTable.network eq this@BitcoinWallet.network }
                     .firstOrNull()
                     ?.run { BlockchainDao.wrapRow(this) }
                     ?: BlockchainDao.new {
                         this.currency = CRYPTOCURRENCY
-                        this.network = network
+                        this.network = this@BitcoinWallet.network
                     }
 
                 seedFingerprint = "" // FIXME
@@ -224,7 +224,7 @@ class BitcoinWallet(
             }
         }
 
-        return walletDao!!
+        return walletDao
     }
 
 }

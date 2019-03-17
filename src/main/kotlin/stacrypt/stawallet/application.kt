@@ -28,7 +28,7 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 
-val wallets: List<Wallet> by lazy { Wallet.initFromConfig() }
+lateinit var wallets: List<Wallet>
 private val logger = Logger.getLogger("Application")
 
 //fun main(args: Array<String>) = io.ktor.server.netty.EngineMain.main(args)
@@ -43,6 +43,7 @@ fun Application.module(testing: Boolean = false) {
 
     logger.log(Level.WARNING, "Initializing wallets:")
 
+    wallets = Wallet.initFromConfig()
 
     logger.log(Level.WARNING, "Syncing wallets:")
 
@@ -88,7 +89,16 @@ fun Application.module(testing: Boolean = false) {
     if (testing) {
         // Init schema:
         // TODO: Move it somewhere else
-        val tables = arrayOf(WalletTable, AddressTable, InvoiceTable, DepositTable, ProofTable, TaskTable, UtxoTable)
+        val tables = arrayOf(
+            WalletTable,
+            BlockchainTable,
+            AddressTable,
+            InvoiceTable,
+            DepositTable,
+            ProofTable,
+            TaskTable,
+            UtxoTable
+        )
         transaction {
             SchemaUtils.drop(*tables)
             flushCache()

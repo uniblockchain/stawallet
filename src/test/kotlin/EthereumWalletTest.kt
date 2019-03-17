@@ -13,6 +13,7 @@ import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameterName
 import org.web3j.protocol.http.HttpService
 import stacrypt.stawallet.NotEnoughFundException
+import stacrypt.stawallet.ethereum.EthereumWallet
 import stacrypt.stawallet.ethereum.geth
 import stacrypt.stawallet.model.*
 import stacrypt.stawallet.wallets
@@ -73,7 +74,7 @@ class EthereumWalletTest : BaseApiTest() {
         transaction {
             wallet1 = WalletDao.new("test-eth-wallet") {
                 this.blockchain = BlockchainDao.new {
-                    this.currency = "eth"
+                    this.currency = "ETH"
                     this.network = stacrypt.stawallet.ethereum.NETWORK_MAINNET
                 }
                 this.seedFingerprint = "00:00:00:00:00:00:00:00"
@@ -138,7 +139,7 @@ class EthereumWalletTest : BaseApiTest() {
 
     @Test
     fun testSendTo() {
-        val ethereumWallet = wallets[0]
+        val ethereumWallet = wallets[0] as EthereumWallet
 
         assertFailsWith(NotEnoughFundException::class) {
             runBlocking {

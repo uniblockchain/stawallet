@@ -85,16 +85,23 @@ class BitcoinBlockchainWatcherTest : BaseApiTest() {
         super.mockup(app)
 
         transaction {
-            wallet1 = WalletDao.new("test-btc-wallet") {
-                this.blockchain = BlockchainDao.new {
-                    this.currency = "BTC"
-                    this.network = NETWORK_TESTNET_3
-                }
-                this.seedFingerprint = "00:00:00:00:00:00:00:00"
-                this.path = "m/44'/0'/0'"
-                this.latestSyncedHeight = 123456
-            }
+            //            wallet1 = WalletDao.new("test-btc-wallet") {
+//                this.blockchain = BlockchainDao.new {
+//                    this.currency = "BTC"
+//                    this.network = NETWORK_TESTNET_3
+//                }
+//                this.seedFingerprint = "00:00:00:00:00:00:00:00"
+//                this.path = "m/44'/0'/0'"
+//                this.latestSyncedHeight = 123456
+//            }
+//            flushCache()
+
+            wallets.forEach { it.initializeToDb(true) }
+
             flushCache()
+
+            wallet1 = WalletDao["test-btc-wallet"]
+            wallet1.latestSyncedHeight = 123456
 
             val address1 = AddressDao.new {
                 this.wallet = wallet1

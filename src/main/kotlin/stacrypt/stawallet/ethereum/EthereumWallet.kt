@@ -13,6 +13,7 @@ import java.math.BigInteger
 import org.web3j.protocol.core.DefaultBlockParameterName
 import org.web3j.protocol.core.DefaultBlockParameterNumber
 import stacrypt.stawallet.*
+import stacrypt.stawallet.SecretProvider.Companion.MAGIC_NUMBER
 import stacrypt.stawallet.model.*
 import java.lang.Exception
 import java.math.BigDecimal
@@ -36,6 +37,8 @@ class EthereumWallet(
     Wallet(name, secretProvider, network) {
     companion object {
         fun coinType() = 60
+
+        const val CRYPTOCURRENCY = "ETH"
     }
 
     override fun startBlockchainWatcher(): BaseBlockchainWatcher {
@@ -187,7 +190,31 @@ class EthereumWallet(
     }
 
     override fun initializeToDb(force: Boolean): WalletDao {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        var walletDao = WalletDao.findById(name)
+
+        if (walletDao != null && force) {
+            walletDao.delete()
+            walletDao = null
+        }
+
+        if (walletDao == null) {
+            walletDao = WalletDao.new(name) {
+                blockchain = BlockchainTable.select { BlockchainTable.currency eq CRYPTOCURRENCY }
+                    .andWhere { BlockchainTable.network eq this@EthereumWallet.network }
+                    .firstOrNull()
+                    ?.run { BlockchainDao.wrapRow(this) }
+                    ?: BlockchainDao.new {
+                        this.currency = CRYPTOCURRENCY
+                        this.network = this@EthereumWallet.network
+                    }
+
+                seedFingerprint = "" // FIXME
+                path = "m/$MAGIC_NUMBER'/${secretProvider.coinType}'/${secretProvider.accountId}'"
+                latestSyncedHeight = 4_048_733 // FIXME
+            }
+        }
+
+        return walletDao
     }
 
 

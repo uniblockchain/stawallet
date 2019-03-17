@@ -53,7 +53,7 @@ class WalletRestTest : BaseApiTest() {
         transaction {
             wallet1 = WalletDao.new("test-btc-wallet") {
                 this.blockchain = BlockchainDao.new {
-                    this.currency = "btc"
+                    this.currency = "BTC"
                     this.network = "testnet3"
                 }
                 this.seedFingerprint = "00:00:00:00:00:00:00:00"
@@ -61,7 +61,7 @@ class WalletRestTest : BaseApiTest() {
             }
             wallet2 = WalletDao.new("test-eth-wallet") {
                 this.blockchain = BlockchainDao.new {
-                    this.currency = "eth"
+                    this.currency = "ETH"
                     this.network = "rinkeby"
                 }
                 this.seedFingerprint = "11:11:11:11:11:11:11:11"
@@ -85,11 +85,6 @@ class WalletRestTest : BaseApiTest() {
 
     @Test
     fun testRoot() {
-
-        (wallets[0] as BitcoinWallet).startBlockchainWatcher()
-
-        runBlocking { delay(5000) }
-
         testEngine!!.handleRequest(HttpMethod.Get, "/").apply {
             assertEquals(HttpStatusCode.OK, response.status())
         }
