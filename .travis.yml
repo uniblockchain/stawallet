@@ -41,6 +41,7 @@ deploy:
   provider: script
   skip_cleanup: true
   script: docker push $REPO && scp docker-compose.production.yml "$SSH_USER@$SSH_HOST:~/stawallet/docker-compose.yml"
+    && scp docker-compose.production.yml "$SSH_USER@$SSH_HOST:~/stawallet/stawallet"
     && ssh $SSH_USER@$SSH_HOST "cd stawallet/ && docker-compose pull && docker-compose up --force-recreate --build -d"
   on:
     branch: master
