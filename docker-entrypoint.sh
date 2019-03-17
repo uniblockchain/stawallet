@@ -15,20 +15,19 @@ fi
 
 SERVICE=$1
 
-alias stawallet=./stawallet/bin/stawallet
-
-stawallet database init
-stawallet database populate
-stawallet database migrate
+./stawallet/bin/stawallet database init
+./stawallet/bin/stawallet database populate
+./stawallet/bin/stawallet database migrate
 
 case $SERVICE in 
 	api)
-		stawallet serve
+		./stawallet/bin/stawallet serve
 		;;
 	btc_watcher)
-		stawallet watch $2
+		./stawallet/bin/stawallet watch $2
 		;;
 	cli)
+        alias stawallet=./stawallet/bin/stawallet
 		tail -f /dev/null
 		;;
   *)
