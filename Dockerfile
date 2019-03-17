@@ -10,7 +10,7 @@ ENV APPLICATION_USER ktor
 # Then we add the user, create the /stawallet folder and give permissions to our user.
 RUN adduser -D -g '' $APPLICATION_USER
 RUN mkdir /stawallet
-RUN chown -R $APPLICATION_USER /app
+RUN chown -R $APPLICATION_USER /stawallet
 
 # Marks this container to use the specified $APPLICATION_USER
 USER $APPLICATION_USER
