@@ -85,17 +85,18 @@ fun Application.module(testing: Boolean = false) {
 
     }
 
-
-    // FIXME
-    if (!testing) {
-        initBaseData(true) // FIXME: Development-only
-
+    if (testing) {
+        // Init schema:
+        // TODO: Move it somewhere else
+        val tables = arrayOf(WalletTable, AddressTable, InvoiceTable, DepositTable, ProofTable, TaskTable, UtxoTable)
+        transaction {
+            SchemaUtils.drop(*tables)
+            flushCache()
+            SchemaUtils.create(*tables)
+            commit()
+        }
     }
-}
 
-
-// FIXME This function is ONLY for DEVELOPMENT purposes and should not be used in production.
-fun initBaseData(force: Boolean = false) {
 }
 
 fun connectToDatabase() {

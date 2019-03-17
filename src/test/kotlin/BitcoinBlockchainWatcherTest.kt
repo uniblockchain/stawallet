@@ -30,7 +30,7 @@ class BitcoinBlockchainWatcherTest : BaseApiTest() {
     override fun configure() = super.configure().apply {
         put("db.salt", "fake-salt")
         put(
-            "secreet.hotSeed",
+            "secrets.hotSeed",
             "0x5c6e14e58ad94121498ea9535795967a7b0339a7e3206fb2c9e52de0bb8c76dfd2e783435cbded4fc9939720386dee90db32b36bd56b85750c4d6825f8cc2e8a" // BIP39: `enhance before small`
         )
         put("wallets.test-btc-wallet.cryptocurrency", "BTC")
@@ -87,7 +87,7 @@ class BitcoinBlockchainWatcherTest : BaseApiTest() {
         transaction {
             wallet1 = WalletDao.new("test-btc-wallet") {
                 this.blockchain = BlockchainDao.new {
-                    this.currency = "btc"
+                    this.currency = "BTC"
                     this.network = NETWORK_TESTNET_3
                 }
                 this.seedFingerprint = "00:00:00:00:00:00:00:00"
