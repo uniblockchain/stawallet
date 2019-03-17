@@ -4,10 +4,7 @@ import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import stacrypt.stawallet.*
-import stacrypt.stawallet.model.AddressDao
-import stacrypt.stawallet.model.AddressTable
-import stacrypt.stawallet.model.DepositDao
-import stacrypt.stawallet.model.InvoiceDao
+import stacrypt.stawallet.model.*
 import java.math.BigInteger
 import kotlin.math.roundToLong
 
@@ -114,6 +111,11 @@ class RippleWallet(name: String, network: String, secretProvider: SecretProvider
 
         throw Exception("Error") // TODO: Report to boss
     }
+
+    override fun initializeToDb(force: Boolean): WalletDao {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
 
 }
 

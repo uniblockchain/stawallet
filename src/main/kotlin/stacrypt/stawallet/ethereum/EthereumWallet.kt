@@ -27,9 +27,13 @@ val DEFAULT_TRANSACTION_GAS_LIMIT = BigInteger("21000")
 
 class AccountNonceMismatchException(message: String?) : Exception(message)
 
-class EthereumWallet(name: String, network: String, override val requiredConfirmations: Int, secretProvider: SecretProvider) :
+class EthereumWallet(
+    name: String,
+    network: String,
+    override val requiredConfirmations: Int,
+    secretProvider: SecretProvider
+) :
     Wallet(name, secretProvider, network) {
-
     companion object {
         fun coinType() = 60
     }
@@ -181,6 +185,11 @@ class EthereumWallet(name: String, network: String, override val requiredConfirm
         return@transaction result.transactionHash
 
     }
+
+    override fun initializeToDb(force: Boolean): WalletDao {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
 
 }
 
