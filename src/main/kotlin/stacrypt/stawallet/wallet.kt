@@ -62,7 +62,7 @@ abstract class Wallet(val name: String, val secretProvider: SecretProvider, val 
                             secretProvider = SimpleSecretProvider(
                                 hotSeedGenerator = { config.getString("secrets.hotSeed").hexToByteArray() },
                                 accountId = config.getInt("wallets.${wc.first}.accountId"),
-                                coinType = BitcoinWallet.coinType(network),
+                                coinType = EthereumWallet.coinType(),
                                 coldAddress = config.getString("wallets.${wc.first}.coldAddress")
                             )
                         )
