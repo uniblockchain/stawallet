@@ -15,16 +15,18 @@ fi
 
 SERVICE=$1
 
-stemerald database init
-stemerald database populate
-stemerald database migrate
+alias stawallet=./stawallet/bin/stawallet
+
+stawallet database init
+stawallet database populate
+stawallet database migrate
 
 case $SERVICE in 
 	api)
-		stemerald serve
+		stawallet serve
 		;;
 	btc_watcher)
-		stemerald watch $2
+		stawallet watch $2
 		;;
 	cli)
 		tail -f /dev/null
