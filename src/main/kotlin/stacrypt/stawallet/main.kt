@@ -8,6 +8,7 @@ import com.typesafe.config.ConfigFactory
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import stacrypt.stawallet.bitcoin.BitcoinWallet
+import stacrypt.stawallet.ethereum.EthereumWallet
 import stacrypt.stawallet.model.*
 import java.net.URI
 
@@ -58,24 +59,7 @@ private object cli {
             transaction {
                 wallets.forEach { wallet ->
                     try {
-                        transaction {
-
-                            if (wallet is BitcoinWallet) {
-                                if (WalletDao.findById("btc") == null) {
-                                    WalletDao.new("btc") {
-                                        blockchain = BlockchainDao.new {
-                                            this.currency = "tbtc"
-                                            this.network = "testnet3"
-                                        }
-                                        seedFingerprint = "" // FIXME
-                                        path = "m/44'/1'/0'"
-                                        latestSyncedHeight = 1_484_780
-                                    }
-                                } else {
-                                    WalletDao["btc"].latestSyncedHeight = 1_484_780
-                                }
-                            }
-                        }
+                        transaction { wallet.initializeToDb(force) }
                     } catch (e: Exception) {
                         println("It seems the ${wallet.name} wallet is already exists in database (or could not be added).")
                     }

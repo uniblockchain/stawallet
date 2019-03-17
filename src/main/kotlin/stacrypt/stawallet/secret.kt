@@ -11,11 +11,10 @@ import org.kethereum.crypto.toHex
 import org.kethereum.extensions.toBigInteger
 import org.kethereum.extensions.toBytesPadded
 import org.kethereum.hashes.sha256
-import org.walleth.khex.hexToByteArray
 
 
 // FIXME: Highly dangerous because of `hotSeed` variable accessibility (e.g. using reflection)
-abstract class SecretProvider(private val accountId: Int) {
+abstract class SecretProvider(internal val accountId: Int) {
 
     companion object {
         const val MAGIC_NUMBER = 44

@@ -16,6 +16,7 @@ import java.math.BigDecimal
 import java.util.logging.Logger
 import kotlin.math.roundToLong
 import org.walleth.khex.toHexString
+import stacrypt.stawallet.SecretProvider.Companion.MAGIC_NUMBER
 import java.math.BigInteger
 
 
@@ -79,8 +80,9 @@ class BitcoinWallet(
         const val TX_INPUT_SIZE = 148 // Bytes
         const val TX_OUTPUT_SIZE = 34 // Bytes
 
-        fun coinType(network: String) = if (network == NETWORK_MAINNET) 0 else 1
+        const val CRYPTOCURRENCY = "BTC"
 
+        fun coinType(network: String) = if (network == NETWORK_MAINNET) 0 else 1
     }
 
     override val daemon = bitcoind
@@ -196,6 +198,35 @@ class BitcoinWallet(
 
             txHash
         }
+
+    override fun initializeToDb(force: Boolean): WalletDao {
+        var walletDao = WalletDao.findById(name)
+
+        if (walletDao != null && force) {
+            walletDao.delete()
+            walletDao = null
+        }
+
+        if (walletDao == null) {
+            WalletDao.new("btc") {
+                blockchain = BlockchainTable.select { BlockchainTable.currency eq CRYPTOCURRENCY }
+                    .andWhere { BlockchainTable.network eq network }
+                    .firstOrNull()
+                    ?.run { BlockchainDao.wrapRow(this) }
+                    ?: BlockchainDao.new {
+                        this.currency = CRYPTOCURRENCY
+                        this.network = network
+                    }
+
+                seedFingerprint = "" // FIXME
+                path = "m/$MAGIC_NUMBER'/${secretProvider.coinType}'/${secretProvider.accountId}'"
+                latestSyncedHeight = 1_484_780 // FIXME
+            }
+        }
+
+        return walletDao!!
+    }
+
 }
 
 const val VERSION_BYTE_P2PKH_MAINNET = 0

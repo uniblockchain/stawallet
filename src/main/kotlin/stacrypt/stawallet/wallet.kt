@@ -111,6 +111,8 @@ abstract class Wallet(val name: String, val secretProvider: SecretProvider, val 
     abstract fun startBlockchainWatcher(): BaseBlockchainWatcher
     abstract fun stopBlockchainWatcher()
 
+    abstract fun initializeToDb(force: Boolean = false): WalletDao
+
 }
 
 interface BaseBlockchainWatcher
