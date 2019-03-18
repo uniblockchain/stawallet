@@ -31,7 +31,7 @@ before_deploy:
   - chmod 600 /tmp/deploy_rsa
   - ssh-add /tmp/deploy_rsa
   - "./gradlew shadowJar installDist"
-  - echo $(./build/install/stawallet/bin/stawallet database create 2> /dev/null) > postgres/initdb.sq
+  - echo $(./build/install/stawallet/bin/stawallet database create 2> /dev/null) > postgres/initdb.sql
   - docker login -u $DOCKER_USER -p $DOCKER_PASS
   - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH
     ; fi`
