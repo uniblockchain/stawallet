@@ -2,6 +2,7 @@ package stacrypt.stawallet
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.subcommands
+import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.*
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -82,7 +83,7 @@ private object cli {
     }
 
     class Watch : CliktCommand("Start blockchain watcher") {
-        val walletName: String by option(help = "Wallet name").required()
+        val walletName: String by argument(help = "Wallet name")
         override fun run() {
             connectToDatabase()
             wallets = Wallet.initFromConfig()
