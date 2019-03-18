@@ -11,6 +11,8 @@ services:
       - 80:8080
     depends_on:
       - db
+    links:
+      - db
     networks:
       stawallet_net:
         ipv4_address: 172.16.238.198
@@ -25,6 +27,8 @@ services:
     restart: always
     depends_on:
       - db
+    links:
+      - db
     networks:
       stawallet_net:
         ipv4_address: 172.16.238.181
@@ -38,6 +42,8 @@ services:
     command: tail -f /dev/null
     restart: always
     depends_on:
+      - db
+    links:
       - db
     networks:
       stawallet_net:
