@@ -164,7 +164,7 @@ class BitcoinBlockchainWatcher(
         }
     }
 
-    fun startWatcher() {
+    override fun startWatcher() {
         GlobalScope.launch(this.dispatcher) {
             mempoolWatcherJob = startMempoolWatcherJob(this)
         }

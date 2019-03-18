@@ -6,6 +6,8 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.*
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import stacrypt.stawallet.bitcoin.BitcoinWallet
@@ -87,7 +89,8 @@ private object cli {
         override fun run() {
             connectToDatabase()
             wallets = Wallet.initFromConfig()
-            watch(walletName)
+            wallets.findLast { it.name == walletName }!!.startBlockchainWatcher()
+            runBlocking { delay(3000) }
         }
     }
 

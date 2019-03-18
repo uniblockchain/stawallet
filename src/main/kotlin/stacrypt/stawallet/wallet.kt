@@ -115,4 +115,6 @@ abstract class Wallet(val name: String, val secretProvider: SecretProvider, val 
 
 }
 
-interface BaseBlockchainWatcher
+interface BaseBlockchainWatcher {
+    fun startWatcher(): Unit
+}

@@ -33,7 +33,7 @@ private val logger = Logger.getLogger("Application")
 
 //fun main(args: Array<String>) = io.ktor.server.netty.EngineMain.main(args)
 
-fun watch(walletName: String) = wallets.findLast { it.name == walletName }!!.startBlockchainWatcher()
+//fun watch(walletName: String) = wallets.findLast { it.name == walletName }!!.startBlockchainWatcher()
 
 @UseExperimental(KtorExperimentalAPI::class)
 @kotlin.jvm.JvmOverloads
