@@ -73,7 +73,7 @@ private object cli {
     class Migrate : CliktCommand("Database migration") {
         override fun run() {
 //            connectToDatabase()
-            TODO()
+//            TODO()
         }
     }
 
