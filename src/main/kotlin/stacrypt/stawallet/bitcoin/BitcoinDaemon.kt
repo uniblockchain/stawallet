@@ -156,8 +156,8 @@ class BitcoinBlockchainWatcher(
                     logger.log(Level.INFO, "$walletDao: There is nothing new, so we skip this iteration")
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
                 logger.log(Level.INFO, "Exception happened, we will come back again in the next iteration")
+                e.printStackTrace()
             } finally {
                 delay(blockWatchGap)
             }
@@ -328,6 +328,7 @@ class BitcoinBlockchainWatcher(
             // TODO Report to the boss
             // Maybe invalid block info
             logger.log(Level.INFO, "Error inquiring proof for tx: ${tx.txid}")
+            e.printStackTrace()
         }
         proof as ProofDao
 
@@ -355,6 +356,7 @@ class BitcoinBlockchainWatcher(
                 } catch (e: Exception) {
 
                     logger.log(Level.INFO, "$walletName: New UTXO adding error :(")
+                    e.printStackTrace()
                     // TODO Report to the boss
                 }
                 it
@@ -382,7 +384,7 @@ class BitcoinBlockchainWatcher(
                     logger.log(Level.INFO, "$walletName: New Deposit added!!!!!!")
                 } catch (e: Exception) {
                     logger.log(Level.INFO, "$walletName: New Deposit adding error :(")
-
+                    e.printStackTrace()
                     // TODO Report to the boss
                 }
 
