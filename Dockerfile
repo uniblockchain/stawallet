@@ -19,6 +19,8 @@ USER $APPLICATION_USER
 COPY --chown=ktor:ktor ./build/libs/stawallet.jar /stawallet/stawallet.jar
 COPY --chown=ktor:ktor ./build/install/stawallet/* /stawallet/
 WORKDIR /stawallet
+RUN ls -la
+RUN ls -la /stawallet
 
 # We define a volume and put the entire project on it
 # TODO: This could be a security risk to put poject files inside a docker volume. In production just put logs here.
