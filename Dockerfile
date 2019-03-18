@@ -17,7 +17,8 @@ USER $APPLICATION_USER
 
 # We copy the FAT Jar we built into the /stawallet folder and sets that folder as the working directory.
 COPY --chown=ktor:ktor ./build/libs/stawallet.jar ./stawallet/stawallet.jar
-COPY --chown=ktor:ktor ./build/install/stawallet/* ./stawallet/
+COPY --chown=ktor:ktor ./build/install/stawallet/bin/* ./stawallet/bin/
+COPY --chown=ktor:ktor ./build/install/stawallet/lib/* ./stawallet/lib/
 WORKDIR ./stawallet
 
 # We define a volume and put the entire project on it

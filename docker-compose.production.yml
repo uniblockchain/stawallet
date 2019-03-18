@@ -5,7 +5,7 @@ services:
   api:
     container_name: stawallet_api
     image: stacrypt/bstawallet
-    command: serve
+    command: stawallet serve
     restart: always
     ports:
       - 80:8080
@@ -21,7 +21,7 @@ services:
   tbtc_wtcher:
     container_name: stawallet_tbtc_watcher
     image: stacrypt/bstawallet
-    command: watch TBTC
+    command: stawallet watch TBTC
     restart: always
     depends_on:
       - db
