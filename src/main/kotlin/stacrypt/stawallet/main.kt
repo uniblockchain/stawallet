@@ -57,6 +57,7 @@ private object cli {
         val force: Boolean by option(help = "Override existing data").flag("--force")
         override fun run() {
             connectToDatabase()
+            wallets = Wallet.initFromConfig()
             transaction {
                 wallets.forEach { wallet ->
                     try {
@@ -84,6 +85,7 @@ private object cli {
         val walletName: String by option(help = "Wallet name").required()
         override fun run() {
             connectToDatabase()
+            wallets = Wallet.initFromConfig()
             watch(walletName)
         }
     }
