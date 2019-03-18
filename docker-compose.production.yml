@@ -56,10 +56,6 @@ services:
     container_name: stawallet_postgres
     image: stacrypt/bstawallet_db
     restart:  always
-    environment:
-      POSTGRES_DB: stawallet
-      POSTGRES_PASSWORD: devpass
-      POSTGRES_USER: dev
     volumes:
       - ./data/db:/var/lib/postgresql/data
     ports:
