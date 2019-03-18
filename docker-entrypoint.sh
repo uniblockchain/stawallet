@@ -21,13 +21,13 @@ SERVICE=$1
 
 case $SERVICE in 
 	api)
-		./stawallet/bin/stawallet serve
+		./bin/stawallet serve
 		;;
 	btc_watcher)
-		./stawallet/bin/stawallet watch $2
+		./bin/stawallet watch $2
 		;;
 	cli)
-        alias stawallet=./stawallet/bin/stawallet
+        alias stawallet=./bin/stawallet
 		tail -f /dev/null
 		;;
   *)
