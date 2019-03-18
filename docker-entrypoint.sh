@@ -15,9 +15,9 @@ fi
 
 SERVICE=$1
 
-./stawallet/bin/stawallet database init
-./stawallet/bin/stawallet database populate
-./stawallet/bin/stawallet database migrate
+./bin/stawallet database init
+./bin/stawallet database populate
+./bin/stawallet database migrate
 
 case $SERVICE in 
 	api)
