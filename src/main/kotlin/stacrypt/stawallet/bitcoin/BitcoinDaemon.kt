@@ -222,7 +222,7 @@ class BitcoinBlockchainWatcher(
                     this.blockHash = block.hash
                     this.blockHeight = block.height!!.toInt()
                     this.txHash = tx.txid!!
-                    this.confirmationsLeft = confirmationsRequires
+                    this.confirmationsLeft = this@BitcoinBlockchainWatcher.confirmationsRequires
                 }
             else
             // TODO: Check for validity
