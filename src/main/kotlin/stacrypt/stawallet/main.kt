@@ -56,6 +56,7 @@ private object cli {
     class Populate : CliktCommand("Populate database with config's base data") {
         val force: Boolean by option(help = "Override existing data").flag("--force")
         override fun run() {
+            connectToDatabase()
             transaction {
                 wallets.forEach { wallet ->
                     try {
@@ -70,6 +71,7 @@ private object cli {
 
     class Migrate : CliktCommand("Database migration") {
         override fun run() {
+//            connectToDatabase()
             TODO()
         }
     }
@@ -81,6 +83,7 @@ private object cli {
     class Watch : CliktCommand("Start blockchain watcher") {
         val walletName: String by option(help = "Wallet name").required()
         override fun run() {
+            connectToDatabase()
             watch(walletName)
         }
     }
