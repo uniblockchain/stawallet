@@ -2,6 +2,9 @@
 
 set -e
 
+pwd
+ls -la
+
 ./bin/stawallet database init
 ./bin/stawallet database populate
 ./bin/stawallet database migrate
