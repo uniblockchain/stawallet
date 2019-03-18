@@ -15,7 +15,7 @@ fi
 
 SERVICE=$1
 
-cd /root/stawallet
+cd ~/stawallet
 
 ./bin/stawallet database init
 ./bin/stawallet database populate
