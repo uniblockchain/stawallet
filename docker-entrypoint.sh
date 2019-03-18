@@ -15,6 +15,8 @@ fi
 
 SERVICE=$1
 
+cd /root/stawallet
+
 ./bin/stawallet database init
 ./bin/stawallet database populate
 ./bin/stawallet database migrate

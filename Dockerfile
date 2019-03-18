@@ -7,20 +7,18 @@ RUN apk --update --no-cache add bash curl
 # We define the user we will use in this instance to prevent using root that even in a container, can be a security risk.
 ENV APPLICATION_USER ktor
 
-# Then we add the user, create the /stawallet folder and give permissions to our user.
+# Then we add the user, create the ./stawallet folder and give permissions to our user.
 RUN adduser -D -g '' $APPLICATION_USER
-RUN mkdir /stawallet
-RUN chown -R $APPLICATION_USER /stawallet
+RUN mkdir ./stawallet
+RUN chown -R $APPLICATION_USER ./stawallet
 
 # Marks this container to use the specified $APPLICATION_USER
 USER $APPLICATION_USER
 
 # We copy the FAT Jar we built into the /stawallet folder and sets that folder as the working directory.
-COPY --chown=ktor:ktor ./build/libs/stawallet.jar /stawallet/stawallet.jar
-COPY --chown=ktor:ktor ./build/install/stawallet/* /stawallet/
-WORKDIR /stawallet
-RUN ls -la
-RUN ls -la /stawallet
+COPY --chown=ktor:ktor ./build/libs/stawallet.jar ./stawallet/stawallet.jar
+COPY --chown=ktor:ktor ./build/install/stawallet/* ./stawallet/
+WORKDIR ./stawallet
 
 # We define a volume and put the entire project on it
 # TODO: This could be a security risk to put poject files inside a docker volume. In production just put logs here.
