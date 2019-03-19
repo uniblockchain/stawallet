@@ -96,7 +96,7 @@ fun ProofDao.export(role: ClientRole? = null, wallet: stacrypt.stawallet.Wallet)
         blockHash = this.blockHash,
         link = wallet.blockchainExplorerTxLink(this.txHash),
         confirmationsLeft = this.confirmationsLeft,
-        confirmationsTrace = (this.confirmationsTrace ?: "").split(":").filter { it.isNotEmpty() },
+        confirmationsTrace = (this.confirmationsTrace ?: "").split(","),
         extra = this.extra,
         error = this.error
     )

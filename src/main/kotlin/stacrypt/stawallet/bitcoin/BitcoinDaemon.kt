@@ -405,7 +405,10 @@ class BitcoinBlockchainWatcher(
         ) {
             with(SqlExpressionBuilder) {
                 it.update(ProofTable.confirmationsLeft, ProofTable.confirmationsLeft - 1)
-                it.update(ProofTable.confirmationsTrace, ProofTable.confirmationsTrace.concat("$analyzingBlockHash,"))
+                it.update(
+                    ProofTable.confirmationsTrace,
+                    ConcatWS(",", ProofTable.confirmationsTrace, stringParam(analyzingBlockHash))
+                )
                 it[ProofTable.updatedAt] = DateTime.now()
             }
         }

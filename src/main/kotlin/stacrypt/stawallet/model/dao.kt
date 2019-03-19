@@ -79,7 +79,7 @@ class ProofDao(id: EntityID<Int>) : IntEntity(id) {
      * We just store the confirmationsTrace and confirmationsLeft, so we cal calculate the `confirmationsRequires`
      */
     val confirmationsRequires: Int
-        get() = confirmationsLeft + (confirmationsTrace?.split(",")?.count { it.isNotEmpty() } ?: 0)
+        get() = confirmationsLeft + (confirmationsTrace?.split(",")?.size ?: 0)
 
 }
 
