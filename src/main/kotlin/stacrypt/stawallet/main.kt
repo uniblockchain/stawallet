@@ -30,7 +30,7 @@ private object cli {
             val statement = """
                 ${if (force) "DROP DATABASE $databaseName;" else ""}
                 CREATE DATABASE $databaseName;
-                GRANT ALL PRIVILEGES ON $databaseName TO $user;
+                GRANT ALL PRIVILEGES ON DATABASE $databaseName TO $user;
             """.trimIndent()
 
             echo("Execute the printed statements to your sql database by 'root' user:", err = true)
