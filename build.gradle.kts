@@ -35,6 +35,7 @@ dependencies {
     compile("io.ktor:ktor-jackson:1.0.0")
     compile("io.ktor:ktor-locations:1.0.0")
     compile("ch.qos.logback:logback-classic:1.2.3")
+    compile("com.fasterxml.jackson.datatype:jackson-datatype-joda:2.1.2")
 
 
     compile(kotlin("stdlib-jdk8"))

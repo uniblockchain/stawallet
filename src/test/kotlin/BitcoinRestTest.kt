@@ -16,6 +16,8 @@ import org.walleth.khex.hexToByteArray
 import stacrypt.stawallet.NotEnoughFundException
 import stacrypt.stawallet.bitcoin.*
 import stacrypt.stawallet.model.*
+import stacrypt.stawallet.rest.isFullUtcDate
+import stacrypt.stawallet.rest.isUtcDate
 import stacrypt.stawallet.wallets
 import java.math.BigInteger
 import kotlin.test.*
@@ -203,6 +205,9 @@ class BitcoinRestTest : BaseApiTest() {
                 assertNotNull(response.content?.toJson()!![0]["address"]["wallet"].asText())
                 assertNotNull(response.content?.toJson()!![0]["address"]["address"].asText())
                 assertNotNull(response.content?.toJson()!![0]["address"]["active"].asBoolean())
+
+                assertTrue { response.content?.toJson()!![0]["creation"].asText().isFullUtcDate() }
+                assertTrue { response.content?.toJson()!![0]["expiration"].isNull }
             }
         }
 
@@ -245,6 +250,9 @@ class BitcoinRestTest : BaseApiTest() {
                 assertNotNull(response.content?.toJson()!!["address"]["wallet"].asText())
                 assertNotNull(response.content?.toJson()!!["address"]["address"].asText())
                 assertNotNull(response.content?.toJson()!!["address"]["active"].asBoolean())
+
+                assertTrue { response.content?.toJson()!!["creation"].asText().isFullUtcDate() }
+                assertTrue { response.content?.toJson()!!["expiration"].isNull }
             }
         }
 

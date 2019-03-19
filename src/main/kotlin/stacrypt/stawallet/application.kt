@@ -1,6 +1,7 @@
 package stacrypt.stawallet
 
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.joda.JodaModule
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.ktor.application.Application
@@ -72,6 +73,8 @@ fun Application.module(testing: Boolean = false) {
     install(ContentNegotiation) {
         jackson {
             enable(SerializationFeature.INDENT_OUTPUT)
+            disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+            registerModule(JodaModule())
         }
     }
 
