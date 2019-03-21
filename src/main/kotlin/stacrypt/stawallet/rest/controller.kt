@@ -31,6 +31,7 @@ fun Routing.walletsRouting() {
             injectDepositsRout()
             injectWithdrawsRout()
             injectTransactionsRout()
+            injectQuotesRout()
         }
 
     }
@@ -277,5 +278,31 @@ fun Route.injectWithdrawsRout() = route("/withdraws") {
                 call.respond(HttpStatusCode.InternalServerError, e.toString())
             }
         }
+    }
+}
+
+fun Route.injectQuotesRout() = route("/quotes") {
+    reachGet("withdraws") {
+
+        val user = qs("user")!!
+        val amount = qs("amount")?.toLong()!!
+        val target = qs("target")!! // Target Address
+
+        // TODO: Validate address
+        call.respond(
+            WithdrawQuoteResource(
+                isUserEligible = true,// TODO
+                isNetworkUp = true,// TODO
+                isAmountValid = amount > 0,// TODO
+                isAddressValid = wallet.validateAddress(target),
+                hasSufficientWalletBalance = true, // TODO
+                isSendingManually = false, // TODO
+                estimatedSendingTime = 0, // TODO
+                estimatedReceivingTime = 0, // TODO
+                estimatedNetworkFee = 0,
+                errors = listOf()
+            )
+        )
+
     }
 }

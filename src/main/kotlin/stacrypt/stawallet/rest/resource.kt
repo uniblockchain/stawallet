@@ -224,3 +224,15 @@ var ISO_8601_FULL = "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d+)?(([+-]\
 fun String.isUtcDate() = ISO_8601.matches(this)
 fun String.isFullUtcDate() = ISO_8601_FULL.matches(this)
 
+data class WithdrawQuoteResource(
+    val isAmountValid: Boolean,
+    val isUserEligible: Boolean,
+    val estimatedNetworkFee: Long?,
+    val isNetworkUp: Boolean,
+    val isAddressValid: Boolean,
+    val hasSufficientWalletBalance: Boolean,
+    val isSendingManually: Boolean,
+    val estimatedSendingTime: Long,  // Seconds
+    val estimatedReceivingTime: Long,// Seconds
+    val errors: List<String>
+)
