@@ -222,7 +222,7 @@ class BitcoinWallet(
 
                 seedFingerprint = "" // FIXME
                 path = "m/$MAGIC_NUMBER'/${secretProvider.coinType}'/${secretProvider.accountId}'"
-                latestSyncedHeight = 1_484_780 // FIXME
+                latestSyncedHeight = 1_485_508 // FIXME
             }
         }
 
