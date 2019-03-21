@@ -90,7 +90,11 @@ private object cli {
             connectToDatabase()
             wallets = Wallet.initFromConfig()
             wallets.findLast { it.name == walletName }!!.startBlockchainWatcher()
-            runBlocking { delay(3000) }
+            runBlocking {
+                while (true) {
+                    delay(3000)
+                }
+            }
         }
     }
 

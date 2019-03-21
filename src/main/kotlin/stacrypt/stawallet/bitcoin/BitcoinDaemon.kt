@@ -109,7 +109,7 @@ class BitcoinBlockchainWatcher(
 
                     val blockToAnalyze = bitcoind.rpcClient.getBlockHash(latestSyncedHeight + 1)
 
-                    logger.log(Level.INFO, "$walletDao: We are looking for block with hash: ${latestSyncedHeight + 1}")
+                    logger.log(Level.INFO, "$walletDao: We are looking for block with hash: $blockToAnalyze")
 
 
                     val nextBlock = bitcoind.rpcClient.getBlockWithTransactions(blockToAnalyze)
@@ -156,7 +156,7 @@ class BitcoinBlockchainWatcher(
                     logger.log(Level.INFO, "$walletDao: There is nothing new, so we skip this iteration")
                 }
             } catch (e: Exception) {
-                logger.log(Level.INFO, "Exception happened, we will come back again in the next iteration")
+                logger.log(Level.SEVERE, "Exception happened, we will come back again in the next iteration")
                 e.printStackTrace()
             } finally {
                 delay(blockWatchGap)
