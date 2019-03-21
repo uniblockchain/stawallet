@@ -23,5 +23,5 @@ class Concat<T: String?>(vararg val expr: Expression<*>) : Function<T?>(VarCharC
 
 class ConcatWS<T : String?>(val separator: String, vararg val expr: Expression<*>) : Function<T?>(VarCharColumnType()) {
     override fun toSQL(queryBuilder: QueryBuilder): String =
-        "CONCAT_WS($separator, ${expr.joinToString(",") { it.toSQL(queryBuilder) }}"
+        "CONCAT_WS('$separator', ${expr.joinToString(",") { it.toSQL(queryBuilder) }}"
 }
