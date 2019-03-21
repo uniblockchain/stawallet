@@ -125,7 +125,7 @@ fun Route.injectDepositsRout() = route("/deposits") {
                             ))
                         } else this
                     }
-                    .andWhere { InvoiceTable.user eq user }
+                    .run { if (user == null || user == "*") this else this.andWhere { InvoiceTable.user eq user } }
                     .orderBy(DepositTable.id, isAsc)
                     .limit(DepositResource.PAGE_SIZE, DepositResource.PAGE_SIZE * page)
             ).map { it.export(null, wallet) }
@@ -160,7 +160,7 @@ fun Route.injectWithdrawsRout() = route("/withdraws") {
             TaskDao.wrapRows(
                 TaskTable
                     .select { TaskTable.wallet eq wallet.name }
-                    .run { if (user != null) this.andWhere { TaskTable.user eq user } else this }
+                    .run { if (user == null || user == "*") this else this.andWhere { TaskTable.user eq user } }
                     .orderBy(TaskTable.id, false)
                     .limit(WithdrawResource.PAGE_SIZE, WithdrawResource.PAGE_SIZE * page)
             ).map { it.export(null, wallet) }
