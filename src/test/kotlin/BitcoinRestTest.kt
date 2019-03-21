@@ -29,6 +29,7 @@ class BitcoinRestTest : BaseApiTest() {
     private val depositsUrl = "/deposits"
     private val withdrawsUrl = "/withdraws"
     private val invoicesUrl = "/invoices"
+    private val quotesUrl = "/quotes"
 
     private lateinit var wallet1: WalletDao
 
@@ -50,6 +51,12 @@ class BitcoinRestTest : BaseApiTest() {
         mockkObject(bitcoind)
         every { bitcoind.rpcClient } returns BitcoinRpcClientFactory.createBitcoinClient("", "", "", 0, false)
         every { bitcoind.rpcClient.estimateSmartFee(6) } returns EstimateSmartResult(feerate = 0.00004560, blocks = 6)
+        every { bitcoind.rpcClient.validateAddress(match { it.startsWith("1") }) } returns AddressValidationResult(
+            isvalid = true
+        )
+        every { bitcoind.rpcClient.validateAddress(match { !it.startsWith("1") }) } returns AddressValidationResult(
+            isvalid = false
+        )
         every {
             bitcoind.rpcClient.createRawTransaction(
                 inputs = listOf(
@@ -425,6 +432,46 @@ class BitcoinRestTest : BaseApiTest() {
             }.apply {
                 assertEquals(HttpStatusCode.OK, response.status())
                 assertEquals(1, response.content?.toJson()!!["id"].asInt())
+            }
+        }
+
+    }
+
+    @Test
+    fun testWithdrawQuote(): Unit {
+
+        val validAmount = 9839428
+        val inValidAmount = -45
+
+        val validAddress = "172GCPPDgvE7vX5LXuZDPfHvAT8yPEhr5Y"
+        val inValidAddress = "bad-address"
+
+        val newBusinessUid = "f53a8be1b789-f53a8be1b789-6eb4-a324-f53a8be1b789"
+        val duplicatedBusinessUid = "c0d9c0a7-6eb4-4e03-a324-f53a8be1b789"
+
+        testEngine!!.apply {
+            handleRequest(
+                HttpMethod.Get,
+                "$walletsUrl/test-btc-wallet$quotesUrl/withdraws?amount=$validAmount&target=$validAddress&user=1&businessUid=$newBusinessUid"
+            ) {
+            }.apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                assertTrue { response.content?.toJson()!!["amountValid"].asBoolean() }
+                assertTrue { response.content?.toJson()!!["addressValid"].asBoolean() }
+                assertFalse { response.content?.toJson()!!["businessUidDuplicated"].asBoolean() }
+            }
+        }
+
+        testEngine!!.apply {
+            handleRequest(
+                HttpMethod.Get,
+                "$walletsUrl/test-btc-wallet$quotesUrl/withdraws?amount=$inValidAmount&target=$inValidAddress&user=1&businessUid=$duplicatedBusinessUid"
+            ) {
+            }.apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                assertFalse { response.content?.toJson()!!["amountValid"].asBoolean() }
+                assertFalse { response.content?.toJson()!!["addressValid"].asBoolean() }
+                assertTrue { response.content?.toJson()!!["businessUidDuplicated"].asBoolean() }
             }
         }
 

@@ -27,6 +27,7 @@ class EthereumRestTest : BaseApiTest() {
     private val depositsUrl = "/deposits"
     private val withdrawsUrl = "/withdraws"
     private val invoicesUrl = "/invoices"
+    private val quotesUrl = "/quotes"
 
     private lateinit var wallet1: WalletDao
 
@@ -67,7 +68,7 @@ class EthereumRestTest : BaseApiTest() {
         super.mockup(app)
 
         transaction {
-//            wallet1 = WalletDao.new("test-eth-wallet") {
+            //            wallet1 = WalletDao.new("test-eth-wallet") {
 //                this.blockchain = BlockchainDao.new {
 //                    this.currency = "ETH"
 //                    this.network = NETWORK_MAINNET
@@ -365,6 +366,46 @@ class EthereumRestTest : BaseApiTest() {
             }.apply {
                 assertEquals(HttpStatusCode.OK, response.status())
                 assertEquals(1, response.content?.toJson()!!["id"].asInt())
+            }
+        }
+
+    }
+
+    @Test
+    fun testWithdrawQuote(): Unit {
+
+        val validAmount = 9839428
+        val inValidAmount = -45
+
+        val validAddress = "0xa6289A91A7D81DAD0Db433aA0Da7fE47998A97Eb"
+        val inValidAddress = "bad-address"
+
+        val newBusinessUid = "f53a8be1b789-f53a8be1b789-6eb4-a324-f53a8be1b789"
+        val duplicatedBusinessUid = "c0d9c0a7-6eb4-4e03-a324-f53a8be1b789"
+
+        testEngine!!.apply {
+            handleRequest(
+                HttpMethod.Get,
+                "$walletsUrl/test-eth-wallet$quotesUrl/withdraws?amount=$validAmount&target=$validAddress&user=1&businessUid=$newBusinessUid"
+            ) {
+            }.apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                assertTrue { response.content?.toJson()!!["amountValid"].asBoolean() }
+                assertTrue { response.content?.toJson()!!["addressValid"].asBoolean() }
+                assertFalse { response.content?.toJson()!!["businessUidDuplicated"].asBoolean() }
+            }
+        }
+
+        testEngine!!.apply {
+            handleRequest(
+                HttpMethod.Get,
+                "$walletsUrl/test-eth-wallet$quotesUrl/withdraws?amount=$inValidAmount&target=$inValidAddress&user=1&businessUid=$duplicatedBusinessUid"
+            ) {
+            }.apply {
+                assertEquals(HttpStatusCode.OK, response.status())
+                assertFalse { response.content?.toJson()!!["amountValid"].asBoolean() }
+                assertFalse { response.content?.toJson()!!["addressValid"].asBoolean() }
+                assertTrue { response.content?.toJson()!!["businessUidDuplicated"].asBoolean() }
             }
         }
 

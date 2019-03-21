@@ -225,6 +225,8 @@ fun String.isUtcDate() = ISO_8601.matches(this)
 fun String.isFullUtcDate() = ISO_8601_FULL.matches(this)
 
 data class WithdrawQuoteResource(
+    val isBusinessUidDuplicated: Boolean,
+    val isBusinessUidValid: Boolean,
     val isAmountValid: Boolean,
     val isUserEligible: Boolean,
     val estimatedNetworkFee: Long?,

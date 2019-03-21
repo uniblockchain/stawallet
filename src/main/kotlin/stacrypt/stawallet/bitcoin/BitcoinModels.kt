@@ -390,10 +390,10 @@ data class SignTransactionError(
 
 data class AddressValidationResult(
     val isvalid: Boolean,
-    val address: String,
-    val scriptPubKey: String,
-    val isscript: Boolean,
-    val iswitness: Boolean?,
-    val witness_version: Int?,
-    val witness_program: String?
+    val address: String? = null,
+    val scriptPubKey: String?= null,
+    val isscript: Boolean? = null,
+    val iswitness: Boolean? = null,
+    val witness_version: Int? = null,
+    val witness_program: String? = null
 )

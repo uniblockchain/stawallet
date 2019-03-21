@@ -287,10 +287,15 @@ fun Route.injectQuotesRout() = route("/quotes") {
         val user = qs("user")!!
         val amount = qs("amount")?.toLong()!!
         val target = qs("target")!! // Target Address
+        val businessUid = qs("businessUid")!!
 
         // TODO: Validate address
         call.respond(
             WithdrawQuoteResource(
+                isBusinessUidValid = businessUid.isNotEmpty(),// TODO
+                isBusinessUidDuplicated = transaction {
+                    TaskTable.select { TaskTable.businessUid eq businessUid }.count()
+                } != 0,
                 isUserEligible = true,// TODO
                 isNetworkUp = true,// TODO
                 isAmountValid = amount > 0,// TODO
