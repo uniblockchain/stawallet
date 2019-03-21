@@ -18,10 +18,10 @@ import org.jetbrains.exposed.sql.vendors.FunctionProvider
 
 class Concat<T: String?>(vararg val expr: Expression<*>) : Function<T?>(VarCharColumnType()) {
     override fun toSQL(queryBuilder: QueryBuilder): String =
-        "CONCAT(${expr.joinToString(",") { it.toSQL(queryBuilder) }}"
+        "CONCAT(${expr.joinToString(",") { it.toSQL(queryBuilder) }})"
 }
 
 class ConcatWS<T : String?>(val separator: String, vararg val expr: Expression<*>) : Function<T?>(VarCharColumnType()) {
     override fun toSQL(queryBuilder: QueryBuilder): String =
-        "CONCAT_WS('$separator', ${expr.joinToString(",") { it.toSQL(queryBuilder) }}"
+        "CONCAT_WS('$separator', ${expr.joinToString(",") { it.toSQL(queryBuilder) }})"
 }
