@@ -387,3 +387,13 @@ data class SignTransactionError(
     val sequence: Int?,
     val error: String?
 )
+
+data class AddressValidationResult(
+    val isvalid: Boolean,
+    val address: String,
+    val scriptPubKey: String,
+    val isscript: Boolean,
+    val iswitness: Boolean?,
+    val witness_version: Int?,
+    val witness_program: String?
+)

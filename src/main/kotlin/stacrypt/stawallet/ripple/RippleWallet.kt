@@ -19,6 +19,10 @@ class RippleWallet(name: String, network: String, secretProvider: SecretProvider
     secretProvider,
     network
 ) {
+    override fun validateAddress(address: String): Boolean {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     override fun startBlockchainWatcher(): BaseBlockchainWatcher {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }

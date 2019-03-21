@@ -401,7 +401,7 @@ interface BitcoinRpcClient {
     fun uptime(): Int
 
     @JsonRpcMethod("validateaddress")
-    fun validateAddress(address: String)
+    fun validateAddress(address: String): AddressValidationResult
 
     @JsonRpcMethod("verifychain")
     fun verifyChain()

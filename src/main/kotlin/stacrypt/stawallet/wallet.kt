@@ -112,6 +112,7 @@ abstract class Wallet(val name: String, val secretProvider: SecretProvider, val 
     abstract fun stopBlockchainWatcher()
 
     abstract fun initializeToDb(force: Boolean = false): WalletDao
+    abstract fun validateAddress(address: String): Boolean
 
 }
 

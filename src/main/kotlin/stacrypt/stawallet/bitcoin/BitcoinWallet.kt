@@ -35,6 +35,8 @@ class BitcoinWallet(
     secretProvider: SecretProvider
 ) :
     Wallet(name, secretProvider, network) {
+    override fun validateAddress(address: String): Boolean = bitcoind.rpcClient.validateAddress(address).isvalid
+
 
     override fun blockchainExplorerTxLink(txId: String) = "https://www.blockchain.com/btc/tx/$txId"
 

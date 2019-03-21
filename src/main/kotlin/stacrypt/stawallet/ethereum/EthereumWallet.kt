@@ -7,6 +7,7 @@ import org.kethereum.crypto.signMessage
 import org.kethereum.crypto.toAddress
 import org.kethereum.functions.calculateHash
 import org.kethereum.functions.encodeRLP
+import org.kethereum.functions.isValid
 import org.kethereum.model.*
 import org.walleth.khex.toHexString
 import java.math.BigInteger
@@ -35,6 +36,8 @@ class EthereumWallet(
     secretProvider: SecretProvider
 ) :
     Wallet(name, secretProvider, network) {
+    override fun validateAddress(address: String): Boolean = Address(address).isValid()
+
     companion object {
         fun coinType() = 60
 
