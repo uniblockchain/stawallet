@@ -152,6 +152,27 @@ class BitcoinBlockchainWatcher(
 //                                .andWhere { UtxoTable.isSpent eq false }
 //                    }
 
+
+                    // TODO: Fix and improve this
+                    logger.log(Level.INFO, "$walletDao: Cleaning up the database")
+//                    logger.log(
+//                        Level.INFO, "$walletDao: Cleaned up " +
+                        transaction {
+                            exec(
+                                """
+                            delete from  proof
+                                where (id not in (select proof from deposit where proof != null))
+                                and (id not in (select proof from task where proof != null))
+                                and (id not in (select discovery_proof from utxo where discovery_proof != null))
+                                and (id not in (select spend_proof from utxo where spend_proof != null))
+                            ;
+                    """.trimIndent()
+                            )
+                        }
+//                                .toString() + " unused proofs"
+//                    )
+
+
                 } else {
                     logger.log(Level.INFO, "$walletDao: There is nothing new, so we skip this iteration")
                 }
