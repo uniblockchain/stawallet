@@ -400,7 +400,7 @@ class BitcoinBlockchainWatcher(
                     .and(ProofTable.blockHash eq blockInfo.hash)
                     .and(ProofTable.blockHeight eq blockInfo.height!!.toInt())
                     .and(ProofTable.confirmationsLeft greater 0)
-                    .and(ProofTable.confirmationsTrace notLike "%$analyzingBlockHash%")
+                    .and(ProofTable.confirmationsTrace.isNull() or ProofTable.confirmationsTrace.notLike("%$analyzingBlockHash%"))
             }
         ) {
             with(SqlExpressionBuilder) {
