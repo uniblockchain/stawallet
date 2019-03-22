@@ -157,9 +157,9 @@ class BitcoinBlockchainWatcher(
                     logger.log(Level.INFO, "$walletDao: Cleaning up the database")
 //                    logger.log(
 //                        Level.INFO, "$walletDao: Cleaned up " +
-                        transaction {
-                            exec(
-                                """
+                    transaction {
+                        exec(
+                            """
                             delete from  proof
                                 where (id not in (select proof from deposit where proof != null))
                                 and (id not in (select proof from task where proof != null))
@@ -167,8 +167,8 @@ class BitcoinBlockchainWatcher(
                                 and (id not in (select spend_proof from utxo where spend_proof != null))
                             ;
                     """.trimIndent()
-                            )
-                        }
+                        )
+                    }
 //                                .toString() + " unused proofs"
 //                    )
 
@@ -273,7 +273,7 @@ class BitcoinBlockchainWatcher(
                     this.wallet = address.wallet
                     this.txid = transaction.txid!!
                     this.vout = transactionOutput.n!!.toInt()
-                    this.amount = transactionOutput.value!!.toLong()
+                    this.amount = transactionOutput.value!!.btcToSat()
                     this.discoveryProof = proof
                 }
             } else {
@@ -399,7 +399,7 @@ class BitcoinBlockchainWatcher(
                     insertNewDeposit(
                         relatedInvoice = v.firstOrNull()?.first,
                         transactionHash = tx.txid!!,
-                        amount = v.sumByLong { it.second.value!!.toLong() },
+                        amount = v.sumByLong { it.second.value!!.btcToSat() },
                         proof = proof
                     )
                     logger.log(Level.INFO, "$walletName: New Deposit added!!!!!!")

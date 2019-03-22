@@ -156,6 +156,7 @@ class BitcoinWallet(
     }
 
     override suspend fun sendTo(address: String, amountToSend: BigInteger, tag: Any?): String =
+    // FIXME: IMPORTANT!!! Check the value unit -> sat or btc?
         transaction {
             val outputs = mutableMapOf(address to BigDecimal(amountToSend))
 
@@ -261,3 +262,4 @@ fun ByteArray.toBitcoinWif(networkByte: Int) = this
 fun BigInteger.toBitcoinWif(networkByte: Int) = toBytesPadded(32).toBitcoinWif(networkByte)
 
 fun Double.btcToSat() = (this * 100_000_000.0).roundToLong()
+fun BigDecimal.btcToSat() = scaleByPowerOfTen(8).toLong()
