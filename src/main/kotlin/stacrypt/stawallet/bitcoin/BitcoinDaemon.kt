@@ -161,10 +161,10 @@ class BitcoinBlockchainWatcher(
                         exec(
                             """
                             delete from  proof
-                                where (id not in (select proof from deposit where proof != null))
-                                and (id not in (select proof from task where proof != null))
-                                and (id not in (select discovery_proof from utxo where discovery_proof != null))
-                                and (id not in (select spend_proof from utxo where spend_proof != null))
+                                where (id not in (select proof from deposit where proof is not null))
+                                and (id not in (select proof from task where proof is not null))
+                                and (id not in (select discovery_proof from utxo where discovery_proof is not null))
+                                and (id not in (select spend_proof from utxo where spend_proof is not null))
                             ;
                     """.trimIndent()
                         )
