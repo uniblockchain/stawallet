@@ -5,6 +5,7 @@ import org.jetbrains.exposed.dao.IdTable
 import org.jetbrains.exposed.dao.IntIdTable
 import org.jetbrains.exposed.sql.Column
 import org.joda.time.DateTime
+import stacrypt.stawallet.model.InvoiceTable.clientDefault
 import stacrypt.stawallet.model.ProofTable.default
 import stacrypt.stawallet.model.TaskTable.default
 
@@ -133,7 +134,7 @@ object InvoiceTable : IntIdTable("invoice") {
     /**
      * The creation time
      */
-    val creation = datetime("creation").default(DateTime.now())
+    val creation = datetime("creation").clientDefault { DateTime.now() }
 
     /**
      * The expiration time:
@@ -199,7 +200,7 @@ object ProofTable : IntIdTable("proof") {
      * Latest update which is occurred to this record.
      * TODO: Automatically update it (DB level)
      */
-    val updatedAt = datetime("updated_at").default(DateTime.now())
+    val updatedAt = datetime("updated_at").clientDefault { DateTime.now() }
 
 }
 
@@ -235,7 +236,7 @@ object DepositTable : IntIdTable() {
      */
     val extra = varchar("extra", 1_000).nullable()
 
-    val createdAt = datetime("created_at").default(DateTime.now())
+    val createdAt = datetime("created_at").clientDefault { DateTime.now() }
 
 }
 
@@ -387,7 +388,7 @@ object TaskTable : IntIdTable("task") {
     /**
      * The creation time
      */
-    val issuedAt = datetime("issued_at").default(DateTime.now())
+    val issuedAt = datetime("issued_at").clientDefault { DateTime.now() }
 
     /**
      * Time of pushing the transaction into network:
