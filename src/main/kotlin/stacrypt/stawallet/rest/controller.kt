@@ -112,7 +112,7 @@ fun Route.injectDepositsRout() = route("/deposits") {
         /**
          * Getting the list of events after a specific time. Useful to get new deposits.
          */
-        val after = qs("after")?.toLong()
+        val after = qs("after")?.toLong() // Seconds
 
         call.respond(
             DepositDao.wrapRows(
@@ -120,7 +120,7 @@ fun Route.injectDepositsRout() = route("/deposits") {
                     .select { InvoiceTable.wallet eq wallet.name }
                     .run {
                         if (after != null) this.andWhere {
-                            (ProofTable.updatedAt greaterEq DateTime(after)) or (DepositTable.createdAt greaterEq DateTime(
+                            (ProofTable.updatedAt greaterEq DateTime(after * 1000L) or (DepositTable.createdAt greaterEq DateTime(
                                 after
                             ))
                         } else this
