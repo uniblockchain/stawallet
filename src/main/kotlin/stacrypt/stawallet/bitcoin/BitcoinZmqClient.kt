@@ -66,8 +66,8 @@ object BitcoinZmqClient {
         subscriber.connect("tcp://$host:$port")
 
 //        subscriber.subscribe(ZMQ_MESSAGE_TYPE_RAW_BLOCK.toByteArray())
-//        subscriber.subscribe(ZMQ_MESSAGE_TYPE_RAW_TX.toByteArray())
-        subscriber.subscribe(ZMQ_MESSAGE_TYPE_HASH_TX.toByteArray())
+        subscriber.subscribe(ZMQ_MESSAGE_TYPE_RAW_TX.toByteArray())
+//        subscriber.subscribe(ZMQ_MESSAGE_TYPE_HASH_TX.toByteArray())
 //        subscriber.subscribe(ZMQ_MESSAGE_TYPE_HASH_BLOCK.toByteArray())
 
         println("Subscribed.. Waiting for messages.")
