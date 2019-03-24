@@ -64,7 +64,7 @@ class BitcoinBlockchainWatcher(
 ) : BaseBlockchainWatcher {
 
     companion object {
-        private val logger = Logger.getLogger("watcher")
+        private val logger = Logger.getLogger("bitcoind_watcher")
     }
 
     val blockWatchGap get() = config.getLong("daemons.bitcoind.watcher.blockWatchGap")
@@ -77,7 +77,7 @@ class BitcoinBlockchainWatcher(
 
     private fun startMempoolWatcherJob(scope: CoroutineScope) = scope.launch {
         BitcoinZmqClient.addObserver {
-            if (it.messageType == ZMQ_MESSAGE_TYPE_HASH_TX) {
+            if (it.messageType == ZMQ_MESSAGE_TYPE_RAW_TX) {
                 processOrphanTransaction(bitcoind.rpcClient.decodeRawTransaction(it.message))
             }
         }
