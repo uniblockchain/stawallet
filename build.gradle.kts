@@ -51,6 +51,7 @@ dependencies {
     compile("com.github.walleth.kethereum:bip44:$kethereumVersion")
     compile("com.github.walleth.kethereum:crypto:$kethereumVersion")
     compile("com.github.walleth.kethereum:rpc:$kethereumVersion")
+    compile("com.github.walleth.kethereum:crypto_impl_spongycastle:$kethereumVersion")
 
     compile("org.zeromq:jeromq:0.5.0")
 
