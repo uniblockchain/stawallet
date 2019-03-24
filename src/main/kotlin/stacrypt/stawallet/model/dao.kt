@@ -72,6 +72,7 @@ class ProofDao(id: EntityID<Int>) : IntEntity(id) {
     var blockHeight by ProofTable.blockHeight
     var confirmationsLeft by ProofTable.confirmationsLeft
     var confirmationsTrace by ProofTable.confirmationsTrace
+    var updatedAt by ProofTable.updatedAt
     var extra by ProofTable.extra
     var error by ProofTable.error
 

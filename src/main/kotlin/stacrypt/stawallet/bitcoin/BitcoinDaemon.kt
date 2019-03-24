@@ -269,6 +269,7 @@ class BitcoinBlockchainWatcher(
                     proof.blockHeight = block.height.toInt()
                     // And reset confirmations (not needed)
                     proof.confirmationsLeft = this@BitcoinBlockchainWatcher.confirmationsRequires
+                    proof.updatedAt = DateTime.now()
                 }
             }
 
