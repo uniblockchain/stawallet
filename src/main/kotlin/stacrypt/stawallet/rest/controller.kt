@@ -120,8 +120,8 @@ fun Route.injectDepositsRout() = route("/deposits") {
                     .select { InvoiceTable.wallet eq wallet.name }
                     .run {
                         if (after != null) this.andWhere {
-                            (ProofTable.updatedAt greaterEq DateTime(after * 1000L) or (DepositTable.createdAt greaterEq DateTime(
-                                after
+                            (ProofTable.updatedAt greaterEq DateTime(after * 1000L)) or (DepositTable.createdAt greaterEq DateTime(
+                                after * 1000L
                             ))
                         } else this
                     }
