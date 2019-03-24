@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
-val kethereumVersion = "0.74.6"
+val kethereumVersion = 0.67 // TODO Update
 
 
 plugins {
@@ -50,8 +50,8 @@ dependencies {
     compile("com.github.walleth.kethereum:functions:$kethereumVersion")
     compile("com.github.walleth.kethereum:bip44:$kethereumVersion")
     compile("com.github.walleth.kethereum:crypto:$kethereumVersion")
-    compile("com.github.walleth.kethereum:rpc:$kethereumVersion")
-    compile("com.github.walleth.kethereum:crypto_impl_spongycastle:$kethereumVersion")
+//    compile("com.github.walleth.kethereum:rpc:$kethereumVersion")
+//    compile("com.github.walleth.kethereum:crypto_impl_spongycastle:$kethereumVersion")
 
     compile("org.zeromq:jeromq:0.5.0")
 
