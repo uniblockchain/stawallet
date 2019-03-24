@@ -3,14 +3,14 @@ package stacrypt.stawallet
 import org.kethereum.bip32.model.Seed
 import org.kethereum.bip32.toKey
 import org.kethereum.crypto.CURVE
-import org.kethereum.crypto.model.ECKeyPair
-import org.kethereum.crypto.model.PUBLIC_KEY_SIZE
-import org.kethereum.crypto.model.PublicKey
 import org.kethereum.crypto.signMessage
 import org.kethereum.crypto.toHex
 import org.kethereum.extensions.toBigInteger
 import org.kethereum.extensions.toBytesPadded
 import org.kethereum.hashes.sha256
+import org.kethereum.model.ECKeyPair
+import org.kethereum.model.PUBLIC_KEY_SIZE
+import org.kethereum.model.PublicKey
 
 
 // FIXME: Highly dangerous because of `hotSeed` variable accessibility (e.g. using reflection)
