@@ -76,6 +76,13 @@ class BitcoinBlockchainWatcher(
     var blockWatcherJob: Job? = null
 
     private fun startMempoolWatcherJob(scope: CoroutineScope) = scope.launch {
+        BitcoinZmqClient.addObserver {
+            if (it.messageType == ZMQ_MESSAGE_TYPE_HASH_TX) {
+                processOrphanTransaction(bitcoind.rpcClient.decodeRawTransaction(it.message))
+            }
+        }
+        // FIXME: Remove observer when cancelled
+        // TODO: Remove observer when cancelled
         while (true) {
             delay(mempoolWatchGap)
             // TODO Implement
@@ -227,27 +234,43 @@ class BitcoinBlockchainWatcher(
      * This method create a new proof for the related transaction, or return the existing one if it has been created
      * in advance.
      */
-    private fun inquireProof(block: BlockInfoWithTransactions, tx: Transaction): ProofDao =
+    private fun inquireProof(block: BlockInfoWithTransactions?, tx: Transaction): ProofDao =
         transaction {
             val q = ProofTable.select { ProofTable.blockchain eq blockchainId }
                 .andWhere { ProofTable.txHash eq tx.txid!! }
-                .andWhere { ProofTable.blockHash eq block.hash!! }
-                .andWhere { ProofTable.blockHeight eq block.height!!.toInt() }
+//                .andWhere { ProofTable.blockHash eq block.hash!! }
+//                .andWhere { ProofTable.blockHeight eq block.height!!.toInt() }
                 .firstOrNull()
+
+            // FIXME: Think more:
 
             val proof: ProofDao
             proof = if (q == null)
             // Create a new proof for this
                 ProofDao.new {
                     this.blockchain = WalletDao[walletName].blockchain
-                    this.blockHash = block.hash
-                    this.blockHeight = block.height!!.toInt()
+                    this.blockHash = block?.hash
+                    this.blockHeight = block?.height?.toInt()
                     this.txHash = tx.txid!!
                     this.confirmationsLeft = this@BitcoinBlockchainWatcher.confirmationsRequires
                 }
             else
             // TODO: Check for validity
                 ProofDao.wrapRow(q)
+
+            if (proof.blockHash != block?.hash && proof.blockHeight != block?.height?.toInt()) {
+                if (block?.hash == null || block?.height == null) {
+                    // This is something unusual.
+                    // TODO: Dangerous, report needed
+                    // TODO: What should we do?
+                } else {
+                    // Update the proof block information
+                    proof.blockHash = block.hash
+                    proof.blockHeight = block.height.toInt()
+                    // And reset confirmations (not needed)
+                    proof.confirmationsLeft = this@BitcoinBlockchainWatcher.confirmationsRequires
+                }
+            }
 
             proof
         }
@@ -292,7 +315,7 @@ class BitcoinBlockchainWatcher(
     }
 
     /**
-     * Here we make a new deposit record, because we are SURE that it is a fully confirmed transaction.
+     * Here we make a new deposit record, even when we are NOT SURE that it is a fully confirmed transaction.
      *
      * Note: The saved deposits are belongs to a specific invoice. If we couldn't find any related invoice, we will not
      * record this deposit.
@@ -335,7 +358,57 @@ class BitcoinBlockchainWatcher(
         }
 
     private fun processOrphanTransaction(tx: Transaction) {
-        // TODO
+        var proof: ProofDao? = null
+        try {
+            proof = inquireProof(null, tx)
+            // TODO: Update proof
+        } catch (e: Exception) {
+            // TODO Report to the boss
+            // Maybe invalid block info
+            logger.log(Level.INFO, "Error inquiring proof for tx: ${tx.txid}")
+            e.printStackTrace()
+        }
+        proof as ProofDao
+
+        tx.vout
+            ?.asSequence()
+            ?.map { vout ->
+                val associatedAddress = findAssociatedAddress(vout)
+                if (associatedAddress == null) logger.log(
+                    Level.INFO,
+                    "${tx.txid}: This transaction's vout: ${vout.n} doesn't have any associated pubkey address"
+                )
+                Pair(associatedAddress, vout)
+            }
+            ?.filter { it.first != null }
+            ?.map {
+                Pair(findRelatedInvoice(it.first!!), it.second)
+            }?.filter {
+                it.first != null
+            }?.groupBy {
+                it.first!!.id.value
+            }?.forEach { _, v ->
+
+                /**
+                 * Insert new Deposit
+                 */
+                logger.log(Level.INFO, "$walletName: New Deposit found!!!!!!")
+
+                try {
+                    insertNewDeposit(
+                        relatedInvoice = v.firstOrNull()?.first,
+                        transactionHash = tx.txid!!,
+                        amount = v.sumByLong { it.second.value!!.btcToSat() },
+                        proof = proof
+                    )
+                    logger.log(Level.INFO, "$walletName: New Deposit added!!!!!!")
+                } catch (e: Exception) {
+                    logger.log(Level.INFO, "$walletName: New Deposit adding error :(")
+                    e.printStackTrace()
+                    // TODO Report to the boss
+                }
+
+            }
     }
 
     private fun processTransaction(block: BlockInfoWithTransactions, tx: Transaction) {
@@ -418,6 +491,8 @@ class BitcoinBlockchainWatcher(
             {
                 (ProofTable.blockchain eq blockchainId)
                     .and(ProofTable.txHash eq txHash)
+                    .and(ProofTable.blockHash.isNotNull())
+                    .and(ProofTable.blockHeight.isNotNull())
                     .and(ProofTable.blockHash eq blockInfo.hash)
                     .and(ProofTable.blockHeight eq blockInfo.height!!.toInt())
                     .and(ProofTable.confirmationsLeft greater 0)

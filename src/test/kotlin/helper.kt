@@ -39,6 +39,8 @@ abstract class BaseApiTest {
         put("daemons.bitcoind.rpc.host", "")
         put("daemons.bitcoind.rpc.port", "0")
         put("daemons.bitcoind.rpc.secure", "false")
+        put("daemons.bitcoind.zmq.host", "")
+        put("daemons.bitcoind.zmq.port", "0")
     }
 
     @Ignore

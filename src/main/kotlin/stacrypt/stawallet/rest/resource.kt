@@ -135,6 +135,8 @@ data class ProofResource(
         fun status(proof: ProofDao?) = when {
             proof?.error != null -> DepositStatusResource.UNACCEPTABLE
             proof?.confirmationsLeft == null -> DepositStatusResource.ORPHAN
+            proof.blockHeight == null -> DepositStatusResource.ORPHAN
+            proof.blockHash == null -> DepositStatusResource.ORPHAN
             proof.confirmationsLeft == 0 -> DepositStatusResource.ACCEPTED
             proof.confirmationsLeft > 0 -> DepositStatusResource.WAITING_TO_BE_CONFIRMED
             else -> DepositStatusResource.FAILED

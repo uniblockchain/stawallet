@@ -51,6 +51,8 @@ dependencies {
     compile("com.github.walleth.kethereum:bip44:$kethereumVersion")
     compile("com.github.walleth.kethereum:crypto:$kethereumVersion")
 
+    compile("org.zeromq:jeromq:0.5.0")
+
 //    compile("org.slf4j:slf4j:1.7.5")
 //    compile("org.slf4j:slf4j-core:1.7.5")
 //    compile("org.slf4j:slf4j-simple:1.7.5")
