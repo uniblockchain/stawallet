@@ -47,6 +47,17 @@ Stawallet is a service to simplify the deposit and withdraw of cryptocurrency as
 6. Configure the `application.conf` by the rpc server IPs and Ports.
 7. Start Stawallet and enjoy it. Take care!
 
+## Running Tests
+There is nothing special to do before running the tests. Just:
+```bash
+./gradlew test
+```
+
+## Deployment
+```bash
+docker-compose up -f docker-compose.production.yml
+```
+
 ## Cli
 Stawallet provides a simple and useful "Command Line Interface".
 
