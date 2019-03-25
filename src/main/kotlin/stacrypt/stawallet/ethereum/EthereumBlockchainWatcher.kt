@@ -8,6 +8,7 @@ import org.web3j.protocol.core.DefaultBlockParameterNumber
 import org.web3j.protocol.core.methods.response.EthBlock
 import stacrypt.stawallet.BaseBlockchainWatcher
 import stacrypt.stawallet.config
+import stacrypt.stawallet.max
 import stacrypt.stawallet.model.*
 import java.lang.Exception
 import java.math.BigInteger
@@ -37,7 +38,7 @@ class EthereumBlockchainWatcher(
                 // Find out witch block height should we sync with (if there is any unsynced block)
                 val currentBestBlockHeight = geth.rpcClient.ethBlockNumber().send().blockNumber.toLong()
                 val walletDao = transaction { WalletDao.findById(walletName) }!!
-                val latestSyncedHeight = walletDao.latestSyncedHeight.toLong()
+                val latestSyncedHeight = walletDao.latestSyncedHeight
                 // TODO: Store and compare `bestblockhash` and get back in case of incompatibility
 
                 logger.log(Level.INFO, "$walletDao: Starting a new watching iteration...")
@@ -84,7 +85,7 @@ class EthereumBlockchainWatcher(
                             }
                         }
 
-                        walletDao.latestSyncedHeight = (latestSyncedHeight + 1).toInt()
+                        walletDao.latestSyncedHeight = latestSyncedHeight + 1.toLong()
                     }
 
                     /**
@@ -218,7 +219,7 @@ class EthereumBlockchainWatcher(
                 ProofDao.new {
                     this.blockchain = WalletDao[walletName].blockchain
                     this.blockHash = block?.hash
-                    this.blockHeight = block?.number?.toInt()
+                    this.blockHeight = block?.number?.toLong()
                     this.txHash = tx.hash!!
                     this.confirmationsLeft = this@EthereumBlockchainWatcher.confirmationsRequires
                 }
@@ -226,7 +227,7 @@ class EthereumBlockchainWatcher(
             // TODO: Check for validity
                 ProofDao.wrapRow(q)
 
-            if (proof.blockHash != block?.hash && proof.blockHeight != block?.number?.toInt()) {
+            if (proof.blockHash != block?.hash && proof.blockHeight != block?.number?.toLong()) {
                 if (block?.hash == null || block?.number == null) {
                     // This is something unusual.
                     // TODO: Dangerous, report needed
@@ -234,7 +235,7 @@ class EthereumBlockchainWatcher(
                 } else {
                     // Update the proof block information
                     proof.blockHash = block.hash
-                    proof.blockHeight = block.number?.toInt()
+                    proof.blockHeight = block.number?.toLong()
                     // And reset confirmations (not needed)
                     proof.confirmationsLeft = this@EthereumBlockchainWatcher.confirmationsRequires
                     proof.updatedAt = DateTime.now()
@@ -267,8 +268,8 @@ class EthereumBlockchainWatcher(
                     .andWhere { ProofTable.txHash eq transactionHash }
                     .count() == 0 -> // This is new!
                     DepositDao.new {
-                        this.grossAmount = amount.toLong() // FIXME FIXME FIXME
-                        this.netAmount = max(0, (amount - feeAmount).toLong()) // FIXME FIXME FIXME
+                        this.grossAmount = amount // FIXME FIXME FIXME
+                        this.netAmount = max(0.toBigInteger(), (amount - feeAmount)) // FIXME FIXME FIXME
                         this.invoice = relatedInvoice
                         this.proof = proof
                     }
@@ -328,7 +329,7 @@ class EthereumBlockchainWatcher(
                     .and(ProofTable.blockHash.isNotNull())
                     .and(ProofTable.blockHeight.isNotNull())
                     .and(ProofTable.blockHash eq blockInfo.hash)
-                    .and(ProofTable.blockHeight eq blockInfo.number!!.toInt())
+                    .and(ProofTable.blockHeight eq blockInfo.number!!.toLong())
                     .and(ProofTable.confirmationsLeft greater 0)
                     .and(ProofTable.confirmationsTrace.isNull() or ProofTable.confirmationsTrace.notLike("%$analyzingBlockHash%"))
             }

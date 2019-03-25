@@ -184,9 +184,9 @@ fun Route.injectWithdrawsRout() = route("/withdraws") {
             val businessUid = form["businessUid"]!!
             val isManual = form["isManual"]!!.toBoolean()
             val target = form["target"]!!
-            val netAmount = form["netAmount"]!!.toLong()
-            val grossAmount = form["grossAmount"]!!.toLong()
-            val estimatedNetworkFee = form["estimatedNetworkFee"]!!.toLong()
+            val netAmount = form["netAmount"]!!.toBigInteger()
+            val grossAmount = form["grossAmount"]!!.toBigInteger()
+            val estimatedNetworkFee = form["estimatedNetworkFee"]!!.toBigInteger()
             val type = TaskType.valueOf(form["type"]!!.toUpperCase())
 
             try {
@@ -222,7 +222,7 @@ fun Route.injectWithdrawsRout() = route("/withdraws") {
         put("/{id}") {
             val form: Parameters = call.receiveParameters()
             val isManual = form["isManual"]?.toBoolean()
-            val finalNetworkFee = form["finalNetworkFee"]?.toLong()
+            val finalNetworkFee = form["finalNetworkFee"]?.toBigInteger()
             val txid = form["txid"]
 
             try {
@@ -285,7 +285,7 @@ fun Route.injectQuotesRout() = route("/quotes") {
     reachGet("withdraws") {
 
         val user = qs("user")!!
-        val amount = qs("amount")?.toLong()!!
+        val amount = qs("amount")?.toBigInteger()!!
         val target = qs("target")!! // Target Address
         val businessUid = qs("businessUid")!!
 
@@ -298,13 +298,13 @@ fun Route.injectQuotesRout() = route("/quotes") {
                 } != 0,
                 isUserEligible = true,// TODO
                 isNetworkUp = true,// TODO
-                isAmountValid = amount > 0,// TODO
+                isAmountValid = amount > 0.toBigInteger(),// TODO
                 isAddressValid = wallet.validateAddress(target),
                 hasSufficientWalletBalance = true, // TODO
                 isSendingManually = false, // TODO
                 estimatedSendingTime = 0, // TODO
                 estimatedReceivingTime = 0, // TODO
-                estimatedNetworkFee = 0,
+                estimatedNetworkFee = 0.toBigInteger(),
                 errors = listOf()
             )
         )

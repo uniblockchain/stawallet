@@ -147,7 +147,7 @@ class BitcoinWalletTest : BaseApiTest() {
                 this.address = address1
                 this.txid = "5061556f857e118aae8d948496f61f645e12cf7ca2a107f8e4ae78b535e86dfb"
                 this.vout = 1
-                this.amount = 2340000
+                this.amount = 2340000.toBigInteger()
                 this.discoveryProof = ProofDao.new {
                     this.blockchain = wallet1.blockchain
                     this.txHash = "5061556f857e118aae8d948496f61f645e12cf7ca2a107f8e4ae78b535e86dfb"
@@ -162,7 +162,7 @@ class BitcoinWalletTest : BaseApiTest() {
                 this.address = address2
                 this.txid = "ac63077e17aef2cf50718a1e7531b8710714dbfdc53424d627c175ddb119cde5"
                 this.vout = 0
-                this.amount = 8173830
+                this.amount = 8173830.toBigInteger()
                 this.discoveryProof = ProofDao.new {
                     this.blockchain = wallet1.blockchain
                     this.txHash = "ac63077e17aef2cf50718a1e7531b8710714dbfdc53424d627c175ddb119cde5"
@@ -177,7 +177,7 @@ class BitcoinWalletTest : BaseApiTest() {
                 this.address = address3
                 this.txid = "3f3b970d786527051962dec390db5dcca0ce6896c9dadf3b28d8d72c271bb3ee"
                 this.vout = 45
-                this.amount = 999999999
+                this.amount = 999999999.toBigInteger()
                 this.discoveryProof = ProofDao.new {
                     this.blockchain = wallet1.blockchain
                     this.txHash = "3f3b970d786527051962dec390db5dcca0ce6896c9dadf3b28d8d72c271bb3ee"

@@ -1,6 +1,5 @@
 package stacrypt.stawallet.bitcoin
 
-import com.typesafe.config.Config
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
@@ -14,7 +13,6 @@ import stacrypt.stawallet.*
 import stacrypt.stawallet.model.*
 import java.math.BigDecimal
 import java.util.logging.Logger
-import kotlin.math.roundToLong
 import org.walleth.khex.toHexString
 import stacrypt.stawallet.SecretProvider.Companion.MAGIC_NUMBER
 import java.math.BigInteger
@@ -78,9 +76,9 @@ class BitcoinWallet(
         )
 
     companion object {
-        const val TX_BASE_SIZE = 10 // Bytes
-        const val TX_INPUT_SIZE = 148 // Bytes
-        const val TX_OUTPUT_SIZE = 34 // Bytes
+        val TX_BASE_SIZE = 10.toBigInteger() // Bytes
+        val TX_INPUT_SIZE = 148.toBigInteger() // Bytes
+        val TX_OUTPUT_SIZE = 34.toBigInteger() // Bytes
 
         const val CRYPTOCURRENCY = "BTC"
 
@@ -129,9 +127,9 @@ class BitcoinWallet(
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    private fun selectUtxo(amountToSend: Long, baseFee: Long, feePerExtraUtxo: Long): List<UtxoDao> {
+    private fun selectUtxo(amountToSend: BigInteger, baseFee: BigInteger, feePerExtraUtxo: BigInteger): List<UtxoDao> {
         var estimatedFee = baseFee
-        var totalInputAmount = 0L
+        var totalInputAmount = 0.toBigInteger()
 
         val utxos = UtxoDao.wrapRows(
             UtxoTable.leftJoin(ProofTable, { UtxoTable.discoveryProof }, { ProofTable.id })
@@ -163,16 +161,16 @@ class BitcoinWallet(
             val satPerByte = daemon.fairTxFeeRate()!!
 
             val utxos = selectUtxo(
-                amountToSend.toLong(),
-                (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2) * satPerByte,
+                amountToSend,
+                (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2.toBigInteger()) * satPerByte,
                 TX_INPUT_SIZE * satPerByte
             )
 
-            val amountToChange = utxos.sumByLong { it.amount } -
-                    amountToSend.toLong() -
-                    (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2) * satPerByte -
-                    utxos.size * TX_INPUT_SIZE * satPerByte
-            if (amountToChange > 0) {
+            val amountToChange = utxos.sumByBigInteger { it.amount } -
+                    amountToSend -
+                    (TX_BASE_SIZE + TX_OUTPUT_SIZE * 2.toBigInteger()) * satPerByte -
+                    utxos.size.toBigInteger() * TX_INPUT_SIZE * satPerByte
+            if (amountToChange > 0.toBigInteger()) {
                 outputs[newAddress(true).provision] = amountToChange.toBigDecimal()
             }
 
@@ -261,5 +259,5 @@ fun ByteArray.toBitcoinWif(networkByte: Int) = this
 
 fun BigInteger.toBitcoinWif(networkByte: Int) = toBytesPadded(32).toBitcoinWif(networkByte)
 
-fun Double.btcToSat() = (this * 100_000_000.0).roundToLong()
-fun BigDecimal.btcToSat() = scaleByPowerOfTen(8).toLong()
+fun BigDecimal.btcToSat() = scaleByPowerOfTen(8).toBigIntegerExact()!!
+fun Double.btcToSat() = this.toBigDecimal().btcToSat()

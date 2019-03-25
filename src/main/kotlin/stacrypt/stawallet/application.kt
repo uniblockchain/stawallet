@@ -1,5 +1,6 @@
 package stacrypt.stawallet
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.joda.JodaModule
 import com.typesafe.config.Config
@@ -27,6 +28,9 @@ import java.net.URI
 import java.sql.Connection
 import java.util.logging.Level
 import java.util.logging.Logger
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
+import java.math.BigInteger
+import com.fasterxml.jackson.databind.module.SimpleModule
 
 
 lateinit var wallets: List<Wallet>
@@ -73,7 +77,9 @@ fun Application.module(testing: Boolean = false) {
     install(ContentNegotiation) {
         jackson {
             enable(SerializationFeature.INDENT_OUTPUT)
+            enable(DeserializationFeature.USE_BIG_INTEGER_FOR_INTS)
             disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+//            registerModule(SimpleModule().apply { addSerializer(BigInteger::class.java, ToStringSerializer()) })
             registerModule(JodaModule())
         }
     }

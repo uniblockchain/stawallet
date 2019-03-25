@@ -2,6 +2,7 @@ package stacrypt.stawallet.rest
 
 import org.joda.time.DateTime
 import stacrypt.stawallet.model.*
+import java.math.BigInteger
 
 enum class ClientRole
 
@@ -15,8 +16,8 @@ fun WalletDao.export(role: ClientRole? = null): WalletResource {
 }
 
 data class WalletBalanceResource(
-    val confirmed: Long,
-    val unconfirmed: Long
+    val confirmed: BigInteger,
+    val unconfirmed: BigInteger
 )
 
 data class WalletOnchainStatus(
@@ -108,8 +109,8 @@ enum class DepositStatusResource {
 data class DepositResource(
     val id: Int?,
     val invoice: InvoiceResource,
-    val grossAmount: Long,
-    val netAmount: Long?,
+    val grossAmount: BigInteger,
+    val netAmount: BigInteger?,
     val proof: ProofResource,
     val isConfirmed: Boolean,
     val status: DepositStatusResource,
@@ -123,7 +124,7 @@ data class DepositResource(
 data class ProofResource(
     val txHash: String?,
     val blockHash: String?,
-    val blockHeight: Int?,
+    val blockHeight: Long?,
     val confirmationsLeft: Int,
     val confirmationsTrace: List<String>,
     val link: String?,
@@ -179,10 +180,10 @@ data class WithdrawResource(
     val wallet: String,
     val user: String?,
     val target: String,
-    val netAmount: Long,
-    val grossAmount: Long,
-    val estimatedNetworkFee: Long,
-    val finalNetworkFee: Long?,
+    val netAmount: BigInteger,
+    val grossAmount: BigInteger,
+    val estimatedNetworkFee: BigInteger,
+    val finalNetworkFee: BigInteger?,
     val type: String,
     val isManual: Boolean?,
     val status: String,
@@ -231,7 +232,7 @@ data class WithdrawQuoteResource(
     val isBusinessUidValid: Boolean,
     val isAmountValid: Boolean,
     val isUserEligible: Boolean,
-    val estimatedNetworkFee: Long?,
+    val estimatedNetworkFee: BigInteger?,
     val isNetworkUp: Boolean,
     val isAddressValid: Boolean,
     val hasSufficientWalletBalance: Boolean,

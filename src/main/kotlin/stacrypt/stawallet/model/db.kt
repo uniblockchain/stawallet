@@ -5,9 +5,6 @@ import org.jetbrains.exposed.dao.IdTable
 import org.jetbrains.exposed.dao.IntIdTable
 import org.jetbrains.exposed.sql.Column
 import org.joda.time.DateTime
-import stacrypt.stawallet.model.InvoiceTable.clientDefault
-import stacrypt.stawallet.model.ProofTable.default
-import stacrypt.stawallet.model.TaskTable.default
 
 
 /**
@@ -56,18 +53,18 @@ object WalletTable : IdTable<String>("wallet") {
      * TODO: Review it's usage
      * Confirmed amount which is payable
      */
-    val balance = long("balance").default(0)
+    val balance = biginteger("balance", 30).default(0.toBigInteger())
 
     /**
      * TODO: Review it's usage
      * Unconfirmed balance, which we are waiting for it to be confirmed in the new feature
      */
-    val unconfirmedBalance = long("unconfirmed_balance").default(0)
+    val unconfirmedBalance = biginteger("unconfirmed_balance", 30).default(0.toBigInteger())
 
     /**
      * Latest block height which has been synchronized with the blockchain watcher
      */
-    val latestSyncedHeight = integer("latest_sync_height").default(0)
+    val latestSyncedHeight = long("latest_sync_height").default(0)
 
 }
 
@@ -172,7 +169,7 @@ object ProofTable : IntIdTable("proof") {
     /**
      * Block height of where the transaction located at
      */
-    val blockHeight = integer("block_height").nullable()
+    val blockHeight = long("block_height").nullable()
 
     /**
      * Confirmations left
@@ -224,12 +221,12 @@ object DepositTable : IntIdTable() {
     /**
      * The amount we really received
      */
-    val grossAmount = long("gross_amount")
+    val grossAmount = biginteger("gross_amount", 30)
 
     /**
      * Amount the user will be charged in our system (whether any fee or commission decreased)
      */
-    val netAmount = long("net_amount")
+    val netAmount = biginteger("net_amount", 30)
 
     /**
      * Extra information (if required)
@@ -330,7 +327,7 @@ object TaskTable : IntIdTable("task") {
     /**
      * Amount to be sent
      */
-    val netAmount = long("net_amount")
+    val netAmount = biginteger("net_amount", 30)
 
     /**
      * Amount the user will be charged in our system (whether any fee or commission decreased)
@@ -339,7 +336,7 @@ object TaskTable : IntIdTable("task") {
      *
      * Note 2: It is JUST to log what happened. It means that this number has no meaning to us.
      */
-    val grossAmount = long("gross_amount")
+    val grossAmount = biginteger("gross_amount", 30)
 
     /**
      * We estimate this number when we want to issue a withdraw records
@@ -348,7 +345,7 @@ object TaskTable : IntIdTable("task") {
      *
      * Note 2: We STRONGLY recommend to calculate this number before issue a withdraw record (there is a function estimate fee)
      */
-    val estimatedNetworkFee = long("estimated_fee")
+    val estimatedNetworkFee = biginteger("estimated_fee", 30)
 
     /**
      * Final network fee
@@ -356,7 +353,7 @@ object TaskTable : IntIdTable("task") {
      * It will be calculated when we pushed the transaction to the network
      *
      */
-    val finalNetworkFee = long("final_network_fee").nullable()
+    val finalNetworkFee = biginteger("final_network_fee", 30).nullable()
 
     /**
      * Why we are transferring this money
@@ -415,7 +412,7 @@ object UtxoTable : IntIdTable("utxo") {
     /**
      * Amount
      */
-    val amount = long("amount")
+    val amount = biginteger("amount", 30)
 
     /**
      * Origin transaction id in the blockchain

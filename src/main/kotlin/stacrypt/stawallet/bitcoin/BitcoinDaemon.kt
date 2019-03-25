@@ -7,9 +7,9 @@ import org.joda.time.DateTime
 import stacrypt.stawallet.*
 import stacrypt.stawallet.model.*
 import java.lang.Exception
+import java.math.BigInteger
 import java.util.logging.Level
 import java.util.logging.Logger
-import kotlin.math.max
 
 object bitcoind : WalletDaemon() {
 
@@ -24,7 +24,7 @@ object bitcoind : WalletDaemon() {
     /**
      * Satoshis per bytes
      */
-    fun fairTxFeeRate(): Long? {
+    fun fairTxFeeRate(): BigInteger? {
         return rpcClient.estimateSmartFee(6).feerate?.btcToSat()
     }
 
@@ -114,7 +114,7 @@ class BitcoinBlockchainWatcher(
                         "$walletDao: We are looking for block in height: ${latestSyncedHeight + 1}"
                     )
 
-                    val blockToAnalyze = bitcoind.rpcClient.getBlockHash(latestSyncedHeight + 1)
+                    val blockToAnalyze = bitcoind.rpcClient.getBlockHash((latestSyncedHeight + 1L).toInt())
 
                     logger.log(Level.INFO, "$walletDao: We are looking for block with hash: $blockToAnalyze")
 
@@ -131,7 +131,7 @@ class BitcoinBlockchainWatcher(
                     transaction {
                         // Now it's time to update previous (unconfirmed) block's confirmations
                         for (i in 0..confirmationsRequires) {
-                            val blockHash = bitcoind.rpcClient.getBlockHash(latestSyncedHeight - i)
+                            val blockHash = bitcoind.rpcClient.getBlockHash((latestSyncedHeight - i.toLong()).toInt())
                             val b = bitcoind.rpcClient.getBlock(blockHash)
                             b.tx?.forEach {
                                 increaseConfirmations(
@@ -250,7 +250,7 @@ class BitcoinBlockchainWatcher(
                 ProofDao.new {
                     this.blockchain = WalletDao[walletName].blockchain
                     this.blockHash = block?.hash
-                    this.blockHeight = block?.height?.toInt()
+                    this.blockHeight = block?.height
                     this.txHash = tx.txid!!
                     this.confirmationsLeft = this@BitcoinBlockchainWatcher.confirmationsRequires
                 }
@@ -258,15 +258,15 @@ class BitcoinBlockchainWatcher(
             // TODO: Check for validity
                 ProofDao.wrapRow(q)
 
-            if (proof.blockHash != block?.hash && proof.blockHeight != block?.height?.toInt()) {
-                if (block?.hash == null || block?.height == null) {
+            if (proof.blockHash != block?.hash && proof.blockHeight != block?.height) {
+                if (block?.hash == null || block.height == null) {
                     // This is something unusual.
                     // TODO: Dangerous, report needed
                     // TODO: What should we do?
                 } else {
                     // Update the proof block information
                     proof.blockHash = block.hash
-                    proof.blockHeight = block.height.toInt()
+                    proof.blockHeight = block.height
                     // And reset confirmations (not needed)
                     proof.confirmationsLeft = this@BitcoinBlockchainWatcher.confirmationsRequires
                     proof.updatedAt = DateTime.now()
@@ -329,8 +329,8 @@ class BitcoinBlockchainWatcher(
     private fun insertNewDeposit(
         relatedInvoice: InvoiceDao?,
         transactionHash: String,
-        amount: Long,
-        feeAmount: Long = 0L,
+        amount: BigInteger,
+        feeAmount: BigInteger = 0.toBigInteger(),
         proof: ProofDao
     ) =
         transaction {
@@ -347,7 +347,7 @@ class BitcoinBlockchainWatcher(
                     .count() == 0 -> // This is new UTXO!
                     DepositDao.new {
                         this.grossAmount = amount
-                        this.netAmount = max(0, amount - feeAmount)
+                        this.netAmount = max(0.toBigInteger(), amount - feeAmount)
                         this.invoice = relatedInvoice
                         this.proof = proof
                     }
@@ -399,7 +399,7 @@ class BitcoinBlockchainWatcher(
                     insertNewDeposit(
                         relatedInvoice = v.firstOrNull()?.first,
                         transactionHash = tx.txid!!,
-                        amount = v.sumByLong { it.second.value!!.btcToSat() },
+                        amount = v.sumByBigInteger { it.second.value!!.btcToSat() },
                         proof = proof
                     )
                     logger.log(Level.INFO, "$walletName: New Deposit added!!!!!!")
@@ -473,7 +473,7 @@ class BitcoinBlockchainWatcher(
                     insertNewDeposit(
                         relatedInvoice = v.firstOrNull()?.first,
                         transactionHash = tx.txid!!,
-                        amount = v.sumByLong { it.second.value!!.btcToSat() },
+                        amount = v.sumByBigInteger { it.second.value!!.btcToSat() },
                         proof = proof
                     )
                     logger.log(Level.INFO, "$walletName: New Deposit added!!!!!!")
@@ -495,7 +495,7 @@ class BitcoinBlockchainWatcher(
                     .and(ProofTable.blockHash.isNotNull())
                     .and(ProofTable.blockHeight.isNotNull())
                     .and(ProofTable.blockHash eq blockInfo.hash)
-                    .and(ProofTable.blockHeight eq blockInfo.height!!.toInt())
+                    .and(ProofTable.blockHeight eq blockInfo.height!!)
                     .and(ProofTable.confirmationsLeft greater 0)
                     .and(ProofTable.confirmationsTrace.isNull() or ProofTable.confirmationsTrace.notLike("%$analyzingBlockHash%"))
             }

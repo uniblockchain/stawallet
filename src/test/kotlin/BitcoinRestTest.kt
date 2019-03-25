@@ -128,7 +128,7 @@ class BitcoinRestTest : BaseApiTest() {
                 this.address = address1
                 this.txid = "5061556f857e118aae8d948496f61f645e12cf7ca2a107f8e4ae78b535e86dfb"
                 this.vout = 1
-                this.amount = 2340000
+                this.amount = 2340000.toBigInteger()
                 this.discoveryProof = ProofDao.new {
                     this.blockchain = wallet1.blockchain
                     this.txHash = "5061556f857e118aae8d948496f61f645e12cf7ca2a107f8e4ae78b535e86dfb"
@@ -143,7 +143,7 @@ class BitcoinRestTest : BaseApiTest() {
                 this.address = address2
                 this.txid = "ac63077e17aef2cf50718a1e7531b8710714dbfdc53424d627c175ddb119cde5"
                 this.vout = 0
-                this.amount = 8173830
+                this.amount = 8173830.toBigInteger()
                 this.discoveryProof = ProofDao.new {
                     this.blockchain = wallet1.blockchain
                     this.txHash = "ac63077e17aef2cf50718a1e7531b8710714dbfdc53424d627c175ddb119cde5"
@@ -158,7 +158,7 @@ class BitcoinRestTest : BaseApiTest() {
                 this.address = address3
                 this.txid = "3f3b970d786527051962dec390db5dcca0ce6896c9dadf3b28d8d72c271bb3ee"
                 this.vout = 45
-                this.amount = 999999999
+                this.amount = 999999999.toBigInteger()
                 this.discoveryProof = ProofDao.new {
                     this.blockchain = wallet1.blockchain
                     this.txHash = "3f3b970d786527051962dec390db5dcca0ce6896c9dadf3b28d8d72c271bb3ee"
@@ -178,8 +178,8 @@ class BitcoinRestTest : BaseApiTest() {
             val deposit1 = DepositDao.new(1) {
                 invoice = invoice1
                 proof = utxo1.discoveryProof
-                grossAmount = 198763
-                netAmount = 198000
+                grossAmount = 198763.toBigInteger()
+                netAmount = 198000.toBigInteger()
             }
 
             val withdraw1 = TaskDao.new(1) {
@@ -187,9 +187,9 @@ class BitcoinRestTest : BaseApiTest() {
                 businessUid = "c0d9c0a7-6eb4-4e03-a324-f53a8be1b789"
                 user = "1"
                 target = "1Mwz1i3MK7AruNFwF3X84FK4qMmpooLtZG"
-                grossAmount = 65740000
-                netAmount = 65020000
-                estimatedNetworkFee = 50000
+                grossAmount = 65740000.toBigInteger()
+                netAmount = 65020000.toBigInteger()
+                estimatedNetworkFee = 50000.toBigInteger()
                 type = TaskType.WITHDRAW
                 status = TaskStatus.QUEUED
             }

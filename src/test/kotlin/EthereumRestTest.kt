@@ -117,8 +117,8 @@ class EthereumRestTest : BaseApiTest() {
                     this.blockHeight = 7291344
                     this.confirmationsLeft = 0
                 }
-                grossAmount = 198763
-                netAmount = 198000
+                grossAmount = 198763.toBigInteger()
+                netAmount = 198000.toBigInteger()
             }
 
             val withdraw1 = TaskDao.new(1) {
@@ -126,9 +126,9 @@ class EthereumRestTest : BaseApiTest() {
                 businessUid = "c0d9c0a7-6eb4-4e03-a324-f53a8be1b789"
                 user = "1"
                 target = "0xb39950d20750d348b3160ba7109e7b29afa553ec"
-                grossAmount = 65740000
-                netAmount = 65020000
-                estimatedNetworkFee = 50000
+                grossAmount = 65740000.toBigInteger()
+                netAmount = 65020000.toBigInteger()
+                estimatedNetworkFee = 50000.toBigInteger()
                 type = TaskType.WITHDRAW
                 status = TaskStatus.QUEUED
             }
