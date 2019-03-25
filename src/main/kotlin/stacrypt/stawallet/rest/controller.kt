@@ -304,7 +304,7 @@ fun Route.injectQuotesRout() = route("/quotes") {
                 isSendingManually = false, // TODO
                 estimatedSendingTime = 0, // TODO
                 estimatedReceivingTime = 0, // TODO
-                estimatedNetworkFee = 0.toBigInteger(),
+                estimatedNetworkFee = 0.toBigInteger().toString(),
                 errors = listOf()
             )
         )

@@ -70,12 +70,12 @@ use `-f` flag to drop the existing database (if exists)
 
 #### Create Database Schema
 ```bash
-stawallet database create init
+stawallet database init
 ```
 
 #### Populate Database (using your configuration file)
 ```bash
-stawallet database create populate
+stawallet database populate
 ```
 
 #### Run blockchain watcher for each wallet
@@ -87,6 +87,17 @@ stawallet watch my-lovely-btc-wallet
 ```bash
 stawallet serve
 ```
+
+## Data Types
+* We store ALL amount related values (including fee values) as non-floating-point `DECIMAL` data type. It is equal to `BigInteger` in Kotlin and Java languages.
+* We dedicate `30` prec for all amount values in database. It means that the equivalent sql data type is `DECIMAL(30,0)`. 
+* All amount will be rendered as `string` in `json` outputs. (Because some third-party json libraries does not support long numbers)
+* All values will be in the lowest possible unit in each cryptocurrency or token (for example `sat` instead of `btc`, `wei` instead of `eth`...)
+* There is NO floating-point for amounts, at all.
+* DateTimes are stored in database as sql `DateTime` type.
+* DateTimes will be rendered in `UTC` human-readable format in json outputs.
+* `block height`s (or `block number`s) are always stores and used as long.
+* `confirmation` numbers are always in `int` type.
 
 ## UseCases
 * Exchange internal coins

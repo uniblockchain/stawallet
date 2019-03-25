@@ -2,22 +2,21 @@ package stacrypt.stawallet.rest
 
 import org.joda.time.DateTime
 import stacrypt.stawallet.model.*
-import java.math.BigInteger
 
 enum class ClientRole
 
 fun WalletDao.export(role: ClientRole? = null): WalletResource {
     return WalletResource(
         id = this.id.value,
-        balance = WalletBalanceResource(balance, unconfirmedBalance),
+        balance = WalletBalanceResource(balance.toString(), unconfirmedBalance.toString()),
         secret = WalletSecretResource(seedFingerprint, path),
         onchainStatus = null
     )
 }
 
 data class WalletBalanceResource(
-    val confirmed: BigInteger,
-    val unconfirmed: BigInteger
+    val confirmed: String,
+    val unconfirmed: String
 )
 
 data class WalletOnchainStatus(
@@ -81,8 +80,8 @@ fun DepositDao.export(role: ClientRole? = null, wallet: stacrypt.stawallet.Walle
     return DepositResource(
         id = id.value,
         invoice = invoice.export(role),
-        grossAmount = this.grossAmount,
-        netAmount = this.netAmount,
+        grossAmount = this.grossAmount.toString(),
+        netAmount = this.netAmount.toString(),
         isConfirmed = this.proof.confirmationsLeft == 0,
         status = ProofResource.status(this.proof),
         proof = this.proof.export(role, wallet),
@@ -109,8 +108,8 @@ enum class DepositStatusResource {
 data class DepositResource(
     val id: Int?,
     val invoice: InvoiceResource,
-    val grossAmount: BigInteger,
-    val netAmount: BigInteger?,
+    val grossAmount: String,
+    val netAmount: String?,
     val proof: ProofResource,
     val isConfirmed: Boolean,
     val status: DepositStatusResource,
@@ -154,10 +153,10 @@ fun TaskDao.export(role: ClientRole? = null, wallet: stacrypt.stawallet.Wallet):
         wallet = this.wallet.id.value,
         user = this.user,
         target = this.target,
-        netAmount = this.netAmount,
-        grossAmount = this.grossAmount,
-        estimatedNetworkFee = this.estimatedNetworkFee,
-        finalNetworkFee = this.finalNetworkFee,
+        netAmount = this.netAmount.toString(),
+        grossAmount = this.grossAmount.toString(),
+        estimatedNetworkFee = this.estimatedNetworkFee.toString(),
+        finalNetworkFee = this.finalNetworkFee?.toString(),
         type = this.type.toString().toLowerCase(),
         isManual = when (this.status) {
             TaskStatus.QUEUED -> true
@@ -180,10 +179,10 @@ data class WithdrawResource(
     val wallet: String,
     val user: String?,
     val target: String,
-    val netAmount: BigInteger,
-    val grossAmount: BigInteger,
-    val estimatedNetworkFee: BigInteger,
-    val finalNetworkFee: BigInteger?,
+    val netAmount: String,
+    val grossAmount: String,
+    val estimatedNetworkFee: String,
+    val finalNetworkFee: String?,
     val type: String,
     val isManual: Boolean?,
     val status: String,
@@ -232,7 +231,7 @@ data class WithdrawQuoteResource(
     val isBusinessUidValid: Boolean,
     val isAmountValid: Boolean,
     val isUserEligible: Boolean,
-    val estimatedNetworkFee: BigInteger?,
+    val estimatedNetworkFee: String?,
     val isNetworkUp: Boolean,
     val isAddressValid: Boolean,
     val hasSufficientWalletBalance: Boolean,
